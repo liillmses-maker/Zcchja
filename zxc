@@ -1,62 +1,119 @@
---[[
-	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
-]]
---[[
-    made by: dak#1111
-    thanks for using!
---]]
+-- Поместите этот LocalScript в StarterPlayerScripts
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local function tween(...)
-    game:GetService("TweenService"):Create(...):Play()
+-- Создаем GUI
+local loadGui = Instance.new("ScreenGui")
+loadGui.Name = "LongLoadGui"
+loadGui.ResetOnSpawn = false
+loadGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0.6, 0, 0.15, 0)
+mainFrame.Position = UDim2.new(0.2, 0, 0.4, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = loadGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0.3, 0)
+title.Text = "ЗАГРУЗКА МИНЬОНА"
+title.TextScaled = true
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+local progressBarBack = Instance.new("Frame")
+progressBarBack.Size = UDim2.new(0.9, 0, 0.3, 0)
+progressBarBack.Position = UDim2.new(0.05, 0, 0.4, 0)
+progressBarBack.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+progressBarBack.BorderSizePixel = 0
+progressBarBack.Parent = mainFrame
+
+local progressBar = Instance.new("Frame")
+progressBar.Name = "ProgressBar"
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = progressBarBack
+
+local percentText = Instance.new("TextLabel")
+percentText.Size = UDim2.new(1, 0, 0.3, 0)
+percentText.Position = UDim2.new(0, 0, 0.75, 0)
+percentText.Text = "0%"
+percentText.TextColor3 = Color3.new(1, 1, 1)
+percentText.BackgroundTransparency = 1
+percentText.Font = Enum.Font.Gotham
+percentText.TextScaled = true
+percentText.Parent = mainFrame
+
+local statusText = Instance.new("TextLabel")
+statusText.Size = UDim2.new(1, 0, 0.2, 0)
+statusText.Position = UDim2.new(0, 0, 0.95, 0)
+statusText.Text = "Инициализация..."
+statusText.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+statusText.BackgroundTransparency = 1
+statusText.Font = Enum.Font.Gotham
+statusText.TextSize = 18
+statusText.Parent = mainFrame
+
+-- Функция обновления прогресса
+local function updateProgress(progress)
+    progressBar.Size = UDim2.new(progress, 0, 1, 0)
+    local percent = math.floor(progress * 100)
+    percentText.Text = percent .. "%"
+    
+    -- Меняем статус в зависимости от прогресса
+    if progress < 0.2 then
+        statusText.Text = "Загрузка базовых модулей..."
+    elseif progress < 0.4 then
+        statusText.Text = "Оптимизация текстур..."
+    elseif progress < 0.6 then
+        statusText.Text = "Калибровка анимаций..."
+    elseif progress < 0.8 then
+        statusText.Text = "Финальная настройка..."
+    else
+        statusText.Text = "Почти готово..."
+    end
 end
 
-game:GetService("ReplicatedFirst"):RemoveDefaultLoadingScreen()
-local loading = Instance.new("ScreenGui")
-local background = Instance.new("Frame")
-local gradient = Instance.new("UIGradient")
-local status = Instance.new("TextLabel")
+-- Симуляция долгой загрузки (1000 секунд)
+local loadTime = 1000 -- 1000 секунд
+local startTime = tick()
+local connection
 
-loading.Name = "loading"
-loading.Parent = game:GetService("CoreGui")
-loading.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+connection = game:GetService("RunService").Heartbeat:Connect(function()
+    local elapsed = tick() - startTime
+    local progress = math.min(elapsed / loadTime, 1)
+    
+    updateProgress(progress)
+    
+    if progress >= 1 then
+        connection:Disconnect()
+        statusText.Text = "Загрузка завершена!"
+        wait(3)
+        loadGui:Destroy()
+    end
+end)
 
-background.Name = "background"
-background.Parent = loading
-background.BackgroundColor3 = Color3.fromRGB(57, 57, 57)
-background.Position = UDim2.new(0, 0, -0.100000001, 0)
-background.Size = UDim2.new(1, 0, 1.10000002, 0)
-
-gradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(76, 76, 76))}
-gradient.Rotation = 90
-gradient.Name = "gradient"
-gradient.Parent = background
-
-status.Name = "status"
-status.Parent = loading
-status.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-status.BackgroundTransparency = 1.000
-status.Position = UDim2.new(0, 0, 0.893442631, 0)
-status.Size = UDim2.new(1, 0, 0.0355480109, 0)
-status.Font = Enum.Font.SourceSansItalic
-status.Text = "< TRYING SERVER >"
-status.TextColor3 = Color3.fromRGB(255, 255, 255)
-status.TextScaled = true
-status.TextSize = 14.000
-status.TextStrokeColor3 = Color3.fromRGB(52, 52, 52)
-status.TextStrokeTransparency = 0.000
-status.TextWrapped = true
-if syn then syn.protect_gui(loading) end
-
-repeat wait() until game:GetService("Players").LocalPlayer
-status.Text = "< JOINING SERVER >"
-
-if not game:IsLoaded() then
-    game.Loaded:wait()
+-- Добавляем немного случайности для реалистичности
+local function randomPause()
+    local pauseChance = math.random(1, 100)
+    if pauseChance > 95 then -- 5% шанс на паузу
+        local pauseTime = math.random(1, 5)
+        statusText.Text = "Обнаружена задержка... ("..pauseTime.."с)"
+        wait(pauseTime)
+    end
 end
 
-wait(.66)
-
-tween(background, TweenInfo.new(.55), {BackgroundTransparency = 1})
-tween(status, TweenInfo.new(.55), {TextTransparency = 1, TextStrokeTransparency = 1})
-wait(.55)
-loading:Destroy()
+-- Периодически вызываем randomPause
+while true do
+    wait(math.random(5, 15))
+    if connection.Connected then
+        randomPause()
+    else
+        break
+    end
+end
