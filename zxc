@@ -1,119 +1,104 @@
--- Поместите этот LocalScript в StarterPlayerScripts
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local gui = Instance.new("ScreenGui")
+gui.Name = "LoadingScreen"
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- Создаем GUI
-local loadGui = Instance.new("ScreenGui")
-loadGui.Name = "LongLoadGui"
-loadGui.ResetOnSpawn = false
-loadGui.Parent = player:WaitForChild("PlayerGui")
+-- Фон
+local background = Instance.new("Frame")
+background.Name = "Background"
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+background.BorderSizePixel = 0
+background.Parent = gui
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0.6, 0, 0.15, 0)
-mainFrame.Position = UDim2.new(0.2, 0, 0.4, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = loadGui
+-- Основной контейнер
+local container = Instance.new("Frame")
+container.Name = "Container"
+container.AnchorPoint = Vector2.new(0.5, 0.5)
+container.Position = UDim2.new(0.5, 0, 0.5, 0)
+container.Size = UDim2.new(0.4, 0, 0.3, 0)
+container.BackgroundTransparency = 1
+container.Parent = background
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0.3, 0)
-title.Text = "ЗАГРУЗКА МИНЬОНА"
-title.TextScaled = true
-title.TextColor3 = Color3.new(1, 1, 1)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.Parent = mainFrame
+-- Логотип/надпись LOAD
+local loadText = Instance.new("TextLabel")
+loadText.Name = "LoadText"
+loadText.Size = UDim2.new(1, 0, 0.5, 0)
+loadText.Position = UDim2.new(0, 0, 0, 0)
+loadText.BackgroundTransparency = 1
+loadText.Text = "LOAD"
+loadText.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadText.TextScaled = true
+loadText.Font = Enum.Font.GothamBlack
+loadText.TextStrokeTransparency = 0.5
+loadText.TextStrokeColor3 = Color3.fromRGB(100, 150, 255)
+loadText.Parent = container
 
-local progressBarBack = Instance.new("Frame")
-progressBarBack.Size = UDim2.new(0.9, 0, 0.3, 0)
-progressBarBack.Position = UDim2.new(0.05, 0, 0.4, 0)
-progressBarBack.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-progressBarBack.BorderSizePixel = 0
-progressBarBack.Parent = mainFrame
+-- Контейнер прогресс-бара
+local progressBarContainer = Instance.new("Frame")
+progressBarContainer.Name = "ProgressBarContainer"
+progressBarContainer.Size = UDim2.new(1, -40, 0.1, 0)
+progressBarContainer.Position = UDim2.new(0, 20, 0.7, 0)
+progressBarContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+progressBarContainer.BorderSizePixel = 0
+progressBarContainer.Parent = container
 
+-- Сам прогресс-бар
 local progressBar = Instance.new("Frame")
 progressBar.Name = "ProgressBar"
 progressBar.Size = UDim2.new(0, 0, 1, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+progressBar.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
 progressBar.BorderSizePixel = 0
-progressBar.Parent = progressBarBack
+progressBar.Parent = progressBarContainer
 
+-- Скругление углов прогресс-бара
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0.5, 0)
+corner.Parent = progressBarContainer
+
+-- Текст процентов
 local percentText = Instance.new("TextLabel")
-percentText.Size = UDim2.new(1, 0, 0.3, 0)
-percentText.Position = UDim2.new(0, 0, 0.75, 0)
-percentText.Text = "0%"
-percentText.TextColor3 = Color3.new(1, 1, 1)
+percentText.Name = "PercentText"
+percentText.Size = UDim2.new(1, 0, 0.2, 0)
+percentText.Position = UDim2.new(0, 0, 0.85, 0)
 percentText.BackgroundTransparency = 1
-percentText.Font = Enum.Font.Gotham
+percentText.Text = "0%"
+percentText.TextColor3 = Color3.fromRGB(200, 200, 255)
 percentText.TextScaled = true
-percentText.Parent = mainFrame
+percentText.Font = Enum.Font.GothamBold
+percentText.Parent = container
 
-local statusText = Instance.new("TextLabel")
-statusText.Size = UDim2.new(1, 0, 0.2, 0)
-statusText.Position = UDim2.new(0, 0, 0.95, 0)
-statusText.Text = "Инициализация..."
-statusText.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-statusText.BackgroundTransparency = 1
-statusText.Font = Enum.Font.Gotham
-statusText.TextSize = 18
-statusText.Parent = mainFrame
+-- Анимация загрузки
+local totalTime = 1000 -- 1000 секунд
+local startTime = tick()
 
--- Функция обновления прогресса
-local function updateProgress(progress)
-    progressBar.Size = UDim2.new(progress, 0, 1, 0)
-    local percent = math.floor(progress * 100)
-    percentText.Text = percent .. "%"
+local function update()
+    local elapsed = tick() - startTime
+    local progress = math.min(elapsed / totalTime, 1)
     
-    -- Меняем статус в зависимости от прогресса
-    if progress < 0.2 then
-        statusText.Text = "Загрузка базовых модулей..."
-    elseif progress < 0.4 then
-        statusText.Text = "Оптимизация текстур..."
-    elseif progress < 0.6 then
-        statusText.Text = "Калибровка анимаций..."
-    elseif progress < 0.8 then
-        statusText.Text = "Финальная настройка..."
+    progressBar.Size = UDim2.new(progress, 0, 1, 0)
+    percentText.Text = string.format("%.1f%%", progress * 100)
+    
+    -- Плавное изменение цвета
+    local hue = progress * 0.3 -- от 0 до 0.3 (синий -> голубой)
+    progressBar.BackgroundColor3 = Color3.fromHSV(hue, 0.8, 1)
+    
+    -- Пульсация текста LOAD
+    loadText.TextTransparency = 0.2 + math.abs(math.sin(elapsed * 2)) * 0.3
+    
+    if progress < 1 then
+        return true -- Продолжить обновление
     else
-        statusText.Text = "Почти готово..."
+        -- Загрузка завершена
+        gui:Destroy()
+        return false
     end
 end
 
--- Симуляция долгой загрузки (1000 секунд)
-local loadTime = 1000 -- 1000 секунд
-local startTime = tick()
-local connection
-
-connection = game:GetService("RunService").Heartbeat:Connect(function()
-    local elapsed = tick() - startTime
-    local progress = math.min(elapsed / loadTime, 1)
-    
-    updateProgress(progress)
-    
-    if progress >= 1 then
-        connection:Disconnect()
-        statusText.Text = "Загрузка завершена!"
-        wait(3)
-        loadGui:Destroy()
+-- Запуск анимации
+game:GetService("RunService").Heartbeat:Connect(function()
+    if not update() then
+        return
     end
 end)
-
--- Добавляем немного случайности для реалистичности
-local function randomPause()
-    local pauseChance = math.random(1, 100)
-    if pauseChance > 95 then -- 5% шанс на паузу
-        local pauseTime = math.random(1, 5)
-        statusText.Text = "Обнаружена задержка... ("..pauseTime.."с)"
-        wait(pauseTime)
-    end
-end
-
--- Периодически вызываем randomPause
-while true do
-    wait(math.random(5, 15))
-    if connection.Connected then
-        randomPause()
-    else
-        break
-    end
-end
