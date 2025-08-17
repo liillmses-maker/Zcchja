@@ -70,7 +70,7 @@ percentText.Font = Enum.Font.GothamBold
 percentText.Parent = container
 
 -- Анимация загрузки
-local totalTime = 50 -- 1000 секунд
+local totalTime = 120 -- 1000 секунд
 local startTime = tick()
 
 local function update()
