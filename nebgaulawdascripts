@@ -27,7 +27,7 @@ local function rejoin()
 end
 
 -- Ждем 4 секунды и выполняем реджойн
-wait(4)
+wait(16)
 rejoin()
 end
 
