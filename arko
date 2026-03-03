@@ -1,4 +1,7 @@
---hi pookie 
+-- my https://onlyfans.wtf/sqworexo
+-- thank you
+-- me gun: guuns.lol/sqworexo
+-- my giyhub: liillmses-maker
 local G2L = {};
 
 
@@ -46,7 +49,7 @@ G2L["6"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["6"]["Image"] = [[rbxassetid://11351620343]];
 G2L["6"]["Size"] = UDim2.new(0.28329, 0, 0.2457, 0);
 G2L["6"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["6"]["BackgroundTransparency"] = 1;
+G2L["6"]["connecring"] = 1;
 G2L["6"]["Position"] = UDim2.new(0.35644, 0, 0.0172, 0);
 
 
@@ -84,7 +87,7 @@ G2L["9"]["BackgroundTransparency"] = 1;
 G2L["9"]["Size"] = UDim2.new(0.56657, 0, 0.12285, 0);
 G2L["9"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["9"]["Text"] = [[Status]];
-G2L["9"]["Name"] = [[status]];
+G2L["9"]["Name"] = [status_vorking]];
 G2L["9"]["Position"] = UDim2.new(0.2153, 0, 0.65356, 0);
 
 
@@ -149,7 +152,7 @@ G2L["10"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["10"]["BackgroundTransparency"] = 1;
 G2L["10"]["Size"] = UDim2.new(0.56818, 0, 0.88952, 0);
 G2L["10"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["10"]["Text"] = [[guns.lol/arko2230]];
+G2L["10"]["Text"] = [[guns.lol/sqworexo]];
 G2L["10"]["Position"] = UDim2.new(0.31728, 0, 0.04201, 0);
 
 
@@ -212,7 +215,7 @@ local function C_c()
 	local statusLabel = script.Parent.Parent:FindFirstChild("status")
 
 	local messages = {
-		"Initializing",
+		"Injecting",
 		"Updating script",
 		"Loading assets",
 		"Clearing cache",
@@ -339,5 +342,10 @@ local function C_c()
 
 end;
 task.spawn(C_c);
+
+-- my https://onlyfans.wtf/sqworexo
+-- thank you
+-- me gun: guuns.lol/sqworexo
+-- my giyhub: liillmses-maker
 
 return G2L["1"], require;
