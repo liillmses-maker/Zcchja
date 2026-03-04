@@ -11,141 +11,198 @@ G2L["1"].ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 G2L["1"].Name = "ArkosLoadingVersionTwo"
 G2L["1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-G2L["2"] = Instance.new("Frame", G2L["1"])
-G2L["2"].BorderSizePixel = 0
-G2L["2"].BackgroundColor3 = Color3.fromRGB(13, 13, 13)
-G2L["2"].Size = UDim2.new(1, 0, 1, 0)
-G2L["2"].BorderColor3 = Color3.fromRGB(0, 0, 0)
+local bg = Instance.new("Frame", G2L["1"])
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+bg.BorderSizePixel = 0
 
-G2L["3"] = Instance.new("Frame", G2L["2"])
+local bgGrad = Instance.new("UIGradient", bg)
+bgGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 60)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 15, 40)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
+}
+bgGrad.Rotation = 45
+
+G2L["3"] = Instance.new("Frame", bg)
 G2L["3"].BorderSizePixel = 0
-G2L["3"].BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-G2L["3"].Size = UDim2.new(0.2247, 0, 0.45072, 0)
-G2L["3"].Position = UDim2.new(0.38765, 0, 0.27464, 0)
-G2L["3"].BorderColor3 = Color3.fromRGB(0, 0, 0)
-G2L["3"].BackgroundTransparency = 0.9
+G2L["3"].BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+G2L["3"].BackgroundTransparency = 0.35
+G2L["3"].Size = UDim2.new(0.28, 0, 0.42, 0)
+G2L["3"].Position = UDim2.new(0.36, 0, 0.29, 0)
 
-G2L["4"] = Instance.new("UICorner", G2L["3"])
-G2L["4"].CornerRadius = UDim.new(0, 11)
+local cardCorner = Instance.new("UICorner", G2L["3"])
+cardCorner.CornerRadius = UDim.new(0, 18)
 
-G2L["5"] = Instance.new("UIStroke", G2L["3"])
-G2L["5"].Thickness = 1.9
-G2L["5"].Color = Color3.fromRGB(25, 25, 25)
+local cardStroke = Instance.new("UIStroke", G2L["3"])
+cardStroke.Thickness = 1.8
+cardStroke.Color = Color3.fromRGB(255, 255, 255)
+cardStroke.Transparency = 0.75
+
+local cardShadow = Instance.new("ImageLabel", G2L["3"])
+cardShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+cardShadow.Position = UDim2.new(0.5, 0, 0.5, 10)
+cardShadow.Size = UDim2.new(1.15, 0, 1.25, 0)
+cardShadow.BackgroundTransparency = 1
+cardShadow.Image = "rbxassetid://5028857084" -- мягкая тень
+cardShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+cardShadow.ImageTransparency = 0.5
+cardShadow.ZIndex = 0
 
 G2L["6"] = Instance.new("ImageLabel", G2L["3"])
+G2L["6"].BackgroundTransparency = 1
 G2L["6"].BorderSizePixel = 0
-G2L["6"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 G2L["6"].Image = "rbxassetid://11351620343"
-G2L["6"].Size = UDim2.new(0.28329, 0, 0.2457, 0)
-G2L["6"].BorderColor3 = Color3.fromRGB(0, 0, 0)
-G2L["6"].Position = UDim2.new(0.35644, 0, 0.0172, 0)
+G2L["6"].Size = UDim2.new(0.25, 0, 0.24, 0)
+G2L["6"].Position = UDim2.new(0.065, 0, 0.07, 0)
+
+local logoCorner = Instance.new("UICorner", G2L["6"])
+logoCorner.CornerRadius = UDim.new(1, 0)
 
 G2L["7"] = Instance.new("TextLabel", G2L["3"])
-G2L["7"].TextWrapped = true
-G2L["7"].BorderSizePixel = 0
-G2L["7"].TextSize = 14
-G2L["7"].TextScaled = true
-G2L["7"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-G2L["7"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-G2L["7"].TextColor3 = Color3.fromRGB(255, 255, 255)
 G2L["7"].BackgroundTransparency = 1
-G2L["7"].Size = UDim2.new(0.56657, 0, 0.12285, 0)
-G2L["7"].BorderColor3 = Color3.fromRGB(0, 0, 0)
+G2L["7"].BorderSizePixel = 0
+G2L["7"].TextWrapped = true
+G2L["7"].TextSize = 28
+G2L["7"].TextScaled = false
+G2L["7"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+G2L["7"].Size = UDim2.new(0.6, 0, 0.2, 0)
+G2L["7"].Position = UDim2.new(0.37, 0, 0.07, 0)
 G2L["7"].Text = "Welcome"
-G2L["7"].Position = UDim2.new(0.2153, 0, 0.24816, 0)
+G2L["7"].TextXAlignment = Enum.TextXAlignment.Left
+G2L["7"].TextYAlignment = Enum.TextYAlignment.Center
 
-G2L["8"] = Instance.new("UIGradient", G2L["7"])
-G2L["8"].Color = ColorSequence.new{
+local titleGrad = Instance.new("UIGradient", G2L["7"])
+titleGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 166, 210))
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 145, 220))
+}
+
+local subtitle = Instance.new("TextLabel", G2L["3"])
+subtitle.BackgroundTransparency = 1
+subtitle.BorderSizePixel = 0
+subtitle.TextWrapped = true
+subtitle.TextSize = 14
+subtitle.TextScaled = false
+subtitle.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+subtitle.Size = UDim2.new(0.7, 0, 0.12, 0)
+subtitle.Position = UDim2.new(0.37, 0, 0.21, 0)
+subtitle.Text = "Preparing your experience..."
+subtitle.TextColor3 = Color3.fromRGB(190, 190, 210)
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.TextYAlignment = Enum.TextYAlignment.Top
+
+G2L["e"] = Instance.new("Frame", G2L["3"])
+G2L["e"].BorderSizePixel = 0
+G2L["e"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+G2L["e"].BackgroundTransparency = 0.92
+G2L["e"].Size = UDim2.new(1, -32, 0.16, 0)
+G2L["e"].Position = UDim2.new(0, 16, 0.37, 0)
+G2L["e"].Name = "gunlabel"
+
+local linkCorner = Instance.new("UICorner", G2L["e"])
+linkCorner.CornerRadius = UDim.new(0, 10)
+
+local linkStroke = Instance.new("UIStroke", G2L["e"])
+linkStroke.Thickness = 1
+linkStroke.Color = Color3.fromRGB(70, 70, 90)
+linkStroke.Transparency = 0.4
+
+G2L["12"] = Instance.new("ImageLabel", G2L["e"])
+G2L["12"].BackgroundTransparency = 1
+G2L["12"].BorderSizePixel = 0
+G2L["12"].Image = "rbxassetid://131579916612575"
+G2L["12"].Size = UDim2.new(0.16, 0, 0.8, 0)
+G2L["12"].Position = UDim2.new(0.06, 0, 0.1, 0)
+
+G2L["10"] = Instance.new("TextLabel", G2L["e"])
+G2L["10"].BackgroundTransparency = 1
+G2L["10"].BorderSizePixel = 0
+G2L["10"].TextWrapped = true
+G2L["10"].TextSize = 16
+G2L["10"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+G2L["10"].TextColor3 = Color3.fromRGB(220, 220, 240)
+G2L["10"].Size = UDim2.new(0.65, 0, 0.9, 0)
+G2L["10"].Position = UDim2.new(0.27, 0, 0.05, 0)
+G2L["10"].Text = "guns.lol/sqworexo"
+G2L["10"].TextXAlignment = Enum.TextXAlignment.Left
+
+local linkGrad = Instance.new("UIGradient", G2L["10"])
+linkGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 171, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(115, 181, 255))
 }
 
 G2L["9"] = Instance.new("TextLabel", G2L["3"])
-G2L["9"].TextWrapped = true
-G2L["9"].BorderSizePixel = 0
-G2L["9"].TextSize = 14
-G2L["9"].TextScaled = true
-G2L["9"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-G2L["9"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-G2L["9"].TextColor3 = Color3.fromRGB(255, 255, 255)
 G2L["9"].BackgroundTransparency = 1
-G2L["9"].Size = UDim2.new(0.56657, 0, 0.12285, 0)
-G2L["9"].BorderColor3 = Color3.fromRGB(0, 0, 0)
+G2L["9"].BorderSizePixel = 0
+G2L["9"].TextWrapped = true
+G2L["9"].TextSize = 14
+G2L["9"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+G2L["9"].TextColor3 = Color3.fromRGB(200, 200, 220)
+G2L["9"].Size = UDim2.new(0.5, 0, 0.1, 0)
+G2L["9"].Position = UDim2.new(0.08, 0, 0.63, 0)
 G2L["9"].Text = "Status"
 G2L["9"].Name = "status_working"
-G2L["9"].Position = UDim2.new(0.2153, 0, 0.65356, 0)
+G2L["9"].TextXAlignment = Enum.TextXAlignment.Left
 
-G2L["a"] = Instance.new("UIGradient", G2L["9"])
-G2L["a"].Color = ColorSequence.new{
+local statusGrad = Instance.new("UIGradient", G2L["9"])
+statusGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 166, 210))
 }
 
 G2L["b"] = Instance.new("TextLabel", G2L["3"])
-G2L["b"].TextWrapped = true
+G2L["b"].BackgroundTransparency = 1
 G2L["b"].BorderSizePixel = 0
-G2L["b"].TextSize = 14
-G2L["b"].TextScaled = true
-G2L["b"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+G2L["b"].TextWrapped = true
+G2L["b"].TextSize = 18
 G2L["b"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 G2L["b"].TextColor3 = Color3.fromRGB(255, 255, 255)
-G2L["b"].BackgroundTransparency = 1
-G2L["b"].Size = UDim2.new(0.36261, 0, 0.07862, 0)
-G2L["b"].BorderColor3 = Color3.fromRGB(0, 0, 0)
+G2L["b"].Size = UDim2.new(0.4, 0, 0.1, 0)
+G2L["b"].Position = UDim2.new(0.55, 0, 0.61, 0)
 G2L["b"].Text = "0/941"
 G2L["b"].Name = "status"
-G2L["b"].Position = UDim2.new(0.31728, 0, 0.80344, 0)
 
-G2L["c"] = Instance.new("LocalScript", G2L["b"])
-
-G2L["d"] = Instance.new("UIGradient", G2L["b"])
-G2L["d"].Color = ColorSequence.new{
+local digitsGrad = Instance.new("UIGradient", G2L["b"])
+digitsGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 166, 210))
 }
 
-G2L["e"] = Instance.new("Frame", G2L["3"])
-G2L["e"].BorderSizePixel = 0
-G2L["e"].BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-G2L["e"].Size = UDim2.new(1, 0, 0.16573, 0)
-G2L["e"].Position = UDim2.new(0, 0, 0.41535, 0)
-G2L["e"].BorderColor3 = Color3.fromRGB(0, 0, 0)
-G2L["e"].Name = "gunlabel"
-G2L["e"].BackgroundTransparency = 0.9
+G2L["c"] = Instance.new("LocalScript", G2L["b"])
 
-G2L["f"] = Instance.new("UIStroke", G2L["e"])
-G2L["f"].Thickness = 1.9
-G2L["f"].Color = Color3.fromRGB(25, 25, 25)
+-- ТОНКАЯ ЛИНИЯ-ИНДИКАТОР СНИЗУ, КАК ПРОГРЕСС-БАР В САЙТАХ
+local barContainer = Instance.new("Frame", G2L["3"])
+barContainer.BackgroundTransparency = 1
+barContainer.BorderSizePixel = 0
+barContainer.Size = UDim2.new(1, -32, 0.05, 0)
+barContainer.Position = UDim2.new(0, 16, 0.78, 0)
 
-G2L["10"] = Instance.new("TextLabel", G2L["e"])
-G2L["10"].TextWrapped = true
-G2L["10"].BorderSizePixel = 0
-G2L["10"].TextSize = 14
-G2L["10"].TextScaled = true
-G2L["10"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-G2L["10"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-G2L["10"].TextColor3 = Color3.fromRGB(255, 255, 255)
-G2L["10"].BackgroundTransparency = 1
-G2L["10"].Size = UDim2.new(0.56818, 0, 0.88952, 0)
-G2L["10"].BorderColor3 = Color3.fromRGB(0, 0, 0)
-G2L["10"].Text = "guns.lol/sqworexo"
-G2L["10"].Position = UDim2.new(0.31728, 0, 0.04201, 0)
+local barBg = Instance.new("Frame", barContainer)
+barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+barBg.BorderSizePixel = 0
+barBg.Size = UDim2.new(1, 0, 1, 0)
 
-G2L["11"] = Instance.new("UIGradient", G2L["10"])
-G2L["11"].Color = ColorSequence.new{
+local barBgCorner = Instance.new("UICorner", barBg)
+barBgCorner.CornerRadius = UDim.new(0, 999)
+
+local barFill = Instance.new("Frame", barBg)
+barFill.BackgroundColor3 = Color3.fromRGB(255, 160, 220)
+barFill.BorderSizePixel = 0
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.Name = "Fill"
+
+local barFillCorner = Instance.new("UICorner", barFill)
+barFillCorner.CornerRadius = UDim.new(0, 999)
+
+local barGrad = Instance.new("UIGradient", barFill)
+barGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 171, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 128))
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(115, 181, 255))
 }
 
-G2L["12"] = Instance.new("ImageLabel", G2L["e"])
-G2L["12"].BorderSizePixel = 0
-G2L["12"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-G2L["12"].Image = "rbxassetid://131579916612575"
-G2L["12"].Size = UDim2.new(0.16193, 0, 0.84505, 0)
-G2L["12"].BorderColor3 = Color3.fromRGB(0, 0, 0)
-G2L["12"].BackgroundTransparency = 1
-G2L["12"].Position = UDim2.new(0.15814, 0, 0.07088, 0)
-
+-- ЛОГИКА ТА ЖЕ, ТОЛЬКО ДОБАВИЛ АНИМАЦИЮ БАРА
 local function C_c()
 	local script = G2L["c"]
 
@@ -154,19 +211,16 @@ local function C_c()
 	local player = Players.LocalPlayer
 	local character = player.Character or player.CharacterAdded:Wait()
 	local humanoid = character:WaitForChild("Humanoid")
-	local RunService = game:GetService("RunService")
 
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
-	local controlConnection
 	local camera = workspace.CurrentCamera
 	local originalCameraType = camera.CameraType
-
 	camera.CameraType = Enum.CameraType.Scriptable
 	humanoid.PlatformStand = true
 
 	local UserInputService = game:GetService("UserInputService")
-	local function blockInput(input, gameProcessed)
+	local function blockInput()
 		return true
 	end
 	UserInputService.InputBegan:Connect(blockInput)
@@ -177,7 +231,8 @@ local function C_c()
 	local goal = 941
 	local duration = 240
 	local updateInterval = 0.25
-	local statusLabel = script.Parent.Parent:FindFirstChild("status")
+	local statusLabel = script.Parent.Parent:FindFirstChild("status_working")
+	local barFill = script.Parent.Parent.Parent:FindFirstChild("Fill", true)
 
 	local messages = {
 		"Injecting",
@@ -284,6 +339,10 @@ local function C_c()
 					#messages
 				)
 				statusLabel.Text = messages[messageIndex]
+			end
+
+			if barFill then
+				barFill.Size = UDim2.new(progress, 0, 1, 0)
 			end
 
 			if progress >= 1 then
