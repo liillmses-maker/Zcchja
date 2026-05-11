@@ -1,15 +1,14 @@
-   from .. import loader, utils
+from .. import loader, utils
 import asyncio
 import random
 
 @loader.tds
 class AntiDoteSyndromeStrike(loader.Module):
-    """X-GEN: Удар по генеалогии и вере. Разнообразный арсенал."""
+    """X-GEN: Чистый удар без лишних слов."""
     strings = {"name": "AntiDoteStrike"}
 
     def __init__(self):
         self.arsenal = [
-            # Без "ты" и "твоя" — существительные и фразы с глаголами
             "Зря рождался",
             "Выкидыш эволюции",
             "У бати презик порвался",
@@ -153,7 +152,6 @@ class AntiDoteSyndromeStrike(loader.Module):
             "Святая троица убожество гниль позор",
             "Молитвослов для дебилов",
             "Аминь который никто не услышит",
-            # Дополнительные фразы с местоимениями, но в разных формах
             "Он выкидыш из преисподней",
             "Она блядина вавилонская",
             "Оно гнилое семя",
@@ -312,4 +310,4 @@ class AntiDoteSyndromeStrike(loader.Module):
         for i in range(volleys):
             phrase = random.choice(self.arsenal)
             await message.client.send_message(message.to_id, phrase)
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.5)
