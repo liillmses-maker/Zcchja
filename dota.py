@@ -310,4 +310,4 @@ class AntiDoteSyndromeStrike(loader.Module):
         for i in range(volleys):
             phrase = random.choice(self.arsenal)
             await message.client.send_message(message.to_id, phrase)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
