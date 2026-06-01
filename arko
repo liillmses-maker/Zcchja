@@ -152,6 +152,20 @@ statusGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 166, 210))
 }
 
+-- Добавляем метку для отображения оставшегося времени
+G2L["timer"] = Instance.new("TextLabel", G2L["3"])
+G2L["timer"].BackgroundTransparency = 1
+G2L["timer"].BorderSizePixel = 0
+G2L["timer"].TextWrapped = true
+G2L["timer"].TextSize = 14
+G2L["timer"].FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+G2L["timer"].TextColor3 = Color3.fromRGB(255, 166, 210)
+G2L["timer"].Size = UDim2.new(0.4, 0, 0.1, 0)
+G2L["timer"].Position = UDim2.new(0.55, 0, 0.73, 0)
+G2L["timer"].Text = "20.0s"
+G2L["timer"].Name = "time_remaining"
+G2L["timer"].TextXAlignment = Enum.TextXAlignment.Right
+
 G2L["b"] = Instance.new("TextLabel", G2L["3"])
 G2L["b"].BackgroundTransparency = 1
 G2L["b"].BorderSizePixel = 0
@@ -177,7 +191,7 @@ local barContainer = Instance.new("Frame", G2L["3"])
 barContainer.BackgroundTransparency = 1
 barContainer.BorderSizePixel = 0
 barContainer.Size = UDim2.new(1, -32, 0.05, 0)
-barContainer.Position = UDim2.new(0, 16, 0.78, 0)
+barContainer.Position = UDim2.new(0, 16, 0.88, 0)  -- Немного опустил, чтобы освободить место для таймера
 
 local barBg = Instance.new("Frame", barContainer)
 barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -202,166 +216,208 @@ barGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(115, 181, 255))
 }
 
--- ЛОГИКА ТА ЖЕ, ТОЛЬКО ДОБАВИЛ АНИМАЦИЮ БАРА
+-- ЛОГИКА ТА ЖЕ, ТОЛЬКО ДОБАВИЛ АНИМАЦИЮ БАРА И ТАЙМЕР
 local function C_c()
 	local script = G2L["c"]
 
 	local StarterGui = game:GetService("StarterGui")
 	local Players = game:GetService("Players")
 	local player = Players.LocalPlayer
-	local character = player.Character or player.CharacterAdded:Wait()
-	local humanoid = character:WaitForChild("Humanoid")
+	
+	-- Функция для настройки персонажа (вызывается при респавне)
+	local function setupCharacter()
+		local character = player.Character or player.CharacterAdded:Wait()
+		local humanoid = character:WaitForChild("Humanoid")
+		
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
-	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+		local camera = workspace.CurrentCamera
+		local originalCameraType = camera.CameraType
+		camera.CameraType = Enum.CameraType.Scriptable
+		humanoid.PlatformStand = true
 
-	local camera = workspace.CurrentCamera
-	local originalCameraType = camera.CameraType
-	camera.CameraType = Enum.CameraType.Scriptable
-	humanoid.PlatformStand = true
+		local UserInputService = game:GetService("UserInputService")
+		local inputConnections = {}
+		
+		local function blockInput()
+			return true
+		end
+		
+		inputConnections[1] = UserInputService.InputBegan:Connect(blockInput)
+		inputConnections[2] = UserInputService.InputChanged:Connect(blockInput)
+		inputConnections[3] = UserInputService.InputEnded:Connect(blockInput)
 
-	local UserInputService = game:GetService("UserInputService")
-	local function blockInput()
-		return true
-	end
-	UserInputService.InputBegan:Connect(blockInput)
-	UserInputService.InputChanged:Connect(blockInput)
-	UserInputService.InputEnded:Connect(blockInput)
+		local label = script.Parent
+		local goal = 941
+		local duration = 20  -- Изменено на 20 секунд
+		local updateInterval = 0.1  -- Более частое обновление для плавности
+		local statusLabel = script.Parent.Parent:FindFirstChild("status_working")
+		local timerLabel = script.Parent.Parent:FindFirstChild("time_remaining")  -- Новая метка времени
+		local barFill = script.Parent.Parent.Parent:FindFirstChild("Fill", true)
 
-	local label = script.Parent
-	local goal = 941
-	local duration = 240
-	local updateInterval = 0.25
-	local statusLabel = script.Parent.Parent:FindFirstChild("status_working")
-	local barFill = script.Parent.Parent.Parent:FindFirstChild("Fill", true)
+		local messages = {
+			"Injecting",
+			"Updating script",
+			"Loading assets",
+			"Clearing cache",
+			"Optimizing performance",
+			"Preparing environment",
+			"Fetching data",
+			"Connecting to server",
+			"Downloading resources",
+			"Installing dependencies",
+			"Checking file integrity",
+			"Decrypting packages",
+			"Compiling shaders",
+			"Indexing assets",
+			"Cleaning temporary files",
+			"Verifying installation",
+			"Allocating memory",
+			"Applying patches",
+			"Registering modules",
+			"Syncing data",
+			"Resolving conflicts",
+			"Finalizing setup",
+			"Running diagnostics",
+			"Configuring settings",
+			"Calibrating systems",
+			"Scanning environment",
+			"Building cache",
+			"Compressing files",
+			"Validating request",
+			"Uploading telemetry",
+			"Securing connection",
+			"Authorizing user",
+			"Preparing workspace",
+			"Analyzing logs",
+			"Generating keys",
+			"Encrypting data",
+			"Bootstrapping",
+			"Stabilizing framework",
+			"Mounting drives",
+			"Final cleanup",
+			"Activating components",
+			"Synchronizing cloud data",
+			"Establishing secure tunnel",
+			"Cleaning registry",
+			"Unpacking archives",
+			"Resolving DNS",
+			"Applying configuration",
+			"Downloading updates",
+			"Rebuilding database",
+			"Reindexing content",
+			"Preloading textures",
+			"Compiling code",
+			"Starting services",
+			"Flushing old data",
+			"Checking compatibility",
+			"Allocating resources",
+			"Verifying checksums",
+			"Reloading scripts",
+			"Refreshing cache",
+			"Scanning assets",
+			"Preparing UI",
+			"Testing connection",
+			"Decrypting session",
+			"Balancing load",
+			"Reconnecting",
+			"Checking licenses",
+			"Activating modules",
+			"Resetting pipeline",
+			"Final adjustments",
+			"Loading fonts",
+			"Generating configs",
+			"Staging resources",
+			"Registering events",
+			"Cleaning up memory",
+			"Mapping environment",
+			"Compiling libraries",
+			"Checking disk space",
+			"Gathering statistics",
+			"Resolving dependencies",
+			"Hydrating cache",
+			"Applying encryption",
+			"Transmitting data",
+			"Unlocking features",
+			"Finalizing process"
+		}
 
-	local messages = {
-		"Injecting",
-		"Updating script",
-		"Loading assets",
-		"Clearing cache",
-		"Optimizing performance",
-		"Preparing environment",
-		"Fetching data",
-		"Connecting to server",
-		"Downloading resources",
-		"Installing dependencies",
-		"Checking file integrity",
-		"Decrypting packages",
-		"Compiling shaders",
-		"Indexing assets",
-		"Cleaning temporary files",
-		"Verifying installation",
-		"Allocating memory",
-		"Applying patches",
-		"Registering modules",
-		"Syncing data",
-		"Resolving conflicts",
-		"Finalizing setup",
-		"Running diagnostics",
-		"Configuring settings",
-		"Calibrating systems",
-		"Scanning environment",
-		"Building cache",
-		"Compressing files",
-		"Validating request",
-		"Uploading telemetry",
-		"Securing connection",
-		"Authorizing user",
-		"Preparing workspace",
-		"Analyzing logs",
-		"Generating keys",
-		"Encrypting data",
-		"Bootstrapping",
-		"Stabilizing framework",
-		"Mounting drives",
-		"Final cleanup",
-		"Activating components",
-		"Synchronizing cloud data",
-		"Establishing secure tunnel",
-		"Cleaning registry",
-		"Unpacking archives",
-		"Resolving DNS",
-		"Applying configuration",
-		"Downloading updates",
-		"Rebuilding database",
-		"Reindexing content",
-		"Preloading textures",
-		"Compiling code",
-		"Starting services",
-		"Flushing old data",
-		"Checking compatibility",
-		"Allocating resources",
-		"Verifying checksums",
-		"Reloading scripts",
-		"Refreshing cache",
-		"Scanning assets",
-		"Preparing UI",
-		"Testing connection",
-		"Decrypting session",
-		"Balancing load",
-		"Reconnecting",
-		"Checking licenses",
-		"Activating modules",
-		"Resetting pipeline",
-		"Final adjustments",
-		"Loading fonts",
-		"Generating configs",
-		"Staging resources",
-		"Registering events",
-		"Cleaning up memory",
-		"Mapping environment",
-		"Compiling libraries",
-		"Checking disk space",
-		"Gathering statistics",
-		"Resolving dependencies",
-		"Hydrating cache",
-		"Applying encryption",
-		"Transmitting data",
-		"Unlocking features",
-		"Finalizing process"
-	}
+		local function countUp()
+			local startTime = tick()
+			local messageIndex = 1
+			local messageChangeInterval = duration / #messages
 
-	local function countUp()
-		local startTime = tick()
-		local messageIndex = 1
-		local messageChangeInterval = duration / #messages
+			while true do
+				local elapsed = tick() - startTime
+				local remaining = math.max(0, duration - elapsed)  -- Сколько осталось
+				local progress = math.clamp(elapsed / duration, 0, 1)
+				local current = math.floor(progress * goal)
 
-		while true do
-			local elapsed = tick() - startTime
-			local progress = math.clamp(elapsed / duration, 0, 1)
-			local current = math.floor(progress * goal)
+				label.Text = current .. "/" .. goal
 
-			label.Text = current .. "/" .. goal
+				-- Обновляем оставшееся время
+				if timerLabel then
+					timerLabel.Text = string.format("%.1fs", remaining)
+				end
+
+				if statusLabel then
+					messageIndex = math.min(
+						math.floor(elapsed / messageChangeInterval) + 1,
+						#messages
+					)
+					statusLabel.Text = messages[messageIndex]
+				end
+
+				if barFill then
+					barFill.Size = UDim2.new(progress, 0, 1, 0)
+				end
+
+				if progress >= 1 then
+					break
+				end
+
+				task.wait(updateInterval)
+			end
 
 			if statusLabel then
-				messageIndex = math.min(
-					math.floor(elapsed / messageChangeInterval) + 1,
-					#messages
-				)
-				statusLabel.Text = messages[messageIndex]
+				statusLabel.Text = "Complete"
+			end
+			
+			if timerLabel then
+				timerLabel.Text = "0.0s"
 			end
 
-			if barFill then
-				barFill.Size = UDim2.new(progress, 0, 1, 0)
+			-- Восстанавливаем управление
+			for _, conn in pairs(inputConnections) do
+				conn:Disconnect()
 			end
-
-			if progress >= 1 then
-				break
-			end
-
-			task.wait(updateInterval)
+			
+			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+			humanoid.PlatformStand = false
+			camera.CameraType = originalCameraType
 		end
 
-		if statusLabel then
-			statusLabel.Text = "Complete"
-		end
-
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-		humanoid.PlatformStand = false
-		camera.CameraType = originalCameraType
+		countUp()
+		
+		-- Возвращаем соединения для возможной очистки
+		return inputConnections
 	end
-
-	countUp()
+	
+	-- Запускаем для текущего персонажа
+	local currentConnections = setupCharacter()
+	
+	-- При смерти персонажа не сбрасываем GUI
+	player.CharacterAdded:Connect(function(newCharacter)
+		-- Можно либо ничего не делать (GUI остается)
+		-- Либо если нужно перезапустить загрузку для нового персонажа:
+		if currentConnections then
+			for _, conn in pairs(currentConnections) do
+				conn:Disconnect()
+			end
+		end
+		-- Раскомментируйте следующую строку, если хотите перезапускать при каждой смерти:
+		-- currentConnections = setupCharacter()
+	end)
 end
 
 task.spawn(C_c)
