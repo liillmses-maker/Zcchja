@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | Mobile | 4 Tabs + Sleeping Cat | All OFF
+-- UWU HUB HATE WORLD | Bigger Rounded GUI | All Working
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -12,7 +12,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local PLAYERGUI = Player:WaitForChild("PlayerGui")
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
--- ================== FULLBRIGHT ==================
+-- FULLBRIGHT
 local FullbrightEnabled = false
 local OrigBright = Lighting.Brightness
 local OrigClock = Lighting.ClockTime
@@ -20,21 +20,200 @@ local OrigFog = Lighting.FogEnd
 local OrigAmbient = Lighting.Ambient
 local OrigOutdoor = Lighting.OutdoorAmbient
 
-local function EnableFB()
-    FullbrightEnabled = true
-    Lighting.Brightness = 5
-    Lighting.ClockTime = 12
-    Lighting.FogEnd = 99999
-    Lighting.Ambient = Color3.new(1, 1, 1)
-    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
-    Lighting.GlobalShadows = false
+local function EnableFB() FullbrightEnabled = true; Lighting.Brightness = 5; Lighting.ClockTime = 12; Lighting.FogEnd = 99999; Lighting.Ambient = Color3.new(1,1,1); Lighting.OutdoorAmbient = Color3.new(1,1,1); Lighting.GlobalShadows = false end
+local function DisableFB() FullbrightEnabled = false; Lighting.Brightness = OrigBright; Lighting.ClockTime = OrigClock; Lighting.FogEnd = OrigFog; Lighting.Ambient = OrigAmbient; Lighting.OutdoorAmbient = OrigOutdoor; Lighting.GlobalShadows = true end
+
+local C = {
+    BG = Color3.new(0.078,0.047,0.063), BG2 = Color3.new(0.118,0.067,0.094),
+    ACCENT = Color3.new(1,0.549,0.706), ACCENT2 = Color3.new(0.784,0.275,0.471),
+    PINK = Color3.new(1,0.667,0.765), WHITE = Color3.new(0.961,0.922,0.941),
+    GRAY = Color3.new(0.627,0.549,0.588), ON = Color3.new(1,0.471,0.627),
+    OFF = Color3.new(0.216,0.118,0.176), RED = Color3.new(1,0.157,0.235),
+    PINK_ESP = Color3.new(1,0.588,0.706), YELLOW = Color3.new(1,0.784,0.392),
+    GREEN = Color3.new(0.392,1,0.392), CYAN = Color3.new(0.392,0.784,1),
+    PURPLE = Color3.new(0.7,0.3,1)
+}
+
+local Settings = {
+    Fullbright=false, AnomalyESP=false, ObjectESP=false, ChangesESP=false,
+    DetectSounds=false, DetectClock=false, DetectFaces=false,
+    AutoCopy=false, Scanner=false, Notifications=false
+}
+local ScanRange = 150
+local MasterOn = false
+
+function Notify(t,txt) if not Settings.Notifications then return end; pcall(function() StarterGui:SetCore("SendNotification",{Title=t,Text=txt,Duration=2}) end) end
+
+local GameName = "Anomaly Watch"
+local GameIcon = ""
+pcall(function() local i=MarketplaceService:GetProductInfo(game.PlaceId); GameName=i.Name; GameIcon=i.IconImage end)
+
+local ROOMS = {"Living Room","LivingRoom","Garage","Downstairs Bathroom","Downstairs Hall","Study","Kitchen","Basement","Master Bedroom","Nursery","Upstairs Bathroom","Storage Room","Upstairs Hall","Upstairs Hallway","Movie Room","Projector Room","Guest Room","Guest Bedroom","Bedroom","Playroom","Yard"}
+local function GetRoomName(o)
+    local c=o; while c do for _,r in ipairs(ROOMS) do if c.Name==r then return r end end; c=c.Parent end
+    local p=o:IsA("BasePart") and o or o:FindFirstChildOfClass("BasePart")
+    if p then for _,ch in ipairs(workspace:GetDescendants()) do for _,r in ipairs(ROOMS) do if ch.Name==r and ch:IsA("BasePart") and (p.Position-ch.Position).Magnitude<30 then return r end end end end
+    return "?"
 end
 
-local function DisableFB()
-    FullbrightEnabled = false
-    Lighting.Brightness = OrigBright
-    Lighting.ClockTime = OrigClock
-    Lighting.FogEnd = OrigFog
+-- ================== GUI (BIGGER + ROUNDED) ==================
+local Gui = Instance.new("ScreenGui"); Gui.Name="UwUHub"; Gui.IgnoreGuiInset=true; Gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; Gui.Parent=PLAYERGUI
+local W=340; local H=250
+local Main=Instance.new("Frame"); Main.Name="MainCard"; Main.Size=UDim2.new(0,W,0,H); Main.Position=UDim2.new(0.5,-W/2,0.5,-H/2)
+Main.BackgroundColor3=C.BG; Main.BorderSizePixel=0; Main.Active=true; Main.Draggable=true; Main.Parent=Gui
+Instance.new("UICorner",Main).CornerRadius=UDim.new(0,12)
+
+local Header=Instance.new("Frame"); Header.Size=UDim2.new(1,0,0,28); Header.BackgroundColor3=C.BG2; Header.BorderSizePixel=0; Header.Parent=Main
+Instance.new("UICorner",Header).CornerRadius=UDim.new(0,12)
+local Title=Instance.new("TextLabel"); Title.Size=UDim2.new(0,160,1,0); Title.Position=UDim2.new(0,10,0,0)
+Title.Text="UWU HUB HATE WORLD"; Title.TextColor3=C.PURPLE; Title.Font=Enum.Font.GothamBold; Title.TextSize=10; Title.BackgroundTransparency=1; Title.TextXAlignment=Enum.TextXAlignment.Left; Title.Parent=Header
+
+local MinBtn=Instance.new("TextButton"); MinBtn.Size=UDim2.new(0,20,0,20); MinBtn.Position=UDim2.new(1,-40,0.5,-10)
+MinBtn.Text="-"; MinBtn.BackgroundColor3=C.OFF; MinBtn.TextColor3=C.PURPLE; MinBtn.Font=Enum.Font.GothamBold; MinBtn.TextSize=13; MinBtn.BorderSizePixel=0; MinBtn.Parent=Header
+Instance.new("UICorner",MinBtn).CornerRadius=UDim.new(0,8)
+
+local MTog=Instance.new("Frame"); MTog.Size=UDim2.new(0,30,0,15); MTog.Position=UDim2.new(1,-36,0.5,-7.5)
+MTog.BackgroundColor3=C.OFF; MTog.BorderSizePixel=0; MTog.Parent=Header; Instance.new("UICorner",MTog).CornerRadius=UDim.new(1,0)
+local MKnob=Instance.new("Frame"); MKnob.Size=UDim2.new(0,11,0,11); MKnob.Position=UDim2.new(0,2,0.5,-5.5)
+MKnob.BackgroundColor3=C.WHITE; MKnob.BorderSizePixel=0; MKnob.Parent=MTog; Instance.new("UICorner",MKnob).CornerRadius=UDim.new(1,0)
+local MFace=Instance.new("TextLabel"); MFace.Size=UDim2.new(1,0,1,0); MFace.Text="=;="; MFace.TextColor3=C.GRAY; MFace.Font=Enum.Font.GothamBold; MFace.TextSize=7; MFace.BackgroundTransparency=1; MFace.Parent=MKnob
+local function UpdateMaster(s) MasterOn=s; if s then TweenService:Create(MTog,TweenInfo.new(0.15),{BackgroundColor3=C.ON}):Play(); TweenService:Create(MKnob,TweenInfo.new(0.15),{Position=UDim2.new(1,-13,0.5,-5.5)}):Play(); MFace.Text="=^^="; MFace.TextColor3=C.ON else TweenService:Create(MTog,TweenInfo.new(0.15),{BackgroundColor3=C.OFF}):Play(); TweenService:Create(MKnob,TweenInfo.new(0.15),{Position=UDim2.new(0,2,0.5,-5.5)}):Play(); MFace.Text="=;="; MFace.TextColor3=C.GRAY end end
+MTog.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then UpdateMaster(not MasterOn) end end)
+
+-- TABS
+local TabBar=Instance.new("Frame"); TabBar.Size=UDim2.new(1,0,0,24); TabBar.Position=UDim2.new(0,0,0,28); TabBar.BackgroundColor3=C.BG; TabBar.BorderSizePixel=0; TabBar.Parent=Main
+local TabNames={"Main","ESP","Detect","Log"}; local TabBtns={}; local TabPages={}
+for i,name in ipairs(TabNames) do
+    local Btn=Instance.new("TextButton"); Btn.Size=UDim2.new(0.25,-1,1,-1); Btn.Position=UDim2.new((i-1)*0.25,0,0,0)
+    Btn.Text=name; Btn.BackgroundColor3=C.BG2; Btn.TextColor3=C.GRAY; Btn.Font=Enum.Font.GothamBold; Btn.TextSize=10; Btn.BorderSizePixel=0; Btn.Parent=TabBar
+    Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,8)
+    local Page=Instance.new("Frame"); Page.Size=UDim2.new(1,-14,1,-58); Page.Position=UDim2.new(0,7,0,56); Page.BackgroundTransparency=1; Page.Visible=false; Page.Parent=Main
+    local PL=Instance.new("UIListLayout"); PL.SortOrder=Enum.SortOrder.LayoutOrder; PL.Padding=UDim.new(0,4); PL.Parent=Page
+    TabBtns[name]=Btn; TabPages[name]={page=Page,layout=PL}; Btn.MouseButton1Click:Connect(function() for n,b in pairs(TabBtns) do if n==name then b.BackgroundColor3=C.ACCENT2; b.TextColor3=C.WHITE; TabPages[n].page.Visible=true else b.BackgroundColor3=C.BG2; b.TextColor3=C.GRAY; TabPages[n].page.Visible=false end end end)
+end
+TabBtns["Main"].BackgroundColor3=C.ACCENT2; TabBtns["Main"].TextColor3=C.WHITE; TabPages["Main"].page.Visible=true
+
+-- TOGGLE
+local function ToggleRow(page,name,default,cb)
+    local enabled=default
+    local Row=Instance.new("Frame"); Row.Size=UDim2.new(1,0,0,30); Row.BackgroundColor3=C.BG2; Row.BorderSizePixel=0; Row.Parent=page; Instance.new("UICorner",Row).CornerRadius=UDim.new(0,8)
+    local Lbl=Instance.new("TextLabel"); Lbl.Size=UDim2.new(0.5,0,1,0); Lbl.Position=UDim2.new(0,8,0,0); Lbl.Text=name; Lbl.TextColor3=C.GRAY; Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=11; Lbl.BackgroundTransparency=1; Lbl.TextXAlignment=Enum.TextXAlignment.Left; Lbl.Parent=Row
+    local CatBtn=Instance.new("TextButton"); CatBtn.Size=UDim2.new(0,40,0,20); CatBtn.Position=UDim2.new(1,-48,0.5,-10); CatBtn.Text="=;="; CatBtn.BackgroundColor3=C.OFF; CatBtn.TextColor3=C.GRAY; CatBtn.Font=Enum.Font.GothamBold; CatBtn.TextSize=9; CatBtn.BorderSizePixel=0; CatBtn.Parent=Row; Instance.new("UICorner",CatBtn).CornerRadius=UDim.new(0,10)
+    local function Set(s) enabled=s; if s then CatBtn.Text="=^^="; CatBtn.BackgroundColor3=C.ON; CatBtn.TextColor3=C.WHITE; Lbl.TextColor3=C.WHITE else CatBtn.Text="=;="; CatBtn.BackgroundColor3=C.OFF; CatBtn.TextColor3=C.GRAY; Lbl.TextColor3=C.GRAY end end
+    CatBtn.MouseButton1Click:Connect(function() Set(not enabled); cb(not enabled) end); Set(default)
+end
+
+-- ================== MAIN TAB ==================
+local mainPage=TabPages["Main"].page
+local InfoFrame=Instance.new("Frame"); InfoFrame.Size=UDim2.new(0.48,0,0,150); InfoFrame.BackgroundColor3=C.BG2; InfoFrame.BorderSizePixel=0; InfoFrame.Parent=mainPage; Instance.new("UICorner",InfoFrame).CornerRadius=UDim.new(0,10)
+local GameIconImg=Instance.new("ImageLabel"); GameIconImg.Size=UDim2.new(0,48,0,48); GameIconImg.Position=UDim2.new(0,10,0,10); GameIconImg.BackgroundTransparency=1; GameIconImg.Image=GameIcon; GameIconImg.Parent=InfoFrame; Instance.new("UICorner",GameIconImg).CornerRadius=UDim.new(0,8)
+local GameLabel=Instance.new("TextLabel"); GameLabel.Size=UDim2.new(0.55,0,0,16); GameLabel.Position=UDim2.new(0,64,0,10); GameLabel.Text=GameName; GameLabel.TextColor3=C.WHITE; GameLabel.Font=Enum.Font.GothamBold; GameLabel.TextSize=10; GameLabel.BackgroundTransparency=1; GameLabel.TextXAlignment=Enum.TextXAlignment.Left; GameLabel.TextTruncate=Enum.TextTruncate.AtEnd; GameLabel.Parent=InfoFrame
+local PlayerLabel=Instance.new("TextLabel"); PlayerLabel.Size=UDim2.new(0.55,0,0,14); PlayerLabel.Position=UDim2.new(0,64,0,28); PlayerLabel.Text="Player: "..Player.Name; PlayerLabel.TextColor3=C.PINK; PlayerLabel.Font=Enum.Font.Gotham; PlayerLabel.TextSize=9; PlayerLabel.BackgroundTransparency=1; PlayerLabel.TextXAlignment=Enum.TextXAlignment.Left; PlayerLabel.Parent=InfoFrame
+local ExecLabel=Instance.new("TextLabel"); ExecLabel.Size=UDim2.new(0.55,0,0,14); ExecLabel.Position=UDim2.new(0,64,0,44); ExecLabel.Text="Exec: "..(pcall(identifyexecutor) and identifyexecutor() or "Unknown"); ExecLabel.TextColor3=C.PURPLE; ExecLabel.Font=Enum.Font.Gotham; ExecLabel.TextSize=9; ExecLabel.BackgroundTransparency=1; ExecLabel.TextXAlignment=Enum.TextXAlignment.Left; ExecLabel.Parent=InfoFrame
+local HubLabel=Instance.new("TextLabel"); HubLabel.Size=UDim2.new(0.55,0,0,14); HubLabel.Position=UDim2.new(0,64,0,60); HubLabel.Text="Hub: UWU HUB"; HubLabel.TextColor3=C.GRAY; HubLabel.Font=Enum.Font.Gotham; HubLabel.TextSize=9; HubLabel.BackgroundTransparency=1; HubLabel.TextXAlignment=Enum.TextXAlignment.Left; HubLabel.Parent=InfoFrame
+
+local CatBox=Instance.new("Frame"); CatBox.Size=UDim2.new(0.48,0,0,150); CatBox.Position=UDim2.new(0.52,0,0,0); CatBox.BackgroundColor3=C.BG2; CatBox.BorderSizePixel=0; CatBox.Parent=mainPage; Instance.new("UICorner",CatBox).CornerRadius=UDim.new(0,10)
+local CatArt=Instance.new("TextLabel"); CatArt.Size=UDim2.new(1,-8,1,-8); CatArt.Position=UDim2.new(0,4,0,4); CatArt.Text=""; CatArt.TextColor3=C.PINK; CatArt.Font=Enum.Font.Gotham; CatArt.TextSize=10; CatArt.BackgroundTransparency=1; CatArt.TextXAlignment=Enum.TextXAlignment.Center; CatArt.TextYAlignment=Enum.TextYAlignment.Center; CatArt.Parent=CatBox
+local CatFrames={[[  ╱|、
+(˚ˎ 。7  
+ |、˜〵          
+じしˍ,)ノ
+   zzz]],[[  ╱|、
+( -ˎ -)  
+ |、˜〵          
+じしˍ,)ノ
+  zzZ]],[[  ╱|、
+( =ˎ =)  
+ |、˜〵          
+じしˍ,)ノ
+  zZz]],[[  ╱|、
+( ˘ˎ ˘)  
+ |、˜〵          
+じしˍ,)ノ
+   zzz]]}
+local CatIdx=1; spawn(function() while CatArt and CatArt.Parent do CatIdx=(CatIdx%#CatFrames)+1; CatArt.Text=CatFrames[CatIdx]; wait(1.2) end end)
+local Status=Instance.new("TextLabel"); Status.Size=UDim2.new(1,0,0,16); Status.Text="uwu zzz..."; Status.TextColor3=C.GRAY; Status.Font=Enum.Font.Gotham; Status.TextSize=10; Status.BackgroundTransparency=1; Status.TextXAlignment=Enum.TextXAlignment.Center; Status.Parent=mainPage
+
+-- ================== ESP ==================
+ToggleRow(TabPages["ESP"].page,"Fullbright",false,function(v) Settings.Fullbright=v; if v then EnableFB() else DisableFB() end end)
+ToggleRow(TabPages["ESP"].page,"Anomaly ESP",false,function(v) Settings.AnomalyESP=v end)
+ToggleRow(TabPages["ESP"].page,"Object ESP",false,function(v) Settings.ObjectESP=v end)
+ToggleRow(TabPages["ESP"].page,"Changes ESP",false,function(v) Settings.ChangesESP=v end)
+ToggleRow(TabPages["ESP"].page,"Notifications",false,function(v) Settings.Notifications=v end)
+
+-- ================== DETECT ==================
+ToggleRow(TabPages["Detect"].page,"Scanner",false,function(v) Settings.Scanner=v end)
+ToggleRow(TabPages["Detect"].page,"Sounds",false,function(v) Settings.DetectSounds=v end)
+ToggleRow(TabPages["Detect"].page,"Clock",false,function(v) Settings.DetectClock=v end)
+ToggleRow(TabPages["Detect"].page,"Faces",false,function(v) Settings.DetectFaces=v end)
+ToggleRow(TabPages["Detect"].page,"Auto Copy",false,function(v) Settings.AutoCopy=v end)
+
+-- ================== LOG ==================
+local logPage=TabPages["Log"].page
+local LogBox=Instance.new("ScrollingFrame"); LogBox.Size=UDim2.new(1,0,0,130); LogBox.BackgroundColor3=C.BG2; LogBox.BorderSizePixel=0; LogBox.CanvasSize=UDim2.new(0,0,0,0); LogBox.ScrollBarThickness=3; LogBox.ScrollBarImageColor3=C.ACCENT; LogBox.Parent=logPage; Instance.new("UICorner",LogBox).CornerRadius=UDim.new(0,8)
+local LogLay=Instance.new("UIListLayout"); LogLay.SortOrder=Enum.SortOrder.LayoutOrder; LogLay.Padding=UDim.new(0,2); LogLay.Parent=LogBox
+local LogCnt=Instance.new("TextLabel"); LogCnt.Size=UDim2.new(1,0,0,16); LogCnt.Text="0 entries"; LogCnt.TextColor3=C.GRAY; LogCnt.Font=Enum.Font.Gotham; LogCnt.TextSize=10; LogCnt.BackgroundTransparency=1; LogCnt.TextXAlignment=Enum.TextXAlignment.Center; LogCnt.Parent=logPage
+local LogN=0
+function AddLog(m,c) LogN=LogN+1; if LogN>200 then for i=1,10 do local k=LogBox:GetChildren(); if k[i] and k[i]:IsA("TextLabel") then k[i]:Remove() end end end; local l=Instance.new("TextLabel"); l.Size=UDim2.new(1,-4,0,14); l.Text=m; l.TextColor3=c or C.WHITE; l.Font=Enum.Font.Gotham; l.TextSize=9; l.BackgroundTransparency=1; l.TextXAlignment=Enum.TextXAlignment.Left; l.Parent=LogBox; LogBox.CanvasSize=UDim2.new(0,0,0,LogLay.AbsoluteContentSize.Y+2); LogBox.CanvasPosition=Vector2.new(0,LogBox.CanvasSize.Y.Offset); LogCnt.Text=LogN.." entries" end
+AddLog("UWU HUB HATE WORLD",C.PURPLE); AddLog("All systems offline",C.GRAY)
+
+-- MINIMIZE
+local MinIcon; local MinFaces={"uwu","owo",">.<","^-^"}; local MinIdx=1
+MinBtn.MouseButton1Click:Connect(function() Main.Visible=false; if not MinIcon then MinIcon=Instance.new("TextButton"); MinIcon.Size=UDim2.new(0,34,0,34); MinIcon.Position=UDim2.new(0.5,-17,0.5,-17); MinIcon.BackgroundColor3=C.BG2; MinIcon.TextColor3=C.PURPLE; MinIcon.Font=Enum.Font.GothamBold; MinIcon.TextSize=10; MinIcon.BorderSizePixel=0; MinIcon.Active=true; MinIcon.Draggable=true; MinIcon.Parent=Gui; Instance.new("UICorner",MinIcon).CornerRadius=UDim.new(0,10); MinIcon.MouseButton1Click:Connect(function() MinIcon.Visible=false; Main.Visible=true end); spawn(function() while MinIcon and MinIcon.Parent and MinIcon.Visible do MinIdx=(MinIdx%#MinFaces)+1; MinIcon.Text=MinFaces[MinIdx]; wait(0.6) end end) else MinIcon.Visible=true end end)
+
+-- ================== ESP SYSTEM ==================
+local ANOMALY_NAMES={"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity"}
+local OBJECT_NAMES={"AnnoyingOrange","NormalOrange","Orange","Float Duck","Duck","Crib","Rockingmachine","Bar Soap","Soap","Mirror","Sink","Curtain","Bucket","TV","Telephone","Alarm Clock","WallClock","ClockFace","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","g Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Briefcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","Bed","Pillow","Glass","Bleach","crayon","pic1","pic2","pic3","Projector"}
+local DetectedESP={}; local LinePool={}; local ESPLastScan=0; local ESPInterval=0.3
+function GetLine() for _,l in ipairs(LinePool) do if not l.Visible then return l end end; local l=Drawing.new("Line"); l.Thickness=1.5; l.Transparency=1; table.insert(LinePool,l); return l end
+local function GetCorners(p) local cf=p.CFrame; local s=p.Size/2; return{cf*Vector3.new(-s.X,-s.Y,-s.Z),cf*Vector3.new(s.X,-s.Y,-s.Z),cf*Vector3.new(s.X,-s.Y,s.Z),cf*Vector3.new(-s.X,-s.Y,s.Z),cf*Vector3.new(-s.X,s.Y,-s.Z),cf*Vector3.new(s.X,s.Y,-s.Z),cf*Vector3.new(s.X,s.Y,s.Z),cf*Vector3.new(-s.X,s.Y,s.Z)} end
+local function DrawWire(p,c) local cn=GetCorners(p); local ed={{1,2},{2,3},{3,4},{4,1},{5,6},{6,7},{7,8},{8,5},{1,5},{2,6},{3,7},{4,8}}; for _,e in ipairs(ed) do local p1=Camera:WorldToViewportPoint(cn[e[1]]); local p2=Camera:WorldToViewportPoint(cn[e[2]]); if p1.Z>0 and p2.Z>0 then local l=GetLine(); l.From=Vector2.new(p1.X,p1.Y); l.To=Vector2.new(p2.X,p2.Y); l.Color=c; l.Visible=true end end end
+local function InList(n,l) for _,k in ipairs(l) do if n==k then return true end end; return false end
+
+-- ================== SCANNER ==================
+local ODB={}; local ScLs=0; local LsCp=0; local LsSo=0; local LsCl=0; local LsFa=0; local Chg={}; local PCl=Lighting.ClockTime; local SR={}
+local BP={"Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg","HumanoidRootPart","LeftFoot","RightFoot","LeftHand","RightHand","LeftLowerArm","LeftLowerLeg","RightLowerArm","RightLowerLeg","LeftUpperArm","LeftUpperLeg","RightUpperArm","RightUpperLeg","UpperTorso","LowerTorso","Body","Handle","Root","Rig","Rig2","Hitobx"}
+local function IsBP(n) for _,b in ipairs(BP) do if n==b then return true end end; return false end
+local function GSt(o) if o:IsA("BasePart") then return{p=o.Position,r=o.Orientation,s=o.Size,c=o.Color,t=o.Transparency,m=o.Material,a=o.Anchored} elseif o:IsA("Model") then local pp=o:FindFirstChildOfClass("BasePart")or o.PrimaryPart; if pp then return{p=pp.Position,r=pp.Orientation,s=pp.Size} end end; return nil end
+local function Chgd(o,n) if not o or not n then return true end; if o.p and n.p and(o.p-n.p).Magnitude>0.1 then return true end; if o.r and n.r and(o.r-n.r).Magnitude>0.5 then return true end; if o.s and n.s and(o.s-n.s).Magnitude>0.1 then return true end; if o.c and n.c and o.c~=n.c then return true end; if o.t and n.t and math.abs(o.t-n.t)>0.01 then return true end; if o.m and n.m and o.m~=n.m then return true end; return false end
+local function CT(o,n) local c={}; if o.p and n.p and(o.p-n.p).Magnitude>0.1 then table.insert(c,"MOVED") end; if o.r and n.r and(o.r-n.r).Magnitude>0.5 then table.insert(c,"ROTATED") end; if o.s and n.s and(o.s-n.s).Magnitude>0.1 then table.insert(c,"RESIZED") end; if o.c and n.c and o.c~=n.c then table.insert(c,"COLOR") end; if o.m and n.m and o.m~=n.m then table.insert(c,"MATERIAL") end; return #c>0 and table.concat(c,"+")or"CHANGED" end
+
+-- MAIN LOOP
+RunService.RenderStepped:Connect(function(dt)
+    if MasterOn and(Settings.AnomalyESP or Settings.ObjectESP or Settings.ChangesESP) then
+        ESPLastScan=ESPLastScan+dt
+        if ESPLastScan>=ESPInterval then ESPLastScan=0; DetectedESP={}
+            for _,o in ipairs(workspace:GetDescendants()) do if not(o:IsA("Model")or o:IsA("BasePart"))then continue end; local nm=o.Name; local ok=false; local col=C.PINK_ESP
+                if Settings.AnomalyESP and InList(nm,ANOMALY_NAMES) then ok=true; col=C.RED
+                elseif Settings.ObjectESP and InList(nm,OBJECT_NAMES) then ok=true; col=C.PINK_ESP
+                elseif Settings.ChangesESP then local p=o:IsA("BasePart")and o or o:FindFirstChildOfClass("BasePart"); if p and p:IsA("BasePart")and(p.Velocity.Magnitude>0.1 or p.RotVelocity.Magnitude>0.1) then ok=true; col=C.YELLOW end end
+                if ok then DetectedESP[o]=col end
+            end
+        end
+        for _,l in ipairs(LinePool) do l.Visible=false end
+        for o,col in pairs(DetectedESP) do if o and o.Parent then if o:IsA("Model") then for _,c in ipairs(o:GetDescendants()) do if c:IsA("BasePart") then DrawWire(c,col) end end elseif o:IsA("BasePart") then DrawWire(o,col) end end end
+    else for _,l in ipairs(LinePool) do l.Visible=false end end
+    
+    if not Settings.Scanner then if MasterOn then Status.Text="uwu on" else Status.Text="uwu zzz..." end; return end
+    ScLs=ScLs+dt; LsCp=LsCp+dt; LsSo=LsSo+dt; LsCl=LsCl+dt; LsFa=LsFa+dt
+    if Settings.DetectSounds and LsSo>=1 then LsSo=0
+        for _,o in ipairs(workspace:GetDescendants()) do if o:IsA("Sound")and o.IsPlaying and o.Volume>0.05 then local id=o:GetFullName(); if not SR[id] then SR[id]=true; local rm=GetRoomName(o); local sn=o.SoundId:match("([^/]+)$")or o.SoundId; local m="[S] ["..rm.."] "..sn; table.insert(Chg,m); AddLog(m,C.CYAN) end end end
+        for id in pairs(SR) do local o=workspace:FindFirstChild(id); if not o or not o:IsA("Sound")or not o.IsPlaying then SR[id]=nil end end
+    end
+    if Settings.DetectClock and LsCl>=0.5 then LsCl=0; local ct=Lighting.ClockTime; local td=math.abs(ct-PCl); if td>0.08 then local m="[CLOCK] x"..math.floor(td/0.03); table.insert(Chg,m); AddLog(m,Color3.new(1,0.59,0.2)) end; PCl=ct end
+    if Settings.DetectFaces and LsFa>=0.5 then LsFa=0
+        for _,o in ipairs(workspace:GetDescendants()) do local nm=o.Name:lower(); if nm:find("annoying")or nm:find("orange")or nm:find("painting")or nm:find("mona") then local hd=false; for _,ch in ipairs(o:GetDescendants()) do if ch:IsA("Decal")or ch:IsA("Texture") then hd=true; break end end; if hd and not o:GetAttribute("FR") then o:SetAttribute("FR",true); local rm=GetRoomName(o); local m="[FACE] ["..rm.."] "..o.Name; table.insert(Chg,m); AddLog(m,Color3.new(1,0.39,1)) end end end
+    end
+    if ScLs>=0.5 then ScLs=0; local rt=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart"); if not rt then return end
+        local CO={}; for _,o in ipairs(workspace:GetDescendants()) do if not(o:IsA("Model")or o:IsA("BasePart"))then continue end; if o:IsA("BasePart")and o.Transparency>0.95 then continue end; if o.Name=="Terrain"then continue end; if IsBP(o.Name) then continue end; local pp=o:IsA("BasePart")and o or o:FindFirstChildOfClass("BasePart"); if not pp then continue end; if(pp.Position-rt.Position).Magnitude>ScanRange then continue end; local st=GSt(o); if not st then continue end; CO[o]=st
+            if ODB[o]and Chgd(ODB[o],st) then local rm=GetRoomName(o); local ct=CT(ODB[o],st); local m="["..rm.."] "..o.Name..": "..ct; table.insert(Chg,m); AddLog(m,C.YELLOW) end
+        end
+        for o in pairs(ODB) do if not CO[o] and not IsBP(o.Name) then local rm=GetRoomName(o); local m="[-] ["..rm.."] "..o.Name; table.insert(Chg,m); AddLog(m,C.RED) end end
+        ODB=CO
+        if Settings.AutoCopy and #Chg>0 and LsCp>=5 and setclipboard then LsCp=0; local sn={}; local tx=""; for _,v in ipairs(Chg) do if not sn[v] then sn[v]=true; tx=tx..v.."\n" end end; setclipboard(tx); Chg={}; Status.Text="copied!"; Status.TextColor3=C.GREEN; spawn(function() wait(2) Status.TextColor3=C.GRAY end) end
+        local tt=0; for _ in pairs(ODB) do tt=tt+1 end; Status.Text="~"..tt.." obj"
+    end
+end)    Lighting.FogEnd = OrigFog
     Lighting.Ambient = OrigAmbient
     Lighting.OutdoorAmbient = OrigOutdoor
     Lighting.GlobalShadows = true
