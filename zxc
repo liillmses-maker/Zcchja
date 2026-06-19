@@ -549,6 +549,521 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
+Notify("=^^=", "pawESP ready")}
+
+-- ================== NOTIFICATION ==================
+function Notify(title, text)
+    if not Settings.Notifications then return end
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = title, Text = text, Duration = 2.5})
+    end)
+end
+
+-- ================== MAIN GUI ==================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "PawESP"
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PLAYERGUI
+
+local W = IsMobile and 230 or 260
+local H = IsMobile and 330 or 360
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, W, 0, H)
+Main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+Main.BackgroundColor3 = C.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 18)
+MainCorner.Parent = Main
+
+-- Glow
+local GlowFrame = Instance.new("Frame")
+GlowFrame.Size = UDim2.new(1, 8, 1, 8)
+GlowFrame.Position = UDim2.new(0, -4, 0, -4)
+GlowFrame.BackgroundColor3 = C.GLOW
+GlowFrame.BackgroundTransparency = 0.65
+GlowFrame.BorderSizePixel = 0
+GlowFrame.ZIndex = 0
+GlowFrame.Parent = Main
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(0, 20)
+GlowCorner.Parent = GlowFrame
+
+-- Gradient
+local Grad = Instance.new("UIGradient")
+Grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 16, 22)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(24, 12, 18)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 14, 20))
+}
+Grad.Rotation = 140
+Grad.Parent = Main
+
+-- ================== HEADER ==================
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 36)
+Header.BackgroundColor3 = C.ACCENT2
+Header.BorderSizePixel = 0
+Header.Parent = Main
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 18)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 100, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "=^^= pawESP"
+Title.TextColor3 = C.WHITE
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- iPhone style master toggle
+local ToggleMaster = Instance.new("Frame")
+ToggleMaster.Size = UDim2.new(0, 44, 0, 24)
+ToggleMaster.Position = UDim2.new(1, -56, 0.5, -12)
+ToggleMaster.BackgroundColor3 = C.OFF
+ToggleMaster.BorderSizePixel = 0
+ToggleMaster.Parent = Header
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleMaster
+
+local ToggleKnob = Instance.new("Frame")
+ToggleKnob.Size = UDim2.new(0, 20, 0, 20)
+ToggleKnob.Position = UDim2.new(0, 2, 0.5, -10)
+ToggleKnob.BackgroundColor3 = C.WHITE
+ToggleKnob.BorderSizePixel = 0
+ToggleKnob.Parent = ToggleMaster
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = ToggleKnob
+
+local KnobFace = Instance.new("TextLabel")
+KnobFace.Size = UDim2.new(1, 0, 1, 0)
+KnobFace.Text = "=.="
+KnobFace.TextColor3 = C.GRAY
+KnobFace.Font = Enum.Font.GothamBold
+KnobFace.TextSize = 7
+KnobFace.BackgroundTransparency = 1
+KnobFace.Parent = ToggleKnob
+
+local MasterOn = true
+local function UpdateMaster(state)
+    MasterOn = state
+    if state then
+        TweenService:Create(ToggleMaster, TweenInfo.new(0.3), {BackgroundColor3 = C.ON}):Play()
+        TweenService:Create(ToggleKnob, TweenInfo.new(0.3), {Position = UDim2.new(1, -22, 0.5, -10)}):Play()
+        KnobFace.Text = "=^^="
+        KnobFace.TextColor3 = C.ON
+    else
+        TweenService:Create(ToggleMaster, TweenInfo.new(0.3), {BackgroundColor3 = C.OFF}):Play()
+        TweenService:Create(ToggleKnob, TweenInfo.new(0.3), {Position = UDim2.new(0, 2, 0.5, -10)}):Play()
+        KnobFace.Text = "=.="
+        KnobFace.TextColor3 = C.GRAY
+    end
+end
+
+ToggleMaster.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        UpdateMaster(not MasterOn)
+    end
+end)
+
+-- ================== BODY ==================
+local Body = Instance.new("Frame")
+Body.Size = UDim2.new(1, -16, 1, -52)
+Body.Position = UDim2.new(0, 8, 0, 44)
+Body.BackgroundTransparency = 1
+Body.BorderSizePixel = 0
+Body.Parent = Main
+
+local BodyList = Instance.new("UIListLayout")
+BodyList.SortOrder = Enum.SortOrder.LayoutOrder
+BodyList.Padding = UDim.new(0, 8)
+BodyList.Parent = Body
+
+-- ================== SECTION ==================
+local function Section(title)
+    local Sec = Instance.new("Frame")
+    Sec.Size = UDim2.new(1, 0, 0, 18)
+    Sec.BackgroundTransparency = 1
+    Sec.Parent = Body
+    
+    local Line = Instance.new("Frame")
+    Line.Size = UDim2.new(1, 0, 0, 1)
+    Line.Position = UDim2.new(0, 0, 0, 16)
+    Line.BackgroundColor3 = C.ACCENT
+    Line.BackgroundTransparency = 0.6
+    Line.Parent = Sec
+    
+    local Txt = Instance.new("TextLabel")
+    Txt.Size = UDim2.new(1, 0, 0, 16)
+    Txt.Text = title
+    Txt.TextColor3 = C.PINK
+    Txt.Font = Enum.Font.GothamBold
+    Txt.TextSize = IsMobile and 9 or 10
+    Txt.BackgroundTransparency = 1
+    Txt.TextXAlignment = Enum.TextXAlignment.Left
+    Txt.Parent = Sec
+    
+    return Sec
+end
+
+-- ================== TOGGLE ROW ==================
+local function ToggleRow(name, default, callback)
+    local enabled = default
+    
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, 0, 0, IsMobile and 34 or 30)
+    Row.BackgroundColor3 = C.BG2
+    Row.BorderSizePixel = 0
+    Row.Parent = Body
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 10)
+    RowCorner.Parent = Row
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.65, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Text = name
+    Label.TextColor3 = C.GRAY
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = IsMobile and 10 or 11
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Row
+    
+    local Tog = Instance.new("Frame")
+    Tog.Size = UDim2.new(0, 38, 0, 20)
+    Tog.Position = UDim2.new(1, -44, 0.5, -10)
+    Tog.BackgroundColor3 = C.OFF
+    Tog.BorderSizePixel = 0
+    Tog.Parent = Row
+    local TogCorner = Instance.new("UICorner")
+    TogCorner.CornerRadius = UDim.new(1, 0)
+    TogCorner.Parent = Tog
+    
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 16, 0, 16)
+    Knob.Position = UDim2.new(0, 2, 0.5, -8)
+    Knob.BackgroundColor3 = C.WHITE
+    Knob.BorderSizePixel = 0
+    Knob.Parent = Tog
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = Knob
+    
+    local Face = Instance.new("TextLabel")
+    Face.Size = UDim2.new(1, 0, 1, 0)
+    Face.Text = "=.="
+    Face.TextColor3 = C.GRAY
+    Face.Font = Enum.Font.GothamBold
+    Face.TextSize = 6
+    Face.BackgroundTransparency = 1
+    Face.Parent = Knob
+    
+    local function SetState(state)
+        enabled = state
+        if state then
+            TweenService:Create(Tog, TweenInfo.new(0.25), {BackgroundColor3 = C.ON}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.25), {Position = UDim2.new(1, -18, 0.5, -8)}):Play()
+            Face.Text = "=^^="
+            Face.TextColor3 = C.ON
+            Label.TextColor3 = C.WHITE
+        else
+            TweenService:Create(Tog, TweenInfo.new(0.25), {BackgroundColor3 = C.OFF}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.25), {Position = UDim2.new(0, 2, 0.5, -8)}):Play()
+            Face.Text = "=.="
+            Face.TextColor3 = C.GRAY
+            Label.TextColor3 = C.GRAY
+        end
+    end
+    
+    Tog.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            SetState(not enabled)
+            callback(not enabled)
+        end
+    end)
+    
+    SetState(default)
+    return Row
+end
+
+-- ================== BUILD UI ==================
+Section("Categories")
+
+ToggleRow("Anomaly ESP", false, function(v)
+    Settings.AnomalyESP = v
+    if v then Notify("=o_o=", "Anomaly ESP enabled") end
+end)
+
+ToggleRow("Object ESP", false, function(v)
+    Settings.ObjectESP = v
+    if v then Notify("=^.^=", "Object ESP enabled") end
+end)
+
+ToggleRow("Changes ESP", false, function(v)
+    Settings.ChangesESP = v
+    if v then Notify("=*.*=", "Changes ESP enabled") end
+end)
+
+Section("Settings")
+
+ToggleRow("Notifications", true, function(v)
+    Settings.Notifications = v
+end)
+
+-- Status
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 16)
+StatusLabel.Text = "=^.^= idle"
+StatusLabel.TextColor3 = C.GRAY
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = IsMobile and 9 or 10
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+StatusLabel.Parent = Body
+
+-- ================== OUTLINE ESP (BEAUTIFUL WRAP) ==================
+local ANOMALY_WORDS = {
+    "Alternate", "CornerAlternate", "WindowAlternate",
+    "HallwayIntruder", "Devil", "Mask", "Dummy",
+    "Mannequin", "BloodPart", "Pentagram",
+    "Eyes", "Jumpscares", "kaneki", "aliveei_loli",
+    "Intruder", "Monster", "Creature", "Entity"
+}
+
+local OBJECT_WORDS = {
+    "AnnoyingOrange", "Orange", "FruitBowl",
+    "Duck", "Crib", "Rockingmachine",
+    "Soap", "Mirror", "Sink", "Curtain", "Bucket",
+    "Washing Machine", "TV", "Telephone",
+    "Alarm Clock", "WallClock", "Whiteboard",
+    "To-Do-List", "StickyNotes", "Papers", "Paper",
+    "Books", "Open Book", "Poster", "Painting",
+    "MonaLisa", "WallDrawing", "Frame",
+    "Monitor", "StudyMonitor", "Screen",
+    "Keyboard", "Mouse", "Carpet",
+    "Chair", "Table", "RoundTable", "Pool Table",
+    "Desk", "Nightstand", "Shelf", "Shoe Rack", "Shoes",
+    "Wardrobe", "Closet", "Door", "Window",
+    "Fridge", "Oven", "Frying Pan",
+    "Cup", "CoffeeJar", "SugarJar", "Container", "Cola",
+    "ToiletPaperRoll", "ToiletPlunger",
+    "Trash Can", "Trash Bag", "Suitcase",
+    "Box", "Cardboard", "Tire", "Plant", "Vase",
+    "Light", "Lamp", "Neon", "Figurine",
+    "World Cup Trophy", "Metal Bat", "Bat",
+    "Screwdriver", "Projector", "ProjectorScreen",
+    "Bed", "Bedframe", "Mattress", "Blanket", "Pillow",
+    "Map", "Board", "Welcome Mat", "Log"
+}
+
+local Detected = {}
+local LinePool = {}
+local LastScan = 0
+local Interval = IsMobile and 0.55 or 0.3
+local Time = 0
+
+function GetPart(o)
+    if o:IsA("BasePart") then return o end
+    return o:FindFirstChildOfClass("BasePart") or o.PrimaryPart
+end
+
+function Match(n, list)
+    n = n:lower()
+    for _, k in ipairs(list) do
+        if n:find(k:lower()) then return true end
+    end
+    return false
+end
+
+function GetLine()
+    for _, l in ipairs(LinePool) do
+        if not l.Visible then return l end
+    end
+    local l = Drawing.new("Line")
+    l.Thickness = 1.8
+    l.Transparency = 1
+    table.insert(LinePool, l)
+    return l
+end
+
+-- Draw outline box using 4 lines
+local function DrawOutline(pos2D, size2D, color, hash)
+    local x = pos2D.X - size2D.X/2
+    local y = pos2D.Y - size2D.Y/2
+    local w = size2D.X
+    local h = size2D.Y
+    
+    local pulse = 1 + math.sin(Time * 2 + hash * 0.01) * 0.04
+    
+    local top = GetLine()
+    top.From = Vector2.new(x, y)
+    top.To = Vector2.new(x + w, y)
+    top.Color = color
+    top.Thickness = 1.8 * pulse
+    top.Visible = true
+    
+    local bottom = GetLine()
+    bottom.From = Vector2.new(x, y + h)
+    bottom.To = Vector2.new(x + w, y + h)
+    bottom.Color = color
+    bottom.Thickness = 1.8 * pulse
+    bottom.Visible = true
+    
+    local left = GetLine()
+    left.From = Vector2.new(x, y)
+    left.To = Vector2.new(x, y + h)
+    left.Color = color
+    left.Thickness = 1.8 * pulse
+    left.Visible = true
+    
+    local right = GetLine()
+    right.From = Vector2.new(x + w, y)
+    right.To = Vector2.new(x + w, y + h)
+    right.Color = color
+    right.Thickness = 1.8 * pulse
+    right.Visible = true
+    
+    -- Corner accents (small extra lines for style)
+    local cornerLen = math.min(w, h) * 0.2
+    
+    -- Top-left corner accent
+    local tl1 = GetLine()
+    tl1.From = Vector2.new(x - 2, y - 2)
+    tl1.To = Vector2.new(x + cornerLen, y - 2)
+    tl1.Color = color
+    tl1.Thickness = 2.2 * pulse
+    tl1.Visible = true
+    
+    local tl2 = GetLine()
+    tl2.From = Vector2.new(x - 2, y - 2)
+    tl2.To = Vector2.new(x - 2, y + cornerLen)
+    tl2.Color = color
+    tl2.Thickness = 2.2 * pulse
+    tl2.Visible = true
+    
+    -- Top-right corner accent
+    local tr1 = GetLine()
+    tr1.From = Vector2.new(x + w - cornerLen, y - 2)
+    tr1.To = Vector2.new(x + w + 2, y - 2)
+    tr1.Color = color
+    tr1.Thickness = 2.2 * pulse
+    tr1.Visible = true
+    
+    local tr2 = GetLine()
+    tr2.From = Vector2.new(x + w + 2, y - 2)
+    tr2.To = Vector2.new(x + w + 2, y + cornerLen)
+    tr2.Color = color
+    tr2.Thickness = 2.2 * pulse
+    tr2.Visible = true
+    
+    -- Bottom-left corner accent
+    local bl1 = GetLine()
+    bl1.From = Vector2.new(x - 2, y + h - cornerLen)
+    bl1.To = Vector2.new(x - 2, y + h + 2)
+    bl1.Color = color
+    bl1.Thickness = 2.2 * pulse
+    bl1.Visible = true
+    
+    local bl2 = GetLine()
+    bl2.From = Vector2.new(x - 2, y + h + 2)
+    bl2.To = Vector2.new(x + cornerLen, y + h + 2)
+    bl2.Color = color
+    bl2.Thickness = 2.2 * pulse
+    bl2.Visible = true
+    
+    -- Bottom-right corner accent
+    local br1 = GetLine()
+    br1.From = Vector2.new(x + w - cornerLen, y + h + 2)
+    br1.To = Vector2.new(x + w + 2, y + h + 2)
+    br1.Color = color
+    br1.Thickness = 2.2 * pulse
+    br1.Visible = true
+    
+    local br2 = GetLine()
+    br2.From = Vector2.new(x + w + 2, y + h - cornerLen)
+    br2.To = Vector2.new(x + w + 2, y + h + 2)
+    br2.Color = color
+    br2.Thickness = 2.2 * pulse
+    br2.Visible = true
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    Time = Time + dt
+    LastScan = LastScan + dt
+    
+    if LastScan >= Interval then
+        LastScan = 0
+        
+        local dead = {}
+        for o, d in pairs(Detected) do
+            if not o or not o.Parent then table.insert(dead, o) end
+        end
+        for _, o in ipairs(dead) do Detected[o] = nil end
+        
+        if MasterOn and (Settings.AnomalyESP or Settings.ObjectESP or Settings.ChangesESP) then
+            for _, o in ipairs(workspace:GetDescendants()) do
+                if Detected[o] then continue end
+                if not (o:IsA("Model") or o:IsA("BasePart")) then continue end
+                
+                local ok = false
+                local col = C.PINK_ESP
+                
+                if Settings.AnomalyESP and Match(o.Name, ANOMALY_WORDS) then
+                    ok = true; col = C.RED
+                elseif Settings.ObjectESP and Match(o.Name, OBJECT_WORDS) then
+                    ok = true; col = C.PINK_ESP
+                elseif Settings.ChangesESP then
+                    local p = GetPart(o)
+                    if p and p:IsA("BasePart") and (p.Velocity.Magnitude > 0.1 or p.RotVelocity.Magnitude > 0.1) then
+                        ok = true; col = C.YELLOW
+                    end
+                end
+                
+                if ok then
+                    local p = GetPart(o)
+                    if p then Detected[o] = {p = p, col = col} end
+                end
+            end
+        end
+    end
+    
+    local n = 0
+    for _ in pairs(Detected) do n = n + 1 end
+    StatusLabel.Text = MasterOn and ("=^^= " .. n) or "=.= off"
+    StatusLabel.TextColor3 = MasterOn and C.PINK or C.GRAY
+    
+    for _, l in ipairs(LinePool) do l.Visible = false end
+    
+    if not MasterOn then return end
+    
+    for o, d in pairs(Detected) do
+        local p = d.p
+        if p and p.Parent then
+            local pos, on = Camera:WorldToViewportPoint(p.Position)
+            if on then
+                local s = Camera:WorldToViewportPoint(p.Position + p.Size)
+                local w = math.abs(s.X - pos.X)
+                local h = math.abs(s.Y - pos.Y)
+                w = math.clamp(w * 1.15, 18, 180)
+                h = math.clamp(h * 1.15, 18, 180)
+                DrawOutline(pos, Vector2.new(w, h), d.col, o:GetHash())
+            end
+        end
+    end
+end)
+
 Notify("=^^=", "pawESP ready")    ShowChangesESP = false,
     Notifications = true
 }
