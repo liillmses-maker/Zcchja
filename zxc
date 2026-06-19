@@ -1,32 +1,552 @@
--- Anomaly Watch | Pink Paw GUI + Full Wireframe ESP | RAGE v16
-local a,b,c,d,e,f,g=game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("TweenService"),game:GetService("StarterGui"),a.LocalPlayer,c.TouchEnabled and not c.KeyboardEnabled,f:WaitForChild("PlayerGui")
-local h={BG=Color3.fromRGB(25,15,20),BG2=Color3.fromRGB(35,20,28),ACCENT=Color3.fromRGB(255,140,180),ACCENT2=Color3.fromRGB(200,70,120),PINK=Color3.fromRGB(255,170,195),WHITE=Color3.fromRGB(245,235,240),GRAY=Color3.fromRGB(160,140,150),ON=Color3.fromRGB(255,120,160),OFF=Color3.fromRGB(55,30,45),RED=Color3.fromRGB(255,40,60),PINK_ESP=Color3.fromRGB(255,150,180),YELLOW=Color3.fromRGB(255,200,100),GLOW=Color3.fromRGB(255,110,150)}
-local i={AnomalyESP=false,ObjectESP=false,ChangesESP=false,Notifications=true}
-function j(k,l)if not i.Notifications then return end;pcall(function()e:SetCore("SendNotification",{Title=k,Text=l,Duration=2.5})end)end
-local m=Instance.new("ScreenGui")m.Name="PawESP";m.IgnoreGuiInset=true;m.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;m.Parent=g
-local n=g and 230 or 260;local o=g and 330 or 360
-local p=Instance.new("Frame")p.Size=UDim2.new(0,n,0,o)p.Position=UDim2.new(0.5,-n/2,0.5,-o/2)p.BackgroundColor3=h.BG;p.BorderSizePixel=0;p.Active=true;p.Draggable=true;p.Parent=m;Instance.new("UICorner",p).CornerRadius=UDim.new(0,18)
-local q=Instance.new("Frame")q.Size=UDim2.new(1,8,1,8)q.Position=UDim2.new(0,-4,0,-4)q.BackgroundColor3=h.GLOW;q.BackgroundTransparency=0.65;q.BorderSizePixel=0;q.ZIndex=0;q.Parent=p;Instance.new("UICorner",q).CornerRadius=UDim.new(0,20)
-local r=Instance.new("UIGradient")r.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(30,16,22)),ColorSequenceKeypoint.new(0.5,Color3.fromRGB(24,12,18)),ColorSequenceKeypoint.new(1,Color3.fromRGB(28,14,20))}r.Rotation=140;r.Parent=p
-local s=Instance.new("Frame")s.Size=UDim2.new(1,0,0,36)s.BackgroundColor3=h.ACCENT2;s.BorderSizePixel=0;s.Parent=p;Instance.new("UICorner",s).CornerRadius=UDim.new(0,18)
-local t=Instance.new("TextLabel")t.Size=UDim2.new(0,100,1,0)t.Position=UDim2.new(0,12,0,0)t.Text="=^^= pawESP";t.TextColor3=h.WHITE;t.Font=Enum.Font.GothamBold;t.TextSize=13;t.BackgroundTransparency=1;t.TextXAlignment=Enum.TextXAlignment.Left;t.Parent=s
-local u=Instance.new("Frame")u.Size=UDim2.new(0,44,0,24)u.Position=UDim2.new(1,-56,0.5,-12)u.BackgroundColor3=h.OFF;u.BorderSizePixel=0;u.Parent=s;Instance.new("UICorner",u).CornerRadius=UDim.new(1,0)
-local v=Instance.new("Frame")v.Size=UDim2.new(0,20,0,20)v.Position=UDim2.new(0,2,0.5,-10)v.BackgroundColor3=h.WHITE;v.BorderSizePixel=0;v.Parent=u;Instance.new("UICorner",v).CornerRadius=UDim.new(1,0)
-local w=Instance.new("TextLabel")w.Size=UDim2.new(1,0,1,0)w.Text="=.=";w.TextColor3=h.GRAY;w.Font=Enum.Font.GothamBold;w.TextSize=7;w.BackgroundTransparency=1;w.Parent=v
-local x=true;local function y(z)x=z;if z then d:Create(u,TweenInfo.new(0.3),{BackgroundColor3=h.ON}):Play()d:Create(v,TweenInfo.new(0.3),{Position=UDim2.new(1,-22,0.5,-10)}):Play()w.Text="=^^=";w.TextColor3=h.ON else d:Create(u,TweenInfo.new(0.3),{BackgroundColor3=h.OFF}):Play()d:Create(v,TweenInfo.new(0.3),{Position=UDim2.new(0,2,0.5,-10)}):Play()w.Text="=.=";w.TextColor3=h.GRAY end end
-u.InputBegan:Connect(function(A)if A.UserInputType==Enum.UserInputType.MouseButton1 or A.UserInputType==Enum.UserInputType.Touch then y(not x)end end)
-local B=Instance.new("Frame")B.Size=UDim2.new(1,-16,1,-52)B.Position=UDim2.new(0,8,0,44)B.BackgroundTransparency=1;B.BorderSizePixel=0;B.Parent=p
-local C=Instance.new("UIListLayout")C.SortOrder=Enum.SortOrder.LayoutOrder;C.Padding=UDim.new(0,8)C.Parent=B
-local function D(E)local F=Instance.new("Frame")F.Size=UDim2.new(1,0,0,18)F.BackgroundTransparency=1;F.Parent=B;local G=Instance.new("Frame")G.Size=UDim2.new(1,0,0,1)G.Position=UDim2.new(0,0,0,16)G.BackgroundColor3=h.ACCENT;G.BackgroundTransparency=0.6;G.Parent=F;local H=Instance.new("TextLabel")H.Size=UDim2.new(1,0,0,16)H.Text=E;H.TextColor3=h.PINK;H.Font=Enum.Font.GothamBold;H.TextSize=g and 9 or 10;H.BackgroundTransparency=1;H.TextXAlignment=Enum.TextXAlignment.Left;H.Parent=F;return F end
-local function I(J,K,L)local M=K;local N=Instance.new("Frame")N.Size=UDim2.new(1,0,0,g and 34 or 30)N.BackgroundColor3=h.BG2;N.BorderSizePixel=0;N.Parent=B;Instance.new("UICorner",N).CornerRadius=UDim.new(0,10)local O=Instance.new("TextLabel")O.Size=UDim2.new(0.65,0,1,0)O.Position=UDim2.new(0,10,0,0)O.Text=J;O.TextColor3=h.GRAY;O.Font=Enum.Font.Gotham;O.TextSize=g and 10 or 11;O.BackgroundTransparency=1;O.TextXAlignment=Enum.TextXAlignment.Left;O.Parent=N;local P=Instance.new("Frame")P.Size=UDim2.new(0,38,0,20)P.Position=UDim2.new(1,-44,0.5,-10)P.BackgroundColor3=h.OFF;P.BorderSizePixel=0;P.Parent=N;Instance.new("UICorner",P).CornerRadius=UDim.new(1,0)local Q=Instance.new("Frame")Q.Size=UDim2.new(0,16,0,16)Q.Position=UDim2.new(0,2,0.5,-8)Q.BackgroundColor3=h.WHITE;Q.BorderSizePixel=0;Q.Parent=P;Instance.new("UICorner",Q).CornerRadius=UDim.new(1,0)local R=Instance.new("TextLabel")R.Size=UDim2.new(1,0,1,0)R.Text="=.=";R.TextColor3=h.GRAY;R.Font=Enum.Font.GothamBold;R.TextSize=6;R.BackgroundTransparency=1;R.Parent=Q;local function S(T)M=T;if T then d:Create(P,TweenInfo.new(0.25),{BackgroundColor3=h.ON}):Play()d:Create(Q,TweenInfo.new(0.25),{Position=UDim2.new(1,-18,0.5,-8)}):Play()R.Text="=^^=";R.TextColor3=h.ON;O.TextColor3=h.WHITE else d:Create(P,TweenInfo.new(0.25),{BackgroundColor3=h.OFF}):Play()d:Create(Q,TweenInfo.new(0.25),{Position=UDim2.new(0,2,0.5,-8)}):Play()R.Text="=.=";R.TextColor3=h.GRAY;O.TextColor3=h.GRAY end end;P.InputBegan:Connect(function(A)if A.UserInputType==Enum.UserInputType.MouseButton1 or A.UserInputType==Enum.UserInputType.Touch then S(not M)L(not M)end end)S(M)return N end
-D("Categories")I("Anomaly ESP",false,function(U)i.AnomalyESP=U;if U then j("=o_o=","Anomaly ESP on")end end)I("Object ESP",false,function(U)i.ObjectESP=U;if U then j("=^.^=","Object ESP on")end end)I("Changes ESP",false,function(U)i.ChangesESP=U;if U then j("=*.*=","Changes ESP on")end end)D("Settings")I("Notifications",true,function(U)i.Notifications=U end)
-local V=Instance.new("TextLabel")V.Size=UDim2.new(1,0,0,16)V.Text="=^.^= idle";V.TextColor3=h.GRAY;V.Font=Enum.Font.Gotham;V.TextSize=g and 9 or 10;V.BackgroundTransparency=1;V.TextXAlignment=Enum.TextXAlignment.Center;V.Parent=B
-local W={"Alternate","CornerAlternate","WindowAlternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","kaneki","aliveei_loli","Intruder","Monster","Creature","Entity"}
-local X={"AnnoyingOrange","Orange","FruitBowl","Duck","Crib","Rockingmachine","Soap","Mirror","Sink","Curtain","Bucket","Washing Machine","TV","Telephone","Alarm Clock","WallClock","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","StudyMonitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Nightstand","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","World Cup Trophy","Metal Bat","Bat","Screwdriver","Projector","ProjectorScreen","Bed","Bedframe","Mattress","Blanket","Pillow","Map","Board","Welcome Mat","Log","Glass","Shattered","Cracked","Broken"}
-local Y={}local Z={}local a0=0;local a1=g and 0.5 or 0.3;local a2=0
-function a3(a4)if a4:IsA("BasePart")then return a4 end;return a4:FindFirstChildOfClass("BasePart")or a4.PrimaryPart end
-function a5(a6,a7)a6=a6:lower()for a8,a9 in ipairs(a7)do if a6:find(a9:lower())then return true end end;return false end
-function aa()for a8,ab in ipairs(Z)do if not ab.Visible then return ab end end;local ac=Drawing.new("Line")ac.Thickness=2;ac.Transparency=1;table.insert(Z,ac)return ac end
-local function ad(ae)local af=ae.CFrame;local ag=ae.Size/2;return{af*Vector3.new(-ag.X,-ag.Y,-ag.Z),af*Vector3.new(ag.X,-ag.Y,-ag.Z),af*Vector3.new(ag.X,-ag.Y,ag.Z),af*Vector3.new(-ag.X,-ag.Y,ag.Z),af*Vector3.new(-ag.X,ag.Y,-ag.Z),af*Vector3.new(ag.X,ag.Y,-ag.Z),af*Vector3.new(ag.X,ag.Y,ag.Z),af*Vector3.new(-ag.X,ag.Y,ag.Z)}end
-local function ah(ae,ai,aj)local ak=ad(ae)local al={{1,2},{2,3},{3,4},{4,1},{5,6},{6,7},{7,8},{8,5},{1,5},{2,6},{3,7},{4,8}}local am=1+math.sin(a2*2.5+aj*0.01)*0.05;for a8,an in ipairs(al)do local ao=ak[an[1]]local ap=ak[an[2]]local aq,ar=Camera:WorldToViewportPoint(ao)local as_,at=Camera:WorldToViewportPoint(ap)if ar>0 and at>0 then local au=aa()au.From=Vector2.new(aq,ar)au.To=Vector2.new(as_,at)au.Color=ai;au.Thickness=2*am;au.Visible=true end end end
-b.RenderStepped:Connect(function(av)a2=a2+av;a0=a0+av;if a0>=a1 then a0=0;local aw={}for ax,ay in pairs(Y)do if not ax or not ax.Parent then table.insert(aw,ax)end end;for a8,ax in ipairs(aw)do Y[ax]=nil end;if x and(i.AnomalyESP or i.ObjectESP or i.ChangesESP)then for a8,ax in ipairs(workspace:GetDescendants())do if Y[ax]then continue end;if not(ax:IsA("Model")or ax:IsA("BasePart"))then continue end;local az=false;local aA=h.PINK_ESP;if i.AnomalyESP and a5(ax.Name,W)then az=true;aA=h.RED elseif i.ObjectESP and a5(ax.Name,X)then az=true;aA=h.PINK_ESP elseif i.ChangesESP then local aB=a3(ax)if aB and aB:IsA("BasePart")and(aB.Velocity.Magnitude>0.1 or aB.RotVelocity.Magnitude>0.1)then az=true;aA=h.YELLOW end end;if az then local aB=a3(ax)if aB then Y[ax]={p=aB,col=aA}end end end end end;local aC=0;for a8 in pairs(Y)do aC=aC+1 end;V.Text=x and("=^^= "..aC)or"=.= off";V.TextColor3=x and h.PINK or h.GRAY;for a8,ab in ipairs(Z)do ab.Visible=false end;if not x then return end;for ax,ay in pairs(Y)do local aB=ay.p;if aB and aB.Parent then if ax:IsA("Model")then local aD=ax:GetDescendants()for a8,aE in ipairs(aD)do if aE:IsA("BasePart")then ah(aE,ay.col,ax:GetHash())end end else ah(aB,ay.col,ax:GetHash())end end end end)j("=^^=","pawESP ready")
+-- Anomaly Watch | Pink Paw GUI + Outline ESP | RAGE v15 FINAL
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+local PLAYERGUI = Player:WaitForChild("PlayerGui")
+
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- ================== COLORS ==================
+local C = {
+    BG = Color3.fromRGB(25, 15, 20),
+    BG2 = Color3.fromRGB(35, 20, 28),
+    ACCENT = Color3.fromRGB(255, 140, 180),
+    ACCENT2 = Color3.fromRGB(200, 70, 120),
+    PINK = Color3.fromRGB(255, 170, 195),
+    WHITE = Color3.fromRGB(245, 235, 240),
+    GRAY = Color3.fromRGB(160, 140, 150),
+    ON = Color3.fromRGB(255, 120, 160),
+    OFF = Color3.fromRGB(55, 30, 40),
+    RED = Color3.fromRGB(255, 40, 60),
+    PINK_ESP = Color3.fromRGB(255, 150, 180),
+    YELLOW = Color3.fromRGB(255, 200, 100),
+    GLOW = Color3.fromRGB(255, 110, 150)
+}
+
+-- ================== SETTINGS ==================
+local Settings = {
+    AnomalyESP = false,
+    ObjectESP = false,
+    ChangesESP = false,
+    Notifications = true
+}
+
+-- ================== NOTIFICATION ==================
+function Notify(title, text)
+    if not Settings.Notifications then return end
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = title, Text = text, Duration = 2.5})
+    end)
+end
+
+-- ================== MAIN GUI ==================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "PawESP"
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PLAYERGUI
+
+local W = IsMobile and 230 or 260
+local H = IsMobile and 330 or 360
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, W, 0, H)
+Main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+Main.BackgroundColor3 = C.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 18)
+MainCorner.Parent = Main
+
+-- Glow
+local GlowFrame = Instance.new("Frame")
+GlowFrame.Size = UDim2.new(1, 8, 1, 8)
+GlowFrame.Position = UDim2.new(0, -4, 0, -4)
+GlowFrame.BackgroundColor3 = C.GLOW
+GlowFrame.BackgroundTransparency = 0.65
+GlowFrame.BorderSizePixel = 0
+GlowFrame.ZIndex = 0
+GlowFrame.Parent = Main
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(0, 20)
+GlowCorner.Parent = GlowFrame
+
+-- Gradient
+local Grad = Instance.new("UIGradient")
+Grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 16, 22)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(24, 12, 18)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 14, 20))
+}
+Grad.Rotation = 140
+Grad.Parent = Main
+
+-- ================== HEADER ==================
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 36)
+Header.BackgroundColor3 = C.ACCENT2
+Header.BorderSizePixel = 0
+Header.Parent = Main
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 18)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 100, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "=^^= pawESP"
+Title.TextColor3 = C.WHITE
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- iPhone style master toggle
+local ToggleMaster = Instance.new("Frame")
+ToggleMaster.Size = UDim2.new(0, 44, 0, 24)
+ToggleMaster.Position = UDim2.new(1, -56, 0.5, -12)
+ToggleMaster.BackgroundColor3 = C.OFF
+ToggleMaster.BorderSizePixel = 0
+ToggleMaster.Parent = Header
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(1, 0)
+ToggleCorner.Parent = ToggleMaster
+
+local ToggleKnob = Instance.new("Frame")
+ToggleKnob.Size = UDim2.new(0, 20, 0, 20)
+ToggleKnob.Position = UDim2.new(0, 2, 0.5, -10)
+ToggleKnob.BackgroundColor3 = C.WHITE
+ToggleKnob.BorderSizePixel = 0
+ToggleKnob.Parent = ToggleMaster
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = ToggleKnob
+
+local KnobFace = Instance.new("TextLabel")
+KnobFace.Size = UDim2.new(1, 0, 1, 0)
+KnobFace.Text = "=.="
+KnobFace.TextColor3 = C.GRAY
+KnobFace.Font = Enum.Font.GothamBold
+KnobFace.TextSize = 7
+KnobFace.BackgroundTransparency = 1
+KnobFace.Parent = ToggleKnob
+
+local MasterOn = true
+local function UpdateMaster(state)
+    MasterOn = state
+    if state then
+        TweenService:Create(ToggleMaster, TweenInfo.new(0.3), {BackgroundColor3 = C.ON}):Play()
+        TweenService:Create(ToggleKnob, TweenInfo.new(0.3), {Position = UDim2.new(1, -22, 0.5, -10)}):Play()
+        KnobFace.Text = "=^^="
+        KnobFace.TextColor3 = C.ON
+    else
+        TweenService:Create(ToggleMaster, TweenInfo.new(0.3), {BackgroundColor3 = C.OFF}):Play()
+        TweenService:Create(ToggleKnob, TweenInfo.new(0.3), {Position = UDim2.new(0, 2, 0.5, -10)}):Play()
+        KnobFace.Text = "=.="
+        KnobFace.TextColor3 = C.GRAY
+    end
+end
+
+ToggleMaster.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        UpdateMaster(not MasterOn)
+    end
+end)
+
+-- ================== BODY ==================
+local Body = Instance.new("Frame")
+Body.Size = UDim2.new(1, -16, 1, -52)
+Body.Position = UDim2.new(0, 8, 0, 44)
+Body.BackgroundTransparency = 1
+Body.BorderSizePixel = 0
+Body.Parent = Main
+
+local BodyList = Instance.new("UIListLayout")
+BodyList.SortOrder = Enum.SortOrder.LayoutOrder
+BodyList.Padding = UDim.new(0, 8)
+BodyList.Parent = Body
+
+-- ================== SECTION ==================
+local function Section(title)
+    local Sec = Instance.new("Frame")
+    Sec.Size = UDim2.new(1, 0, 0, 18)
+    Sec.BackgroundTransparency = 1
+    Sec.Parent = Body
+    
+    local Line = Instance.new("Frame")
+    Line.Size = UDim2.new(1, 0, 0, 1)
+    Line.Position = UDim2.new(0, 0, 0, 16)
+    Line.BackgroundColor3 = C.ACCENT
+    Line.BackgroundTransparency = 0.6
+    Line.Parent = Sec
+    
+    local Txt = Instance.new("TextLabel")
+    Txt.Size = UDim2.new(1, 0, 0, 16)
+    Txt.Text = title
+    Txt.TextColor3 = C.PINK
+    Txt.Font = Enum.Font.GothamBold
+    Txt.TextSize = IsMobile and 9 or 10
+    Txt.BackgroundTransparency = 1
+    Txt.TextXAlignment = Enum.TextXAlignment.Left
+    Txt.Parent = Sec
+    
+    return Sec
+end
+
+-- ================== TOGGLE ROW ==================
+local function ToggleRow(name, default, callback)
+    local enabled = default
+    
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, 0, 0, IsMobile and 34 or 30)
+    Row.BackgroundColor3 = C.BG2
+    Row.BorderSizePixel = 0
+    Row.Parent = Body
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 10)
+    RowCorner.Parent = Row
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.65, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Text = name
+    Label.TextColor3 = C.GRAY
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = IsMobile and 10 or 11
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Row
+    
+    local Tog = Instance.new("Frame")
+    Tog.Size = UDim2.new(0, 38, 0, 20)
+    Tog.Position = UDim2.new(1, -44, 0.5, -10)
+    Tog.BackgroundColor3 = C.OFF
+    Tog.BorderSizePixel = 0
+    Tog.Parent = Row
+    local TogCorner = Instance.new("UICorner")
+    TogCorner.CornerRadius = UDim.new(1, 0)
+    TogCorner.Parent = Tog
+    
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 16, 0, 16)
+    Knob.Position = UDim2.new(0, 2, 0.5, -8)
+    Knob.BackgroundColor3 = C.WHITE
+    Knob.BorderSizePixel = 0
+    Knob.Parent = Tog
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = Knob
+    
+    local Face = Instance.new("TextLabel")
+    Face.Size = UDim2.new(1, 0, 1, 0)
+    Face.Text = "=.="
+    Face.TextColor3 = C.GRAY
+    Face.Font = Enum.Font.GothamBold
+    Face.TextSize = 6
+    Face.BackgroundTransparency = 1
+    Face.Parent = Knob
+    
+    local function SetState(state)
+        enabled = state
+        if state then
+            TweenService:Create(Tog, TweenInfo.new(0.25), {BackgroundColor3 = C.ON}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.25), {Position = UDim2.new(1, -18, 0.5, -8)}):Play()
+            Face.Text = "=^^="
+            Face.TextColor3 = C.ON
+            Label.TextColor3 = C.WHITE
+        else
+            TweenService:Create(Tog, TweenInfo.new(0.25), {BackgroundColor3 = C.OFF}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.25), {Position = UDim2.new(0, 2, 0.5, -8)}):Play()
+            Face.Text = "=.="
+            Face.TextColor3 = C.GRAY
+            Label.TextColor3 = C.GRAY
+        end
+    end
+    
+    Tog.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            SetState(not enabled)
+            callback(not enabled)
+        end
+    end)
+    
+    SetState(default)
+    return Row
+end
+
+-- ================== BUILD UI ==================
+Section("Categories")
+
+ToggleRow("Anomaly ESP", false, function(v)
+    Settings.AnomalyESP = v
+    if v then Notify("=o_o=", "Anomaly ESP enabled") end
+end)
+
+ToggleRow("Object ESP", false, function(v)
+    Settings.ObjectESP = v
+    if v then Notify("=^.^=", "Object ESP enabled") end
+end)
+
+ToggleRow("Changes ESP", false, function(v)
+    Settings.ChangesESP = v
+    if v then Notify("=*.*=", "Changes ESP enabled") end
+end)
+
+Section("Settings")
+
+ToggleRow("Notifications", true, function(v)
+    Settings.Notifications = v
+end)
+
+-- Status
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 16)
+StatusLabel.Text = "=^.^= idle"
+StatusLabel.TextColor3 = C.GRAY
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = IsMobile and 9 or 10
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+StatusLabel.Parent = Body
+
+-- ================== OUTLINE ESP (BEAUTIFUL WRAP) ==================
+local ANOMALY_WORDS = {
+    "Alternate", "CornerAlternate", "WindowAlternate",
+    "HallwayIntruder", "Devil", "Mask", "Dummy",
+    "Mannequin", "BloodPart", "Pentagram",
+    "Eyes", "Jumpscares", "kaneki", "aliveei_loli",
+    "Intruder", "Monster", "Creature", "Entity"
+}
+
+local OBJECT_WORDS = {
+    "AnnoyingOrange", "Orange", "FruitBowl",
+    "Duck", "Crib", "Rockingmachine",
+    "Soap", "Mirror", "Sink", "Curtain", "Bucket",
+    "Washing Machine", "TV", "Telephone",
+    "Alarm Clock", "WallClock", "Whiteboard",
+    "To-Do-List", "StickyNotes", "Papers", "Paper",
+    "Books", "Open Book", "Poster", "Painting",
+    "MonaLisa", "WallDrawing", "Frame",
+    "Monitor", "StudyMonitor", "Screen",
+    "Keyboard", "Mouse", "Carpet",
+    "Chair", "Table", "RoundTable", "Pool Table",
+    "Desk", "Nightstand", "Shelf", "Shoe Rack", "Shoes",
+    "Wardrobe", "Closet", "Door", "Window",
+    "Fridge", "Oven", "Frying Pan",
+    "Cup", "CoffeeJar", "SugarJar", "Container", "Cola",
+    "ToiletPaperRoll", "ToiletPlunger",
+    "Trash Can", "Trash Bag", "Suitcase",
+    "Box", "Cardboard", "Tire", "Plant", "Vase",
+    "Light", "Lamp", "Neon", "Figurine",
+    "World Cup Trophy", "Metal Bat", "Bat",
+    "Screwdriver", "Projector", "ProjectorScreen",
+    "Bed", "Bedframe", "Mattress", "Blanket", "Pillow",
+    "Map", "Board", "Welcome Mat", "Log"
+}
+
+local Detected = {}
+local LinePool = {}
+local LastScan = 0
+local Interval = IsMobile and 0.55 or 0.3
+local Time = 0
+
+function GetPart(o)
+    if o:IsA("BasePart") then return o end
+    return o:FindFirstChildOfClass("BasePart") or o.PrimaryPart
+end
+
+function Match(n, list)
+    n = n:lower()
+    for _, k in ipairs(list) do
+        if n:find(k:lower()) then return true end
+    end
+    return false
+end
+
+function GetLine()
+    for _, l in ipairs(LinePool) do
+        if not l.Visible then return l end
+    end
+    local l = Drawing.new("Line")
+    l.Thickness = 1.8
+    l.Transparency = 1
+    table.insert(LinePool, l)
+    return l
+end
+
+-- Draw outline box using 4 lines
+local function DrawOutline(pos2D, size2D, color, hash)
+    local x = pos2D.X - size2D.X/2
+    local y = pos2D.Y - size2D.Y/2
+    local w = size2D.X
+    local h = size2D.Y
+    
+    local pulse = 1 + math.sin(Time * 2 + hash * 0.01) * 0.04
+    
+    local top = GetLine()
+    top.From = Vector2.new(x, y)
+    top.To = Vector2.new(x + w, y)
+    top.Color = color
+    top.Thickness = 1.8 * pulse
+    top.Visible = true
+    
+    local bottom = GetLine()
+    bottom.From = Vector2.new(x, y + h)
+    bottom.To = Vector2.new(x + w, y + h)
+    bottom.Color = color
+    bottom.Thickness = 1.8 * pulse
+    bottom.Visible = true
+    
+    local left = GetLine()
+    left.From = Vector2.new(x, y)
+    left.To = Vector2.new(x, y + h)
+    left.Color = color
+    left.Thickness = 1.8 * pulse
+    left.Visible = true
+    
+    local right = GetLine()
+    right.From = Vector2.new(x + w, y)
+    right.To = Vector2.new(x + w, y + h)
+    right.Color = color
+    right.Thickness = 1.8 * pulse
+    right.Visible = true
+    
+    -- Corner accents (small extra lines for style)
+    local cornerLen = math.min(w, h) * 0.2
+    
+    -- Top-left corner accent
+    local tl1 = GetLine()
+    tl1.From = Vector2.new(x - 2, y - 2)
+    tl1.To = Vector2.new(x + cornerLen, y - 2)
+    tl1.Color = color
+    tl1.Thickness = 2.2 * pulse
+    tl1.Visible = true
+    
+    local tl2 = GetLine()
+    tl2.From = Vector2.new(x - 2, y - 2)
+    tl2.To = Vector2.new(x - 2, y + cornerLen)
+    tl2.Color = color
+    tl2.Thickness = 2.2 * pulse
+    tl2.Visible = true
+    
+    -- Top-right corner accent
+    local tr1 = GetLine()
+    tr1.From = Vector2.new(x + w - cornerLen, y - 2)
+    tr1.To = Vector2.new(x + w + 2, y - 2)
+    tr1.Color = color
+    tr1.Thickness = 2.2 * pulse
+    tr1.Visible = true
+    
+    local tr2 = GetLine()
+    tr2.From = Vector2.new(x + w + 2, y - 2)
+    tr2.To = Vector2.new(x + w + 2, y + cornerLen)
+    tr2.Color = color
+    tr2.Thickness = 2.2 * pulse
+    tr2.Visible = true
+    
+    -- Bottom-left corner accent
+    local bl1 = GetLine()
+    bl1.From = Vector2.new(x - 2, y + h - cornerLen)
+    bl1.To = Vector2.new(x - 2, y + h + 2)
+    bl1.Color = color
+    bl1.Thickness = 2.2 * pulse
+    bl1.Visible = true
+    
+    local bl2 = GetLine()
+    bl2.From = Vector2.new(x - 2, y + h + 2)
+    bl2.To = Vector2.new(x + cornerLen, y + h + 2)
+    bl2.Color = color
+    bl2.Thickness = 2.2 * pulse
+    bl2.Visible = true
+    
+    -- Bottom-right corner accent
+    local br1 = GetLine()
+    br1.From = Vector2.new(x + w - cornerLen, y + h + 2)
+    br1.To = Vector2.new(x + w + 2, y + h + 2)
+    br1.Color = color
+    br1.Thickness = 2.2 * pulse
+    br1.Visible = true
+    
+    local br2 = GetLine()
+    br2.From = Vector2.new(x + w + 2, y + h - cornerLen)
+    br2.To = Vector2.new(x + w + 2, y + h + 2)
+    br2.Color = color
+    br2.Thickness = 2.2 * pulse
+    br2.Visible = true
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    Time = Time + dt
+    LastScan = LastScan + dt
+    
+    if LastScan >= Interval then
+        LastScan = 0
+        
+        local dead = {}
+        for o, d in pairs(Detected) do
+            if not o or not o.Parent then table.insert(dead, o) end
+        end
+        for _, o in ipairs(dead) do Detected[o] = nil end
+        
+        if MasterOn and (Settings.AnomalyESP or Settings.ObjectESP or Settings.ChangesESP) then
+            for _, o in ipairs(workspace:GetDescendants()) do
+                if Detected[o] then continue end
+                if not (o:IsA("Model") or o:IsA("BasePart")) then continue end
+                
+                local ok = false
+                local col = C.PINK_ESP
+                
+                if Settings.AnomalyESP and Match(o.Name, ANOMALY_WORDS) then
+                    ok = true; col = C.RED
+                elseif Settings.ObjectESP and Match(o.Name, OBJECT_WORDS) then
+                    ok = true; col = C.PINK_ESP
+                elseif Settings.ChangesESP then
+                    local p = GetPart(o)
+                    if p and p:IsA("BasePart") and (p.Velocity.Magnitude > 0.1 or p.RotVelocity.Magnitude > 0.1) then
+                        ok = true; col = C.YELLOW
+                    end
+                end
+                
+                if ok then
+                    local p = GetPart(o)
+                    if p then Detected[o] = {p = p, col = col} end
+                end
+            end
+        end
+    end
+    
+    local n = 0
+    for _ in pairs(Detected) do n = n + 1 end
+    StatusLabel.Text = MasterOn and ("=^^= " .. n) or "=.= off"
+    StatusLabel.TextColor3 = MasterOn and C.PINK or C.GRAY
+    
+    for _, l in ipairs(LinePool) do l.Visible = false end
+    
+    if not MasterOn then return end
+    
+    for o, d in pairs(Detected) do
+        local p = d.p
+        if p and p.Parent then
+            local pos, on = Camera:WorldToViewportPoint(p.Position)
+            if on then
+                local s = Camera:WorldToViewportPoint(p.Position + p.Size)
+                local w = math.abs(s.X - pos.X)
+                local h = math.abs(s.Y - pos.Y)
+                w = math.clamp(w * 1.15, 18, 180)
+                h = math.clamp(h * 1.15, 18, 180)
+                DrawOutline(pos, Vector2.new(w, h), d.col, o:GetHash())
+            end
+        end
+    end
+end)
+
+Notify("=^^=", "pawESP ready")
