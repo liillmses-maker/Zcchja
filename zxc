@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | CLEAN HEADER + INFO TEXT ESP | FINAL v9
+-- UWU HUB HATE WORLD | STATE SYNC + ESP FIX | FINAL v10
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -24,6 +24,7 @@ local C = {
     GREEN=Color3.fromRGB(100,255,100), ORANGE=Color3.fromRGB(255,150,50)
 }
 
+-- ================== GLOBAL STATE (сохраняется при пересоздании GUI) ==================
 local Settings = {
     Fullbright=false, NPCMode=false, ItemMode=false,
     SkinDetect=false, SizeDetect=false, ShowNotify=false,
@@ -31,6 +32,20 @@ local Settings = {
     Speed=false, Fly=false, Fling=false, Noclip=false, FOV=false, JumpPower=false
 }
 local MasterOn = true
+
+-- ================== TOGGLE BUTTONS REGISTRY (для синхронизации) ==================
+local ToggleButtons = {}
+
+local function SyncAllToggles()
+    for _, toggleData in pairs(ToggleButtons) do
+        local setting = Settings[toggleData.key]
+        if setting ~= nil then
+            toggleData.btn.Text = setting and "=^^= ON" or "=;= OFF"
+            toggleData.btn.BackgroundColor3 = setting and C.ON or C.OFF
+            toggleData.lbl.TextColor3 = setting and C.WHITE or C.GRAY
+        end
+    end
+end
 
 -- PLAYER MODS
 local function SetSpeed(v) local c=Player.Character; if c then local h=c:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed=v and 50 or 16 end end end
@@ -45,10 +60,20 @@ local function SetFly(v) local c=Player.Character; if not c then return end; loc
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then vel-=Vector3.new(0,50,0) end
             if bv then bv.Velocity=vel end; if bg then bg.CFrame=Camera.CFrame end; wait() end end)
     else if r:FindFirstChildOfClass("BodyVelocity") then r:FindFirstChildOfClass("BodyVelocity"):Destroy() end; if r:FindFirstChildOfClass("BodyGyro") then r:FindFirstChildOfClass("BodyGyro"):Destroy() end; if h then h.PlatformStand=false end end end
-local function SetFling(v) if v then local c=Player.Character; if c then local r=c:FindFirstChild("HumanoidRootPart"); if r then r.Velocity=Vector3.new(0,5000,0) end end; Settings.Fling=false end end
+local function SetFling(v) if v then local c=Player.Character; if c then local r=c:FindFirstChild("HumanoidRootPart"); if r then r.Velocity=Vector3.new(0,5000,0) end end; Settings.Fling=false; SyncAllToggles() end end
 local function SetNoclip(v) if v then local c=Player.Character; if c then for _,p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=false end end end else local c=Player.Character; if c then for _,p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=true end end end end end
 local function SetFOV(v) Camera.FieldOfView=v and 120 or 70 end
 local function SetJump(v) local c=Player.Character; if c then local h=c:FindFirstChildOfClass("Humanoid"); if h then h.JumpPower=v and 150 or 50; h.UseJumpPower=true end end end
+
+-- ================== KNOWN MONSTERS (from Anomaly Watch wiki) ==================
+local KNOWN_MONSTERS = {
+    "Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart",
+    "Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity",
+    "Smiler","Fleshy","Screecher","Weeper","Crawler","Screamer","Watcher","Runner",
+    "Hanger","Skinner","Twitcher","Grabber","Burster","Seeker","Rusher","Lurker",
+    "Archangel","Gabriel","Shadow","Figure","Horror","Terror","Idle Intruder",
+    "Uncle Joe","Surprise Intruder","Geoffrey","The Walker","H.I.M","Hooded Intruder"
+}
 
 -- ROOMS
 local ROOMS = {
@@ -65,6 +90,155 @@ local ROOMS = {
 }
 local function GetRoom(pos) if not pos then return"?" end; for _,r in ipairs(ROOMS) do if pos.X>=r.min.X and pos.X<=r.max.X and pos.Y>=r.min.Y and pos.Y<=r.max.Y and pos.Z>=r.min.Z and pos.Z<=r.max.Z then return r.name end end; return"?" end
 
+-- ================== ESP SYSTEM (GLOBAL) ==================
+local Circles={}; local TextLabels={}; local AnimTime=0
+local ObjectCache={}; local NPCObjects={}; local ItemObjects={}
+
+function GetCircle()
+    for _,c in ipairs(Circles) do if not c.Visible then return c end end
+    if Drawing then local c=Drawing.new("Circle"); c.Thickness=2; c.Filled=false; c.Transparency=1; c.NumSides=32; table.insert(Circles,c); return c end
+    return nil
+end
+
+function GetText()
+    for _,t in ipairs(TextLabels) do if not t.Visible then return t end end
+    if Drawing then local t=Drawing.new("Text"); t.Size=13; t.Center=true; t.Outline=true; t.OutlineColor=Color3.new(); table.insert(TextLabels,t); return t end
+    return nil
+end
+
+local function GetState(obj)
+    if not obj or not obj.Parent then return nil end
+    if obj:IsA("BasePart") then return{p=obj.Position,s=obj.Size,c=obj.Color,m=obj.Material,t=obj.Transparency} end
+    local pp=obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart; if pp then return{p=pp.Position,s=pp.Size} end
+    return nil
+end
+
+local function HasChanged(old,new)
+    if not old or not new then return true end
+    if old.p and new.p and(old.p-new.p).Magnitude>0.1 then return true end
+    if old.s and new.s and(old.s-new.s).Magnitude>0.1 then return true end
+    if old.c and new.c and old.c~=new.c then return true end
+    if old.m and new.m and old.m~=new.m then return true end
+    if old.t and new.t and math.abs(old.t-new.t)>0.01 then return true end
+    return false
+end
+
+local function IsKnownMonster(name)
+    for _,k in ipairs(KNOWN_MONSTERS) do if name==k then return true end end
+    return false
+end
+
+local function IsNPC(obj)
+    if obj:IsA("Model") then
+        if obj:FindFirstChildOfClass("Humanoid") then return true end
+        if obj:FindFirstChild("HumanoidRootPart") then return true end
+        if IsKnownMonster(obj.Name) then return true end
+    end
+    return false
+end
+
+local function GetPart(obj) return obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart end
+
+local function GetChangeType(old,new)
+    if not old or not new then return"NEW" end
+    local t={}
+    if old.p and new.p and(old.p-new.p).Magnitude>0.1 then t[#t+1]="Moved" end
+    if old.s and new.s and(old.s-new.s).Magnitude>0.1 then t[#t+1]="Resized" end
+    if old.c and new.c and old.c~=new.c then t[#t+1]="Color" end
+    if old.m and new.m and old.m~=new.m then t[#t+1]="Material" end
+    return#t>0 and table.concat(t,"+")or"Changed"
+end
+
+-- Events (outside GUI, always active)
+workspace.DescendantAdded:Connect(function(obj)
+    if not MasterOn then return end
+    if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end
+    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    local st=GetState(obj); if st then ObjectCache[obj]=st end
+    if IsNPC(obj) then NPCObjects[obj]={name=obj.Name,time=tick()}
+    elseif Settings.ItemMode then ItemObjects[obj]={st=st,changed=false,time=tick(),name=obj.Name,ctype="NEW"} end
+end)
+
+workspace.DescendantRemoving:Connect(function(obj)
+    NPCObjects[obj]=nil; ItemObjects[obj]=nil; ObjectCache[obj]=nil
+end)
+
+spawn(function()
+    while true do wait(0.4)
+        if MasterOn and Settings.ItemMode then
+            for obj,data in pairs(ItemObjects) do
+                if obj and obj.Parent then
+                    local st=GetState(obj)
+                    if st and data.st then if HasChanged(data.st,st) then data.changed=true; data.ctype=GetChangeType(data.st,st); data.st=st; data.time=tick() end
+                    elseif st then data.st=st end
+                else ItemObjects[obj]=nil end
+            end
+            local now=tick(); for obj,data in pairs(ItemObjects) do if not data.changed and now-data.time>5 then ItemObjects[obj]=nil end end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    AnimTime=AnimTime+dt
+    if MasterOn then
+        for _,c in ipairs(Circles) do c.Visible=false end
+        for _,t in ipairs(TextLabels) do t.Visible=false end
+        
+        if Settings.NPCMode then
+            for obj,data in pairs(NPCObjects) do
+                if obj and obj.Parent then
+                    local part=GetPart(obj)
+                    if part then
+                        local pos,on=Camera:WorldToViewportPoint(part.Position)
+                        if on then
+                            local cr=GetCircle(); local txt=GetText()
+                            if cr and txt then
+                                local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
+                                local room=GetRoom(part.Position)
+                                local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                                local dist=root and math.floor((part.Position-root.Position).Magnitude)or 0
+                                local vel=part.AssemblyLinearVelocity or part.Velocity or Vector3.zero
+                                local status=vel.Magnitude>0.3 and"ACTIVE"or"IDLE"
+                                cr.Position=Vector2.new(pos.X,pos.Y); cr.Radius=r; cr.Color=C.RED; cr.Visible=true
+                                txt.Position=Vector2.new(pos.X,pos.Y-r-16)
+                                txt.Text="R "..data.name.."\n"..room.." | "..status.." | "..dist.."m"
+                                txt.Color=C.WHITE; txt.Visible=true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        if Settings.ItemMode then
+            for obj,data in pairs(ItemObjects) do
+                if obj and obj.Parent then
+                    local part=GetPart(obj)
+                    if part then
+                        local pos,on=Camera:WorldToViewportPoint(part.Position)
+                        if on then
+                            local cr=GetCircle(); local txt=GetText()
+                            if cr and txt then
+                                local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
+                                local room=GetRoom(part.Position)
+                                local col=data.changed and C.GREEN or C.PINK_ESP
+                                local ctype=data.changed and data.ctype or"NEW"
+                                cr.Position=Vector2.new(pos.X,pos.Y); cr.Radius=r; cr.Color=col; cr.Visible=true
+                                txt.Position=Vector2.new(pos.X,pos.Y-r-16)
+                                txt.Text="P "..data.name.."\n"..room.." | "..ctype
+                                txt.Color=C.WHITE; txt.Visible=true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    else
+        for _,c in ipairs(Circles) do c.Visible=false end
+        for _,t in ipairs(TextLabels) do t.Visible=false end
+    end
+end)
+
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui"); Gui.Name="UwUHub"; Gui.Parent=PLAYERGUI; Gui.IgnoreGuiInset=true; Gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 local Main, MinIcon
@@ -75,7 +249,6 @@ local function CreateMinIcon()
     MinIcon.BackgroundTransparency=1; MinIcon.Text="uwu"; MinIcon.TextColor3=C.PINK; MinIcon.Font=Enum.Font.GothamBold
     MinIcon.TextSize=11; MinIcon.BorderSizePixel=0; MinIcon.Active=true; MinIcon.Draggable=true; MinIcon.Parent=Gui
     local bg=Instance.new("Frame"); bg.Size=UDim2.new(1,0,1,0); bg.BackgroundColor3=C.BG2; bg.BackgroundTransparency=0.25; bg.BorderSizePixel=0; bg.ZIndex=0; bg.Parent=MinIcon; Instance.new("UICorner",bg).CornerRadius=UDim.new(1,0)
-    -- Glow
     local glow=Instance.new("Frame"); glow.Size=UDim2.new(1,8,1,8); glow.Position=UDim2.new(0,-4,0,-4); glow.BackgroundColor3=C.PINK; glow.BackgroundTransparency=0.7; glow.BorderSizePixel=0; glow.ZIndex=0; glow.Parent=MinIcon; Instance.new("UICorner",glow).CornerRadius=UDim.new(1,0)
     local faces={"uwu","owo",">.<","^-^"}; local idx=1
     spawn(function() while MinIcon and MinIcon.Parent do idx=idx%#faces+1; MinIcon.Text=faces[idx]; wait(0.6) end end)
@@ -84,22 +257,19 @@ end
 
 function CreateMain()
     if Main then Main:Destroy() end; if MinIcon then MinIcon:Destroy(); MinIcon=nil end
+    ToggleButtons = {} -- Reset registry for new GUI
+    
     Main=Instance.new("Frame"); Main.Size=UDim2.new(0,320,0,300); Main.Position=UDim2.new(0.5,-160,0.5,-150)
     Main.BackgroundColor3=C.BG; Main.BorderSizePixel=0; Main.Active=true; Main.Draggable=true; Main.Parent=Gui
     Instance.new("UICorner",Main).CornerRadius=UDim.new(0,18)
     Main.BackgroundTransparency=1; TweenService:Create(Main,TweenInfo.new(0.3),{BackgroundTransparency=0}):Play()
     
-    -- ================== CLEAN HEADER ==================
+    -- CLEAN HEADER
     local Header=Instance.new("Frame"); Header.Size=UDim2.new(1,0,0,30); Header.BackgroundColor3=C.BG2; Header.BorderSizePixel=0; Header.Parent=Main; Instance.new("UICorner",Header).CornerRadius=UDim.new(0,18)
-    
-    -- Title left
     local Title=Instance.new("TextLabel"); Title.Size=UDim2.new(0,180,1,0); Title.Position=UDim2.new(0,12,0,0)
     Title.Text="=^^= UWU HUB"; Title.TextColor3=C.PINK; Title.Font=Enum.Font.GothamBold; Title.TextSize=12; Title.BackgroundTransparency=1; Title.TextXAlignment=Enum.TextXAlignment.Left; Title.Parent=Header
-    
-    -- Minimize button RIGHT ONLY
     local MinBtn=Instance.new("Frame"); MinBtn.Size=UDim2.new(0,26,0,26); MinBtn.Position=UDim2.new(1,-32,0.5,-13)
     MinBtn.BackgroundColor3=C.BG2; MinBtn.BorderSizePixel=0; MinBtn.Parent=Header; Instance.new("UICorner",MinBtn).CornerRadius=UDim.new(1,0)
-    -- Glow
     local MinGlow=Instance.new("Frame"); MinGlow.Size=UDim2.new(1,6,1,6); MinGlow.Position=UDim2.new(0,-3,0,-3)
     MinGlow.BackgroundColor3=C.PINK; MinGlow.BackgroundTransparency=0.6; MinGlow.BorderSizePixel=0; MinGlow.ZIndex=0; MinGlow.Parent=MinBtn; Instance.new("UICorner",MinGlow).CornerRadius=UDim.new(1,0)
     local MinText=Instance.new("TextButton"); MinText.Size=UDim2.new(1,0,1,0); MinText.Text="-"; MinText.BackgroundTransparency=1
@@ -122,37 +292,48 @@ function CreateMain()
     end
     tabBtns["Main"].BackgroundColor3=C.PINK; tabBtns["Main"].TextColor3=C.WHITE; tabFrames["Main"].Visible=true
     
-    local function Toggle(parent,label,default,cb)
-        local enabled=default
+    -- ================== TOGGLE WITH STATE SYNC ==================
+    local function Toggle(parent,label,key,default,cb)
+        local enabled = Settings[key] ~= nil and Settings[key] or default
         local row=Instance.new("Frame"); row.Size=UDim2.new(1,0,0,28); row.BackgroundColor3=C.BG2; row.BorderSizePixel=0; row.Parent=parent; Instance.new("UICorner",row).CornerRadius=UDim.new(0,10)
         local lbl=Instance.new("TextLabel"); lbl.Size=UDim2.new(0.5,0,1,0); lbl.Position=UDim2.new(0,8,0,0)
-        lbl.Text=label; lbl.TextColor3=C.GRAY; lbl.Font=Enum.Font.Gotham; lbl.TextSize=9; lbl.BackgroundTransparency=1; lbl.TextXAlignment=Enum.TextXAlignment.Left; lbl.Parent=row
+        lbl.Text=label; lbl.TextColor3=enabled and C.WHITE or C.GRAY; lbl.Font=Enum.Font.Gotham; lbl.TextSize=9; lbl.BackgroundTransparency=1; lbl.TextXAlignment=Enum.TextXAlignment.Left; lbl.Parent=row
         local btn=Instance.new("TextButton"); btn.Size=UDim2.new(0,46,0,22); btn.Position=UDim2.new(1,-52,0.5,-11)
-        btn.Text=default and"=^^= ON"or"=;= OFF"; btn.BackgroundColor3=default and C.ON or C.OFF; btn.TextColor3=C.WHITE
+        btn.Text=enabled and"=^^= ON"or"=;= OFF"; btn.BackgroundColor3=enabled and C.ON or C.OFF; btn.TextColor3=C.WHITE
         btn.Font=Enum.Font.GothamBold; btn.TextSize=7; btn.BorderSizePixel=0; btn.Parent=row; Instance.new("UICorner",btn).CornerRadius=UDim.new(0,10)
-        btn.MouseButton1Click:Connect(function() enabled=not enabled; btn.Text=enabled and"=^^= ON"or"=;= OFF"; btn.BackgroundColor3=enabled and C.ON or C.OFF; lbl.TextColor3=enabled and C.WHITE or C.GRAY; cb(enabled) end)
+        
+        -- Register for sync
+        ToggleButtons[key] = {btn=btn, lbl=lbl, key=key}
+        
+        btn.MouseButton1Click:Connect(function()
+            enabled=not enabled
+            Settings[key]=enabled
+            btn.Text=enabled and"=^^= ON"or"=;= OFF"
+            btn.BackgroundColor3=enabled and C.ON or C.OFF
+            lbl.TextColor3=enabled and C.WHITE or C.GRAY
+            cb(enabled)
+        end)
         return row
     end
     
     -- ================== MAIN TAB ==================
     local mf=tabFrames["Main"]
+    local StatusText=Instance.new("TextLabel"); StatusText.Size=UDim2.new(1,0,0,16)
+    StatusText.Text="=^^= Active"; StatusText.TextColor3=C.PINK; StatusText.Font=Enum.Font.GothamBold; StatusText.TextSize=10; StatusText.BackgroundTransparency=1; StatusText.TextXAlignment=Enum.TextXAlignment.Center; StatusText.Parent=mf
     
-    -- Master Toggle in Main
+    -- Master Toggle
     local masterRow=Instance.new("Frame"); masterRow.Size=UDim2.new(1,0,0,32); masterRow.BackgroundColor3=C.BG2; masterRow.BorderSizePixel=0; masterRow.Parent=mf; Instance.new("UICorner",masterRow).CornerRadius=UDim.new(0,10)
     local masterLbl=Instance.new("TextLabel"); masterLbl.Size=UDim2.new(0.5,0,1,0); masterLbl.Position=UDim2.new(0,10,0,0)
     masterLbl.Text="Master Toggle"; masterLbl.TextColor3=C.WHITE; masterLbl.Font=Enum.Font.Gotham; masterLbl.TextSize=10; masterLbl.BackgroundTransparency=1; masterLbl.TextXAlignment=Enum.TextXAlignment.Left; masterLbl.Parent=masterRow
     local masterBtn=Instance.new("TextButton"); masterBtn.Size=UDim2.new(0,50,0,24); masterBtn.Position=UDim2.new(1,-56,0.5,-12)
-    masterBtn.Text="=^^= ON"; masterBtn.BackgroundColor3=C.ON; masterBtn.TextColor3=C.WHITE; masterBtn.Font=Enum.Font.GothamBold; masterBtn.TextSize=8; masterBtn.BorderSizePixel=0; masterBtn.Parent=masterRow; Instance.new("UICorner",masterBtn).CornerRadius=UDim.new(0,10)
+    masterBtn.Text=MasterOn and"=^^= ON"or"=;= OFF"; masterBtn.BackgroundColor3=MasterOn and C.ON or C.OFF; masterBtn.TextColor3=C.WHITE; masterBtn.Font=Enum.Font.GothamBold; masterBtn.TextSize=8; masterBtn.BorderSizePixel=0; masterBtn.Parent=masterRow; Instance.new("UICorner",masterBtn).CornerRadius=UDim.new(0,10)
     masterBtn.MouseButton1Click:Connect(function() MasterOn=not MasterOn; masterBtn.Text=MasterOn and"=^^= ON"or"=;= OFF"; masterBtn.BackgroundColor3=MasterOn and C.ON or C.OFF end)
     
     local ib=Instance.new("Frame"); ib.Size=UDim2.new(1,0,0,35); ib.BackgroundColor3=C.BG2; ib.BorderSizePixel=0; ib.Parent=mf; Instance.new("UICorner",ib).CornerRadius=UDim.new(0,10)
     local it=Instance.new("TextLabel"); it.Size=UDim2.new(1,-10,1,-10); it.Position=UDim2.new(0,5,0,5)
-    it.Text="Anomaly Watch | "..Player.Name; it.TextColor3=C.WHITE; it.Font=Enum.Font.Gotham; it.TextSize=9; it.BackgroundTransparency=1; it.TextXAlignment=Enum.TextXAlignment.Left; it.Parent=ib
+    it.Text="Anomaly Watch | "..Player.Name.."\nKnown Monsters: "..#KNOWN_MONSTERS; it.TextColor3=C.WHITE; it.Font=Enum.Font.Gotham; it.TextSize=9; it.BackgroundTransparency=1; it.TextXAlignment=Enum.TextXAlignment.Left; it.TextYAlignment=Enum.TextYAlignment.Top; it.Parent=ib
     
-    local StatusText=Instance.new("TextLabel"); StatusText.Size=UDim2.new(1,0,0,16)
-    StatusText.Text="=^^= Active"; StatusText.TextColor3=C.PINK; StatusText.Font=Enum.Font.GothamBold; StatusText.TextSize=10; StatusText.BackgroundTransparency=1; StatusText.TextXAlignment=Enum.TextXAlignment.Center; StatusText.Parent=mf
-    
-    local cb=Instance.new("Frame"); cb.Size=UDim2.new(1,0,0,90); cb.BackgroundColor3=C.BG2; cb.BorderSizePixel=0; cb.Parent=mf; Instance.new("UICorner",cb).CornerRadius=UDim.new(0,10)
+    local cb=Instance.new("Frame"); cb.Size=UDim2.new(1,0,0,80); cb.BackgroundColor3=C.BG2; cb.BorderSizePixel=0; cb.Parent=mf; Instance.new("UICorner",cb).CornerRadius=UDim.new(0,10)
     local ca=Instance.new("TextLabel"); ca.Size=UDim2.new(1,-6,1,-6); ca.Position=UDim2.new(0,3,0,3)
     ca.Text=[[  ╱|、
 (˚ˎ 。7  
@@ -178,29 +359,29 @@ function CreateMain()
    zzz]]}; local ci=1
     spawn(function() while ca and ca.Parent do ci=ci%#cfs+1; ca.Text=cfs[ci]; wait(1.2) end end)
     
-    -- ESP TAB
-    Toggle(tabFrames["ESP"],"Fullbright",false,function(v) Settings.Fullbright=v; if v then EnableFB() else DisableFB() end end)
+    -- ================== ESP TAB ==================
+    Toggle(tabFrames["ESP"],"Fullbright","Fullbright",false,function(v) if v then EnableFB() else DisableFB() end end)
     local l1=Instance.new("TextLabel"); l1.Size=UDim2.new(1,0,0,16); l1.Text="NPC / MONSTER (RED)"; l1.TextColor3=C.RED; l1.Font=Enum.Font.GothamBold; l1.TextSize=8; l1.BackgroundTransparency=1; l1.TextXAlignment=Enum.TextXAlignment.Left; l1.Parent=tabFrames["ESP"]
-    Toggle(tabFrames["ESP"],"Show NPCs",false,function(v) Settings.NPCMode=v end)
+    Toggle(tabFrames["ESP"],"Show NPCs","NPCMode",false,function(v) end)
     local l2=Instance.new("TextLabel"); l2.Size=UDim2.new(1,0,0,16); l2.Text="ITEMS / CHANGES (PINK)"; l2.TextColor3=C.PINK_ESP; l2.Font=Enum.Font.GothamBold; l2.TextSize=8; l2.BackgroundTransparency=1; l2.TextXAlignment=Enum.TextXAlignment.Left; l2.Parent=tabFrames["ESP"]
-    Toggle(tabFrames["ESP"],"Show Items",false,function(v) Settings.ItemMode=v end)
-    Toggle(tabFrames["ESP"],"Skin Detect",false,function(v) Settings.SkinDetect=v end)
-    Toggle(tabFrames["ESP"],"Size Detect",false,function(v) Settings.SizeDetect=v end)
-    Toggle(tabFrames["ESP"],"Show Notify",false,function(v) Settings.ShowNotify=v end)
+    Toggle(tabFrames["ESP"],"Show Items","ItemMode",false,function(v) end)
+    Toggle(tabFrames["ESP"],"Skin Detect","SkinDetect",false,function(v) end)
+    Toggle(tabFrames["ESP"],"Size Detect","SizeDetect",false,function(v) end)
+    Toggle(tabFrames["ESP"],"Show Notify","ShowNotify",false,function(v) end)
     
-    -- PLAYER TAB
-    Toggle(tabFrames["Player"],"Speed",false,function(v) Settings.Speed=v; SetSpeed(v) end)
-    Toggle(tabFrames["Player"],"Fly",false,function(v) Settings.Fly=v; SetFly(v) end)
-    Toggle(tabFrames["Player"],"Fling",false,function(v) Settings.Fling=v; SetFling(v) end)
-    Toggle(tabFrames["Player"],"Noclip",false,function(v) Settings.Noclip=v; SetNoclip(v) end)
-    Toggle(tabFrames["Player"],"FOV",false,function(v) Settings.FOV=v; SetFOV(v) end)
-    Toggle(tabFrames["Player"],"Jump Power",false,function(v) Settings.JumpPower=v; SetJump(v) end)
+    -- ================== PLAYER TAB ==================
+    Toggle(tabFrames["Player"],"Speed","Speed",false,function(v) SetSpeed(v) end)
+    Toggle(tabFrames["Player"],"Fly","Fly",false,function(v) SetFly(v) end)
+    Toggle(tabFrames["Player"],"Fling","Fling",false,function(v) SetFling(v) end)
+    Toggle(tabFrames["Player"],"Noclip","Noclip",false,function(v) SetNoclip(v) end)
+    Toggle(tabFrames["Player"],"FOV","FOV",false,function(v) SetFOV(v) end)
+    Toggle(tabFrames["Player"],"Jump Power","JumpPower",false,function(v) SetJump(v) end)
     
-    -- DETECT TAB
-    Toggle(tabFrames["Detect"],"Scanner",false,function(v) Settings.Scanner=v end)
-    Toggle(tabFrames["Detect"],"Auto Copy",false,function(v) Settings.AutoCopy=v end)
+    -- ================== DETECT TAB ==================
+    Toggle(tabFrames["Detect"],"Scanner","Scanner",false,function(v) end)
+    Toggle(tabFrames["Detect"],"Auto Copy","AutoCopy",false,function(v) end)
     
-    -- LOG TAB
+    -- ================== LOG TAB ==================
     local ls=Instance.new("ScrollingFrame"); ls.Size=UDim2.new(1,0,0,170); ls.BackgroundColor3=C.BG2; ls.BorderSizePixel=0
     ls.CanvasSize=UDim2.new(0,0,0,0); ls.ScrollBarThickness=3; ls.ScrollBarImageColor3=C.PINK; ls.Parent=tabFrames["Log"]; Instance.new("UICorner",ls).CornerRadius=UDim.new(0,10)
     local ll=Instance.new("UIListLayout"); ll.SortOrder=Enum.SortOrder.LayoutOrder; ll.Padding=UDim.new(0,1); ll.Parent=ls
@@ -209,149 +390,10 @@ function CreateMain()
         l.BackgroundTransparency=1; TweenService:Create(l,TweenInfo.new(0.2),{BackgroundTransparency=0}):Play()
         ls.CanvasSize=UDim2.new(0,0,0,ll.AbsoluteContentSize.Y+10); ls.CanvasPosition=Vector2.new(0,ls.CanvasSize.Y.Offset)
     end
-    AddLog("UWU HUB HATE WORLD",C.PURPLE); AddLog("ESP with Name+Room+Status",C.CYAN)
+    AddLog("UWU HUB HATE WORLD",C.PURPLE)
+    AddLog("State sync active | "..#KNOWN_MONSTERS.." known monsters",C.CYAN)
     
-    -- ================== ESP SYSTEM ==================
-    local Circles={}; local TextLabels={}; local AnimTime=0
-    local ObjectCache={}; local NPCObjects={}; local ItemObjects={}
-    
-    function GetCircle()
-        for _,c in ipairs(Circles) do if not c.Visible then return c end end
-        if Drawing then local c=Drawing.new("Circle"); c.Thickness=2; c.Filled=false; c.Transparency=1; c.NumSides=32; table.insert(Circles,c); return c end
-        return nil
-    end
-    
-    function GetText()
-        for _,t in ipairs(TextLabels) do if not t.Visible then return t end end
-        if Drawing then local t=Drawing.new("Text"); t.Size=13; t.Center=true; t.Outline=true; t.OutlineColor=Color3.new(); table.insert(TextLabels,t); return t end
-        return nil
-    end
-    
-    local function GetState(obj)
-        if not obj or not obj.Parent then return nil end
-        if obj:IsA("BasePart") then return{p=obj.Position,s=obj.Size,c=obj.Color,m=obj.Material,t=obj.Transparency} end
-        local pp=obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart; if pp then return{p=pp.Position,s=pp.Size} end
-        return nil
-    end
-    
-    local function HasChanged(old,new)
-        if not old or not new then return true end
-        if old.p and new.p and(old.p-new.p).Magnitude>0.1 then return true end
-        if old.s and new.s and(old.s-new.s).Magnitude>0.1 then return true end
-        if old.c and new.c and old.c~=new.c then return true end
-        if old.m and new.m and old.m~=new.m then return true end
-        if old.t and new.t and math.abs(old.t-new.t)>0.01 then return true end
-        return false
-    end
-    
-    local function IsNPC(obj)
-        if obj:IsA("Model") then if obj:FindFirstChildOfClass("Humanoid") then return true end; if obj:FindFirstChild("HumanoidRootPart") then return true end end
-        return false
-    end
-    
-    local function GetPart(obj) return obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart end
-    
-    local function GetChangeType(old,new)
-        if not old or not new then return"NEW" end
-        local t={}
-        if old.p and new.p and(old.p-new.p).Magnitude>0.1 then t[#t+1]="Moved" end
-        if old.s and new.s and(old.s-new.s).Magnitude>0.1 then t[#t+1]="Resized" end
-        if old.c and new.c and old.c~=new.c then t[#t+1]="Color" end
-        if old.m and new.m and old.m~=new.m then t[#t+1]="Material" end
-        return#t>0 and table.concat(t,"+")or"Changed"
-    end
-    
-    workspace.DescendantAdded:Connect(function(obj)
-        if not MasterOn then return end
-        if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end
-        if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
-        local st=GetState(obj); if st then ObjectCache[obj]=st end
-        if IsNPC(obj) then NPCObjects[obj]={name=obj.Name,time=tick()}
-        elseif Settings.ItemMode then ItemObjects[obj]={st=st,changed=false,time=tick(),name=obj.Name,ctype="NEW"} end
-    end)
-    
-    workspace.DescendantRemoving:Connect(function(obj)
-        NPCObjects[obj]=nil; ItemObjects[obj]=nil; ObjectCache[obj]=nil
-    end)
-    
-    spawn(function()
-        while Main and Main.Parent do wait(0.4)
-            if MasterOn and Settings.ItemMode then
-                for obj,data in pairs(ItemObjects) do
-                    if obj and obj.Parent then
-                        local st=GetState(obj)
-                        if st and data.st then if HasChanged(data.st,st) then data.changed=true; data.ctype=GetChangeType(data.st,st); data.st=st; data.time=tick() end
-                        elseif st then data.st=st end
-                    else ItemObjects[obj]=nil end
-                end
-                local now=tick(); for obj,data in pairs(ItemObjects) do if not data.changed and now-data.time>5 then ItemObjects[obj]=nil end end
-            end
-        end
-    end)
-    
-    RunService.RenderStepped:Connect(function(dt)
-        AnimTime=AnimTime+dt
-        if MasterOn then
-            for _,c in ipairs(Circles) do c.Visible=false end
-            for _,t in ipairs(TextLabels) do t.Visible=false end
-            
-            if Settings.NPCMode then
-                for obj,data in pairs(NPCObjects) do
-                    if obj and obj.Parent then
-                        local part=GetPart(obj)
-                        if part then
-                            local pos,on=Camera:WorldToViewportPoint(part.Position)
-                            if on then
-                                local cr=GetCircle(); local txt=GetText()
-                                if cr and txt then
-                                    local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
-                                    local room=GetRoom(part.Position)
-                                    local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                                    local dist=root and math.floor((part.Position-root.Position).Magnitude)or 0
-                                    local vel=part.AssemblyLinearVelocity or part.Velocity or Vector3.zero
-                                    local status=vel.Magnitude>0.3 and"ACTIVE"or"IDLE"
-                                    cr.Position=Vector2.new(pos.X,pos.Y); cr.Radius=r; cr.Color=C.RED; cr.Visible=true
-                                    txt.Position=Vector2.new(pos.X,pos.Y-r-16)
-                                    txt.Text="R "..data.name.."\n"..room.." | "..status.." | "..dist.."m"
-                                    txt.Color=C.WHITE; txt.Visible=true
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            
-            if Settings.ItemMode then
-                for obj,data in pairs(ItemObjects) do
-                    if obj and obj.Parent then
-                        local part=GetPart(obj)
-                        if part then
-                            local pos,on=Camera:WorldToViewportPoint(part.Position)
-                            if on then
-                                local cr=GetCircle(); local txt=GetText()
-                                if cr and txt then
-                                    local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
-                                    local room=GetRoom(part.Position)
-                                    local col=data.changed and C.GREEN or C.PINK_ESP
-                                    local ctype=data.changed and data.ctype or"NEW"
-                                    cr.Position=Vector2.new(pos.X,pos.Y); cr.Radius=r; cr.Color=col; cr.Visible=true
-                                    txt.Position=Vector2.new(pos.X,pos.Y-r-16)
-                                    txt.Text="P "..data.name.."\n"..room.." | "..ctype
-                                    txt.Color=C.WHITE; txt.Visible=true
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        else
-            for _,c in ipairs(Circles) do c.Visible=false end
-            for _,t in ipairs(TextLabels) do t.Visible=false end
-        end
-        local nc,ic=0,0; for _ in pairs(NPCObjects) do nc=nc+1 end; for _ in pairs(ItemObjects) do ic=ic+1 end
-        StatusText.Text=MasterOn and("NPC:"..nc.." ITEM:"..ic)or"=;= Idle"; StatusText.TextColor3=MasterOn and C.PINK or C.GRAY
-    end)
-    
+    -- Scanner log
     spawn(function()
         while Main and Main.Parent do wait(0.5)
             if MasterOn and Settings.Scanner then
@@ -366,6 +408,15 @@ function CreateMain()
                     end
                 end
             end
+        end
+    end)
+    
+    -- Status updater
+    spawn(function()
+        while Main and Main.Parent do wait(1)
+            local nc,ic=0,0; for _ in pairs(NPCObjects) do nc=nc+1 end; for _ in pairs(ItemObjects) do ic=ic+1 end
+            StatusText.Text=MasterOn and("NPC:"..nc.." ITEM:"..ic)or"=;= Idle"
+            StatusText.TextColor3=MasterOn and C.PINK or C.GRAY
         end
     end)
 end
