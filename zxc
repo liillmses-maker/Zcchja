@@ -1,4 +1,4 @@
--- Anomaly Watch | SCANNER v26 | FIXED
+-- UWU HUB HATE WORLD | Mobile Mini | All OFF by default
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -55,15 +55,24 @@ local C = {
     YELLOW = Color3.new(1, 0.784, 0.392),
     GLOW = Color3.new(1, 0.431, 0.588),
     GREEN = Color3.new(0.392, 1, 0.392),
-    CYAN = Color3.new(0.392, 0.784, 1)
+    CYAN = Color3.new(0.392, 0.784, 1),
+    PURPLE = Color3.new(0.7, 0.3, 1)
 }
 
+-- ================== SETTINGS (ALL OFF) ==================
 local Settings = {
-    AnomalyESP = false, ObjectESP = false, ChangesESP = false,
-    AutoCopy = true, ScanRange = 150, Notifications = true,
-    DetectSounds = true, DetectClock = true, DetectFaces = true
+    Fullbright = false,
+    AnomalyESP = false,
+    ObjectESP = false,
+    ChangesESP = false,
+    DetectSounds = false,
+    DetectClock = false,
+    DetectFaces = false,
+    AutoCopy = false,
+    ScanRange = 150,
+    Notifications = false
 }
-local MasterOn = true
+local MasterOn = false
 
 function Notify(t, txt)
     if not Settings.Notifications then return end
@@ -102,13 +111,13 @@ end
 
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "PawESP"
+Gui.Name = "UwUHub"
 Gui.IgnoreGuiInset = true
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Gui.Parent = PLAYERGUI
 
-local W = 270
-local H = 550
+local W = 190
+local H = 380
 local Main = Instance.new("Frame")
 Main.Name = "MainCard"
 Main.Size = UDim2.new(0, W, 0, H)
@@ -118,59 +127,60 @@ Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 Main.Parent = Gui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
 local Glow = Instance.new("Frame")
-Glow.Size = UDim2.new(1, 4, 1, 4)
-Glow.Position = UDim2.new(0, -2, 0, -2)
+Glow.Size = UDim2.new(1, 3, 1, 3)
+Glow.Position = UDim2.new(0, -1.5, 0, -1.5)
 Glow.BackgroundColor3 = C.GLOW
-Glow.BackgroundTransparency = 0.55
+Glow.BackgroundTransparency = 0.5
 Glow.BorderSizePixel = 0
 Glow.ZIndex = 0
 Glow.Parent = Main
-Instance.new("UICorner", Glow).CornerRadius = UDim.new(0, 15)
+Instance.new("UICorner", Glow).CornerRadius = UDim.new(0, 13)
 
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 30)
+Header.Size = UDim2.new(1, 0, 0, 26)
 Header.BackgroundColor3 = C.ACCENT2
 Header.BorderSizePixel = 0
 Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 100, 1, 0)
-Title.Position = UDim2.new(0, 8, 0, 0)
-Title.Text = "=^^= scanner"
+Title.Size = UDim2.new(0, 130, 1, 0)
+Title.Position = UDim2.new(0, 6, 0, 0)
+Title.Text = "UWU HUB HATE WORLD"
 Title.TextColor3 = C.WHITE
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextSize = 9
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
 local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 20, 0, 20)
-MinBtn.Position = UDim2.new(1, -48, 0.5, -10)
+MinBtn.Size = UDim2.new(0, 18, 0, 18)
+MinBtn.Position = UDim2.new(1, -40, 0.5, -9)
 MinBtn.Text = "-"
 MinBtn.BackgroundColor3 = Color3.new(0.196, 0.098, 0.137)
 MinBtn.TextColor3 = C.PINK
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 12
+MinBtn.TextSize = 10
 MinBtn.BorderSizePixel = 0
 MinBtn.Parent = Header
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
 
+-- Master toggle
 local MTog = Instance.new("Frame")
-MTog.Size = UDim2.new(0, 32, 0, 16)
-MTog.Position = UDim2.new(1, -36, 0.5, -8)
-MTog.BackgroundColor3 = C.ON
+MTog.Size = UDim2.new(0, 28, 0, 14)
+MTog.Position = UDim2.new(1, -32, 0.5, -7)
+MTog.BackgroundColor3 = C.OFF
 MTog.BorderSizePixel = 0
 MTog.Parent = Header
 Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
 
 local MKnob = Instance.new("Frame")
-MKnob.Size = UDim2.new(0, 12, 0, 12)
-MKnob.Position = UDim2.new(1, -14, 0.5, -6)
+MKnob.Size = UDim2.new(0, 10, 0, 10)
+MKnob.Position = UDim2.new(0, 2, 0.5, -5)
 MKnob.BackgroundColor3 = C.WHITE
 MKnob.BorderSizePixel = 0
 MKnob.Parent = MTog
@@ -179,11 +189,11 @@ Instance.new("UICorner", MKnob).CornerRadius = UDim.new(1, 0)
 local function UpdateMaster(s)
     MasterOn = s
     if s then
-        TweenService:Create(MTog, TweenInfo.new(0.2), {BackgroundColor3 = C.ON}):Play()
-        TweenService:Create(MKnob, TweenInfo.new(0.2), {Position = UDim2.new(1, -14, 0.5, -6)}):Play()
+        TweenService:Create(MTog, TweenInfo.new(0.15), {BackgroundColor3 = C.ON}):Play()
+        TweenService:Create(MKnob, TweenInfo.new(0.15), {Position = UDim2.new(1, -12, 0.5, -5)}):Play()
     else
-        TweenService:Create(MTog, TweenInfo.new(0.2), {BackgroundColor3 = C.OFF}):Play()
-        TweenService:Create(MKnob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -6)}):Play()
+        TweenService:Create(MTog, TweenInfo.new(0.15), {BackgroundColor3 = C.OFF}):Play()
+        TweenService:Create(MKnob, TweenInfo.new(0.15), {Position = UDim2.new(0, 2, 0.5, -5)}):Play()
     end
 end
 MTog.InputBegan:Connect(function(i)
@@ -193,27 +203,27 @@ MTog.InputBegan:Connect(function(i)
 end)
 
 local Body = Instance.new("Frame")
-Body.Size = UDim2.new(1, -12, 1, -40)
-Body.Position = UDim2.new(0, 6, 0, 36)
+Body.Size = UDim2.new(1, -10, 1, -34)
+Body.Position = UDim2.new(0, 5, 0, 30)
 Body.BackgroundTransparency = 1
 Body.BorderSizePixel = 0
 Body.Parent = Main
 local BL = Instance.new("UIListLayout")
 BL.SortOrder = Enum.SortOrder.LayoutOrder
-BL.Padding = UDim.new(0, 3)
+BL.Padding = UDim.new(0, 2)
 BL.Parent = Body
 
 local function Section(title)
     local Sec = Instance.new("Frame")
-    Sec.Size = UDim2.new(1, 0, 0, 14)
+    Sec.Size = UDim2.new(1, 0, 0, 12)
     Sec.BackgroundTransparency = 1
     Sec.Parent = Body
     local Txt = Instance.new("TextLabel")
-    Txt.Size = UDim2.new(1, 0, 0, 14)
+    Txt.Size = UDim2.new(1, 0, 0, 12)
     Txt.Text = title
     Txt.TextColor3 = C.PINK
     Txt.Font = Enum.Font.GothamBold
-    Txt.TextSize = 8
+    Txt.TextSize = 7
     Txt.BackgroundTransparency = 1
     Txt.TextXAlignment = Enum.TextXAlignment.Left
     Txt.Parent = Sec
@@ -222,34 +232,34 @@ end
 local function ToggleRow(name, default, cb)
     local enabled = default
     local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1, 0, 0, 24)
+    Row.Size = UDim2.new(1, 0, 0, 22)
     Row.BackgroundColor3 = C.BG2
     Row.BorderSizePixel = 0
     Row.Parent = Body
-    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 5)
 
     local Lbl = Instance.new("TextLabel")
-    Lbl.Size = UDim2.new(0.55, 0, 1, 0)
-    Lbl.Position = UDim2.new(0, 6, 0, 0)
+    Lbl.Size = UDim2.new(0.5, 0, 1, 0)
+    Lbl.Position = UDim2.new(0, 5, 0, 0)
     Lbl.Text = name
     Lbl.TextColor3 = C.GRAY
     Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = 10
+    Lbl.TextSize = 9
     Lbl.BackgroundTransparency = 1
     Lbl.TextXAlignment = Enum.TextXAlignment.Left
     Lbl.Parent = Row
 
     local Tog = Instance.new("Frame")
-    Tog.Size = UDim2.new(0, 30, 0, 16)
-    Tog.Position = UDim2.new(1, -34, 0.5, -8)
+    Tog.Size = UDim2.new(0, 26, 0, 14)
+    Tog.Position = UDim2.new(1, -30, 0.5, -7)
     Tog.BackgroundColor3 = C.OFF
     Tog.BorderSizePixel = 0
     Tog.Parent = Row
     Instance.new("UICorner", Tog).CornerRadius = UDim.new(1, 0)
 
     local Knob = Instance.new("Frame")
-    Knob.Size = UDim2.new(0, 12, 0, 12)
-    Knob.Position = UDim2.new(0, 2, 0.5, -6)
+    Knob.Size = UDim2.new(0, 10, 0, 10)
+    Knob.Position = UDim2.new(0, 2, 0.5, -5)
     Knob.BackgroundColor3 = C.WHITE
     Knob.BorderSizePixel = 0
     Knob.Parent = Tog
@@ -258,12 +268,12 @@ local function ToggleRow(name, default, cb)
     local function Set(s)
         enabled = s
         if s then
-            TweenService:Create(Tog, TweenInfo.new(0.2), {BackgroundColor3 = C.ON}):Play()
-            TweenService:Create(Knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -14, 0.5, -6)}):Play()
+            TweenService:Create(Tog, TweenInfo.new(0.15), {BackgroundColor3 = C.ON}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.15), {Position = UDim2.new(1, -12, 0.5, -5)}):Play()
             Lbl.TextColor3 = C.WHITE
         else
-            TweenService:Create(Tog, TweenInfo.new(0.2), {BackgroundColor3 = C.OFF}):Play()
-            TweenService:Create(Knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -6)}):Play()
+            TweenService:Create(Tog, TweenInfo.new(0.15), {BackgroundColor3 = C.OFF}):Play()
+            TweenService:Create(Knob, TweenInfo.new(0.15), {Position = UDim2.new(0, 2, 0.5, -5)}):Play()
             Lbl.TextColor3 = C.GRAY
         end
     end
@@ -276,31 +286,31 @@ local function ToggleRow(name, default, cb)
     Set(default)
 end
 
-Section("Visual")
-ToggleRow("Fullbright", false, function(v) if v then EnableFB() else DisableFB() end end)
+Section("VISUAL")
+ToggleRow("Fullbright", false, function(v) Settings.Fullbright = v; if v then EnableFB() else DisableFB() end end)
 
 Section("ESP")
-ToggleRow("Anomaly ESP", false, function(v) Settings.AnomalyESP = v end)
-ToggleRow("Object ESP", false, function(v) Settings.ObjectESP = v end)
-ToggleRow("Changes ESP", false, function(v) Settings.ChangesESP = v end)
+ToggleRow("Anomaly", false, function(v) Settings.AnomalyESP = v end)
+ToggleRow("Objects", false, function(v) Settings.ObjectESP = v end)
+ToggleRow("Changes", false, function(v) Settings.ChangesESP = v end)
 
-Section("Detectors")
-ToggleRow("Sound Detect", true, function(v) Settings.DetectSounds = v end)
-ToggleRow("Clock Detect", true, function(v) Settings.DetectClock = v end)
-ToggleRow("Face Detect", true, function(v) Settings.DetectFaces = v end)
+Section("DETECTORS")
+ToggleRow("Sounds", false, function(v) Settings.DetectSounds = v end)
+ToggleRow("Clock", false, function(v) Settings.DetectClock = v end)
+ToggleRow("Faces", false, function(v) Settings.DetectFaces = v end)
 
-Section("Scanner")
-ToggleRow("Auto Copy", true, function(v) Settings.AutoCopy = v end)
+Section("SCANNER")
+ToggleRow("Auto Copy", false, function(v) Settings.AutoCopy = v end)
 
 local ChangeLog = Instance.new("ScrollingFrame")
-ChangeLog.Size = UDim2.new(1, 0, 0, 150)
+ChangeLog.Size = UDim2.new(1, 0, 0, 100)
 ChangeLog.BackgroundColor3 = Color3.new(0.078, 0.047, 0.063)
 ChangeLog.BorderSizePixel = 0
 ChangeLog.CanvasSize = UDim2.new(0, 0, 0, 0)
 ChangeLog.ScrollBarThickness = 2
 ChangeLog.ScrollBarImageColor3 = C.ACCENT
 ChangeLog.Parent = Body
-Instance.new("UICorner", ChangeLog).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", ChangeLog).CornerRadius = UDim.new(0, 5)
 local CLL = Instance.new("UIListLayout")
 CLL.SortOrder = Enum.SortOrder.LayoutOrder
 CLL.Padding = UDim.new(0, 1)
@@ -308,11 +318,11 @@ CLL.Parent = ChangeLog
 
 local function AddLog(msg, color)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -4, 0, 14)
+    lbl.Size = UDim2.new(1, -4, 0, 12)
     lbl.Text = msg
     lbl.TextColor3 = color or C.WHITE
     lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 8
+    lbl.TextSize = 7
     lbl.BackgroundTransparency = 1
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = ChangeLog
@@ -320,44 +330,44 @@ local function AddLog(msg, color)
     ChangeLog.CanvasPosition = Vector2.new(0, ChangeLog.CanvasSize.Y.Offset)
 end
 
-Section("Other")
-ToggleRow("Notify", true, function(v) Settings.Notifications = v end)
+Section("OTHER")
+ToggleRow("Notify", false, function(v) Settings.Notifications = v end)
 
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, 0, 0, 12)
-Status.Text = "scanning..."
+Status.Size = UDim2.new(1, 0, 0, 10)
+Status.Text = "uwu off"
 Status.TextColor3 = C.GRAY
 Status.Font = Enum.Font.Gotham
-Status.TextSize = 8
+Status.TextSize = 7
 Status.BackgroundTransparency = 1
 Status.TextXAlignment = Enum.TextXAlignment.Center
 Status.Parent = Body
 
 -- ================== MINIMIZE ==================
 local MinIcon
-local CatFrames = {"=^.^=", "=o.o=", "=-.=", "=*.*=", "=^^="}
+local CatFrames = {"uwu", "owo", ">.<", "^-^", "^^"}
 local CatFrame = 1
 MinBtn.MouseButton1Click:Connect(function()
     Main.Visible = false
     if not MinIcon then
         MinIcon = Instance.new("TextButton")
-        MinIcon.Size = UDim2.new(0, 34, 0, 34)
-        MinIcon.Position = UDim2.new(0.5, -17, 0.5, -17)
+        MinIcon.Size = UDim2.new(0, 30, 0, 30)
+        MinIcon.Position = UDim2.new(0.5, -15, 0.5, -15)
         MinIcon.BackgroundColor3 = C.BG2
-        MinIcon.TextColor3 = C.PINK
+        MinIcon.TextColor3 = C.PURPLE
         MinIcon.Font = Enum.Font.GothamBold
-        MinIcon.TextSize = 10
+        MinIcon.TextSize = 9
         MinIcon.BorderSizePixel = 0
         MinIcon.Active = true
         MinIcon.Draggable = true
         MinIcon.Parent = Gui
-        Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(0, 9)
+        Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(0, 8)
         MinIcon.MouseButton1Click:Connect(function() MinIcon.Visible = false; Main.Visible = true end)
         spawn(function()
             while MinIcon and MinIcon.Parent and MinIcon.Visible do
                 CatFrame = (CatFrame % #CatFrames) + 1
                 MinIcon.Text = CatFrames[CatFrame]
-                wait(0.7)
+                wait(0.6)
             end
         end)
     else
@@ -379,23 +389,13 @@ local SoundReported = {}
 local function GetObjectState(obj)
     if obj:IsA("BasePart") then
         return {
-            pos = obj.Position,
-            rot = obj.Orientation,
-            size = obj.Size,
-            color = obj.Color,
-            transparency = obj.Transparency,
-            material = obj.Material,
-            anchored = obj.Anchored
+            pos = obj.Position, rot = obj.Orientation, size = obj.Size,
+            color = obj.Color, transparency = obj.Transparency,
+            material = obj.Material, anchored = obj.Anchored
         }
     elseif obj:IsA("Model") then
         local part = obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
-        if part then
-            return {
-                pos = part.Position,
-                rot = part.Orientation,
-                size = part.Size
-            }
-        end
+        if part then return {pos = part.Position, rot = part.Orientation, size = part.Size} end
     end
     return nil
 end
@@ -440,19 +440,15 @@ RunService.RenderStepped:Connect(function(dt)
                     local room = GetRoomName(obj)
                     local sid = obj.SoundId or "unknown"
                     local sname = sid:match("([^/]+)$") or sid
-                    local msg = "[SOUND] [" .. room .. "] " .. sname
+                    local msg = "[S] [" .. room .. "] " .. sname
                     table.insert(CopiedChanges, msg)
                     AddLog(msg, C.CYAN)
-                    Notify("SOUND", msg, 2)
                 end
             end
         end
-        -- Clear old sounds
         for id in pairs(SoundReported) do
             local obj = workspace:FindFirstChild(id)
-            if not obj or not obj:IsA("Sound") or not obj.IsPlaying then
-                SoundReported[id] = nil
-            end
+            if not obj or not obj:IsA("Sound") or not obj.IsPlaying then SoundReported[id] = nil end
         end
     end
 
@@ -462,10 +458,9 @@ RunService.RenderStepped:Connect(function(dt)
         local currentTime = Lighting.ClockTime
         local timeDiff = math.abs(currentTime - PrevClockTime)
         if timeDiff > 0.08 then
-            local msg = "[CLOCK] Time speed x" .. math.floor(timeDiff / 0.03)
+            local msg = "[CLOCK] x" .. math.floor(timeDiff / 0.03)
             table.insert(CopiedChanges, msg)
             AddLog(msg, Color3.new(1, 0.588, 0.196))
-            Notify("CLOCK", msg, 2)
         end
         PrevClockTime = currentTime
     end
@@ -475,13 +470,10 @@ RunService.RenderStepped:Connect(function(dt)
         LastFaceCheck = 0
         for _, obj in ipairs(workspace:GetDescendants()) do
             local name = obj.Name:lower()
-            if name:find("annoying") or name:find("orange") or name:find("painting") or name:find("mona") or name:find("portrait") then
+            if name:find("annoying") or name:find("orange") or name:find("painting") or name:find("mona") then
                 local hasDecal = false
                 for _, child in ipairs(obj:GetDescendants()) do
-                    if child:IsA("Decal") or child:IsA("Texture") then
-                        hasDecal = true
-                        break
-                    end
+                    if child:IsA("Decal") or child:IsA("Texture") then hasDecal = true; break end
                 end
                 if hasDecal and not obj:GetAttribute("FaceReported") then
                     obj:SetAttribute("FaceReported", true)
@@ -489,7 +481,6 @@ RunService.RenderStepped:Connect(function(dt)
                     local msg = "[FACE] [" .. room .. "] " .. obj.Name
                     table.insert(CopiedChanges, msg)
                     AddLog(msg, Color3.new(1, 0.392, 1))
-                    Notify("FACE", msg, 2)
                 end
             end
         end
@@ -506,11 +497,9 @@ RunService.RenderStepped:Connect(function(dt)
             if not (obj:IsA("Model") or obj:IsA("BasePart")) then continue end
             if obj:IsA("BasePart") and obj.Transparency > 0.95 then continue end
             if obj.Name == "Terrain" then continue end
-
             local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
             if not part then continue end
             if (part.Position - root.Position).Magnitude > Settings.ScanRange then continue end
-
             local state = GetObjectState(obj)
             if not state then continue end
             currentObjects[obj] = state
@@ -519,26 +508,17 @@ RunService.RenderStepped:Connect(function(dt)
                 if HasStateChanged(ObjectDB[obj], state) then
                     local room = GetRoomName(obj)
                     local changeType = GetChangeType(ObjectDB[obj], state)
-                    local msg = "[CHANGE] [" .. room .. "] " .. obj.Name .. ": " .. changeType
+                    local msg = "[" .. room .. "] " .. obj.Name .. ": " .. changeType
                     table.insert(CopiedChanges, msg)
                     AddLog(msg, C.YELLOW)
-                end
-            else
-                if not obj:GetAttribute("NewReported") then
-                    obj:SetAttribute("NewReported", true)
-                    local room = GetRoomName(obj)
-                    local msg = "[NEW] [" .. room .. "] " .. obj.Name
-                    table.insert(CopiedChanges, msg)
-                    AddLog(msg, C.GREEN)
                 end
             end
         end
 
-        -- REMOVED
         for obj in pairs(ObjectDB) do
             if not currentObjects[obj] then
                 local room = GetRoomName(obj)
-                local msg = "[REMOVED] [" .. room .. "] " .. obj.Name
+                local msg = "[-] [" .. room .. "] " .. obj.Name
                 table.insert(CopiedChanges, msg)
                 AddLog(msg, C.RED)
             end
@@ -546,30 +526,25 @@ RunService.RenderStepped:Connect(function(dt)
 
         ObjectDB = currentObjects
 
-        -- AUTO COPY
         if Settings.AutoCopy and #CopiedChanges > 0 and LastCopy >= 5 and setclipboard then
             LastCopy = 0
             local seen = {}
             local text = ""
             for _, v in ipairs(CopiedChanges) do
-                if not seen[v] then
-                    seen[v] = true
-                    text = text .. v .. "\n"
-                end
+                if not seen[v] then seen[v] = true; text = text .. v .. "\n" end
             end
             setclipboard(text)
             CopiedChanges = {}
-            Status.Text = "~ copied!"
+            Status.Text = "copied!"
             Status.TextColor3 = C.GREEN
             spawn(function() wait(2) Status.TextColor3 = C.GRAY end)
         end
 
         local total = 0
         for _ in pairs(ObjectDB) do total = total + 1 end
-        Status.Text = "~ " .. total .. " obj"
+        Status.Text = MasterOn and ("~" .. total) or "uwu off"
     end
 end)
 
-Notify("=^^=", "Scanner ready!")
-AddLog("Scanner v26: Sound+Clock+Faces", C.PINK)
-AddLog("Range: " .. Settings.ScanRange .. "m", C.GRAY)
+AddLog("UWU HUB HATE WORLD", C.PURPLE)
+AddLog("All OFF | Range: " .. Settings.ScanRange .. "m", C.GRAY)
