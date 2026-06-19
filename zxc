@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | Oval GUI + Circle ESP + Skin Detect | v10 FINAL
+-- UWU HUB HATE WORLD | ALL TABS WORKING | v12 FINAL
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -23,7 +23,6 @@ local OrigOutdoor = Lighting.OutdoorAmbient
 local function EnableFB() FullbrightEnabled = true; Lighting.Brightness = 5; Lighting.ClockTime = 12; Lighting.FogEnd = 99999; Lighting.Ambient = Color3.new(1,1,1); Lighting.OutdoorAmbient = Color3.new(1,1,1); Lighting.GlobalShadows = false end
 local function DisableFB() FullbrightEnabled = false; Lighting.Brightness = OrigBright; Lighting.ClockTime = OrigClock; Lighting.FogEnd = OrigFog; Lighting.Ambient = OrigAmbient; Lighting.OutdoorAmbient = OrigOutdoor; Lighting.GlobalShadows = true end
 
--- COLORS
 local C = {
     BG = Color3.new(0.08,0.05,0.06), BG2 = Color3.new(0.12,0.07,0.09),
     ACCENT = Color3.new(1,0.55,0.71), ACCENT2 = Color3.new(0.78,0.27,0.47),
@@ -35,6 +34,411 @@ local C = {
     PURPLE = Color3.new(0.7,0.3,1)
 }
 
+local Settings = {
+    Fullbright=false, ShowAnomaly=false, ShowObject=false, ShowChanges=false,
+    ShowSkinDetect=false, ShowSizeDetect=false, ShowNotify=false,
+    DetectSounds=false, DetectClock=false, DetectFaces=false,
+    AutoCopy=false, Scanner=false
+}
+local MasterOn = false
+
+local GameName = "Anomaly Watch"
+local GameIcon = ""
+pcall(function() local i=MarketplaceService:GetProductInfo(game.PlaceId); GameName=i.Name; GameIcon=i.IconImage end)
+
+local ROOMS = {"Living Room","LivingRoom","Garage","Downstairs Bathroom","Downstairs Hall","Study","Kitchen","Basement","Master Bedroom","Nursery","Upstairs Bathroom","Storage Room","Upstairs Hall","Upstairs Hallway","Movie Room","Projector Room","Guest Room","Guest Bedroom","Bedroom","Playroom","Yard"}
+local function GetRoomName(o)
+    local c=o; while c do for _,r in ipairs(ROOMS) do if c.Name==r then return r end end; c=c.Parent end
+    local p=o:IsA("BasePart") and o or o:FindFirstChildOfClass("BasePart")
+    if p then for _,ch in ipairs(workspace:GetDescendants()) do for _,r in ipairs(ROOMS) do if ch.Name==r and ch:IsA("BasePart") and (p.Position-ch.Position).Magnitude<30 then return r end end end end
+    return "?"
+end
+
+-- NOTIFICATIONS
+local LastNotify = {}
+local function ShowNotif(title,text,color)
+    if not Settings.ShowNotify then return end
+    local key = title..text
+    if LastNotify[key] and tick()-LastNotify[key] < 1 then return end
+    LastNotify[key] = tick()
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0,220,0,44)
+    Frame.AnchorPoint = Vector2.new(1,0)
+    Frame.Position = UDim2.new(0.98,0,0,12)
+    Frame.BackgroundColor3 = C.BG2
+    Frame.BackgroundTransparency = 0.15
+    Frame.BorderSizePixel = 0
+    Frame.Parent = PLAYERGUI
+    Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,18)
+    local Tl = Instance.new("TextLabel")
+    Tl.Size = UDim2.new(1,-20,0,18); Tl.Position = UDim2.new(0,10,0,4)
+    Tl.Text = title; Tl.TextColor3 = color or C.PINK; Tl.Font = Enum.Font.GothamBold
+    Tl.TextSize = 10; Tl.BackgroundTransparency = 1; Tl.TextXAlignment = Enum.TextXAlignment.Left; Tl.Parent = Frame
+    local Tx = Instance.new("TextLabel")
+    Tx.Size = UDim2.new(1,-20,0,14); Tx.Position = UDim2.new(0,10,0,22)
+    Tx.Text = text; Tx.TextColor3 = C.WHITE; Tx.Font = Enum.Font.Gotham
+    Tx.TextSize = 8; Tx.BackgroundTransparency = 1; Tx.TextXAlignment = Enum.TextXAlignment.Left; Tx.Parent = Frame
+    TweenService:Create(Frame,TweenInfo.new(0.25),{Position=UDim2.new(0.96,0,0,12)}):Play()
+    task.delay(4,function() if Frame.Parent then TweenService:Create(Frame,TweenInfo.new(0.35),{BackgroundTransparency=1}):Play(); task.wait(0.35); Frame:Destroy() end end)
+end
+
+-- ================== GUI OVAL ==================
+local Gui = Instance.new("ScreenGui"); Gui.Name="UwUHub"; Gui.IgnoreGuiInset=true; Gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; Gui.Parent=PLAYERGUI
+local W=310; local H=240
+local Main=Instance.new("Frame"); Main.Name="MainCard"; Main.Size=UDim2.new(0,W,0,H); Main.Position=UDim2.new(0.5,-W/2,0.5,-H/2)
+Main.BackgroundColor3=C.BG; Main.BackgroundTransparency=0.08; Main.BorderSizePixel=0; Main.Active=true; Main.Draggable=true; Main.Parent=Gui
+Instance.new("UICorner",Main).CornerRadius=UDim.new(0,25)
+local Glass=Instance.new("Frame"); Glass.Size=UDim2.new(1,0,1,0); Glass.BackgroundColor3=C.WHITE; Glass.BackgroundTransparency=0.95; Glass.BorderSizePixel=0; Glass.Parent=Main
+Instance.new("UICorner",Glass).CornerRadius=UDim.new(0,25)
+local Glow=Instance.new("Frame"); Glow.Size=UDim2.new(1,8,1,8); Glow.Position=UDim2.new(0,-4,0,-4)
+Glow.BackgroundColor3=C.ACCENT; Glow.BackgroundTransparency=0.7; Glow.BorderSizePixel=0; Glow.ZIndex=0; Glow.Parent=Main
+Instance.new("UICorner",Glow).CornerRadius=UDim.new(0,28)
+
+-- HEADER
+local Header=Instance.new("Frame"); Header.Size=UDim2.new(1,0,0,30); Header.BackgroundColor3=C.BG2; Header.BorderSizePixel=0; Header.Parent=Main
+Instance.new("UICorner",Header).CornerRadius=UDim.new(0,25)
+local Title=Instance.new("TextLabel"); Title.Size=UDim2.new(0,140,1,0); Title.Position=UDim2.new(0,12,0,0)
+Title.Text="UWU HUB"; Title.TextColor3=C.PINK; Title.Font=Enum.Font.GothamBold; Title.TextSize=10; Title.BackgroundTransparency=1; Title.TextXAlignment=Enum.TextXAlignment.Left; Title.Parent=Header
+local MinBtn=Instance.new("TextButton"); MinBtn.Size=UDim2.new(0,22,0,22); MinBtn.Position=UDim2.new(1,-42,0.5,-11)
+MinBtn.Text="-"; MinBtn.BackgroundColor3=C.OFF; MinBtn.TextColor3=C.PINK; MinBtn.Font=Enum.Font.GothamBold; MinBtn.TextSize=14; MinBtn.BorderSizePixel=0; MinBtn.Parent=Header
+Instance.new("UICorner",MinBtn).CornerRadius=UDim.new(1,0)
+
+-- MASTER TOGGLE
+local MTog=Instance.new("Frame"); MTog.Size=UDim2.new(0,34,0,18); MTog.Position=UDim2.new(1,-38,0.5,-9)
+MTog.BackgroundColor3=C.OFF; MTog.BorderSizePixel=0; MTog.Parent=Header; Instance.new("UICorner",MTog).CornerRadius=UDim.new(1,0)
+local MKnob=Instance.new("Frame"); MKnob.Size=UDim2.new(0,14,0,14); MKnob.Position=UDim2.new(0,2,0.5,-7)
+MKnob.BackgroundColor3=C.WHITE; MKnob.BorderSizePixel=0; MKnob.Parent=MTog; Instance.new("UICorner",MKnob).CornerRadius=UDim.new(1,0)
+local MFace=Instance.new("TextLabel"); MFace.Size=UDim2.new(1,0,1,0); MFace.Text="=;="; MFace.TextColor3=C.GRAY; MFace.Font=Enum.Font.GothamBold; MFace.TextSize=8; MFace.BackgroundTransparency=1; MFace.Parent=MKnob
+local function UpdateMaster(s) MasterOn=s; if s then TweenService:Create(MTog,TweenInfo.new(0.2),{BackgroundColor3=C.ON}):Play(); TweenService:Create(MKnob,TweenInfo.new(0.2),{Position=UDim2.new(1,-16,0.5,-7)}):Play(); MFace.Text="=^^="; MFace.TextColor3=C.ON else TweenService:Create(MTog,TweenInfo.new(0.2),{BackgroundColor3=C.OFF}):Play(); TweenService:Create(MKnob,TweenInfo.new(0.2),{Position=UDim2.new(0,2,0.5,-7)}):Play(); MFace.Text="=;="; MFace.TextColor3=C.GRAY end end
+MTog.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then UpdateMaster(not MasterOn) end end)
+
+-- TABS
+local TabBar=Instance.new("Frame"); TabBar.Size=UDim2.new(1,0,0,24); TabBar.Position=UDim2.new(0,0,0,30); TabBar.BackgroundColor3=C.BG; TabBar.BorderSizePixel=0; TabBar.Parent=Main
+local TabNames={"Main","ESP","Detect","Log"}; local TabBtns={}; local TabPages={}
+for i,name in ipairs(TabNames) do
+    local Btn=Instance.new("TextButton"); Btn.Size=UDim2.new(0.25,-1,1,-1); Btn.Position=UDim2.new((i-1)*0.25,0,0,0)
+    Btn.Text=name; Btn.BackgroundColor3=C.BG2; Btn.TextColor3=C.GRAY; Btn.Font=Enum.Font.GothamBold; Btn.TextSize=9; Btn.BorderSizePixel=0; Btn.Parent=TabBar
+    Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,12)
+    local Page=Instance.new("Frame"); Page.Size=UDim2.new(1,-14,1,-60); Page.Position=UDim2.new(0,7,0,58); Page.BackgroundTransparency=1; Page.Visible=false; Page.Parent=Main
+    local PL=Instance.new("UIListLayout"); PL.SortOrder=Enum.SortOrder.LayoutOrder; PL.Padding=UDim.new(0,4); PL.Parent=Page
+    TabBtns[name]=Btn; TabPages[name]=Page; Btn.MouseButton1Click:Connect(function() for n,b in pairs(TabBtns) do if n==name then b.BackgroundColor3=C.ACCENT2; b.TextColor3=C.WHITE; TabPages[n].Visible=true else b.BackgroundColor3=C.BG2; b.TextColor3=C.GRAY; TabPages[n].Visible=false end end end)
+end
+TabBtns["Main"].BackgroundColor3=C.ACCENT2; TabBtns["Main"].TextColor3=C.WHITE; TabPages["Main"].Visible=true
+
+-- PAW TOGGLE
+local function PawToggle(page,name,default,cb)
+    local enabled=default
+    local Row=Instance.new("Frame"); Row.Size=UDim2.new(1,0,0,32); Row.BackgroundColor3=C.BG2; Row.BorderSizePixel=0; Row.Parent=page; Instance.new("UICorner",Row).CornerRadius=UDim.new(0,15)
+    local Lbl=Instance.new("TextLabel"); Lbl.Size=UDim2.new(0.5,0,1,0); Lbl.Position=UDim2.new(0,10,0,0); Lbl.Text=name; Lbl.TextColor3=C.GRAY; Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=10; Lbl.BackgroundTransparency=1; Lbl.TextXAlignment=Enum.TextXAlignment.Left; Lbl.Parent=Row
+    local PawBtn=Instance.new("TextButton"); PawBtn.Size=UDim2.new(0,44,0,44); PawBtn.Position=UDim2.new(1,-52,0.5,-22); PawBtn.Text="=;="; PawBtn.BackgroundColor3=C.OFF; PawBtn.TextColor3=C.GRAY; PawBtn.Font=Enum.Font.GothamBold; PawBtn.TextSize=11; PawBtn.BorderSizePixel=0; PawBtn.Parent=Row; Instance.new("UICorner",PawBtn).CornerRadius=UDim.new(1,0)
+    local function Set(s) enabled=s; if s then TweenService:Create(PawBtn,TweenInfo.new(0.25,Enum.EasingStyle.Back),{Size=UDim2.new(0,48,0,48),BackgroundColor3=C.ON,TextColor3=C.WHITE}):Play(); PawBtn.Text="=^^="; Lbl.TextColor3=C.WHITE else TweenService:Create(PawBtn,TweenInfo.new(0.2),{Size=UDim2.new(0,44,0,44),BackgroundColor3=C.OFF,TextColor3=C.GRAY}):Play(); PawBtn.Text="=;="; Lbl.TextColor3=C.GRAY end end
+    PawBtn.MouseButton1Click:Connect(function() Set(not enabled); cb(not enabled) end); Set(default)
+end
+
+-- ================== MAIN TAB ==================
+local mainPage=TabPages["Main"]
+
+-- Game Info
+local InfoFrame=Instance.new("Frame")
+InfoFrame.Size=UDim2.new(1,0,0,55)
+InfoFrame.BackgroundColor3=C.BG2
+InfoFrame.BorderSizePixel=0
+InfoFrame.Parent=mainPage
+Instance.new("UICorner",InfoFrame).CornerRadius=UDim.new(0,15)
+
+local GameIconImg=Instance.new("ImageLabel")
+GameIconImg.Size=UDim2.new(0,38,0,38)
+GameIconImg.Position=UDim2.new(0,8,0,8)
+GameIconImg.BackgroundTransparency=1
+GameIconImg.Image=GameIcon
+GameIconImg.Parent=InfoFrame
+Instance.new("UICorner",GameIconImg).CornerRadius=UDim.new(1,0)
+
+local GameNameLabel=Instance.new("TextLabel")
+GameNameLabel.Size=UDim2.new(0.55,0,0,14)
+GameNameLabel.Position=UDim2.new(0,52,0,6)
+GameNameLabel.Text="Game: "..GameName
+GameNameLabel.TextColor3=C.WHITE
+GameNameLabel.Font=Enum.Font.GothamBold
+GameNameLabel.TextSize=9
+GameNameLabel.BackgroundTransparency=1
+GameNameLabel.TextXAlignment=Enum.TextXAlignment.Left
+GameNameLabel.TextTruncate=Enum.TextTruncate.AtEnd
+GameNameLabel.Parent=InfoFrame
+
+local PlayerNameLabel=Instance.new("TextLabel")
+PlayerNameLabel.Size=UDim2.new(0.55,0,0,12)
+PlayerNameLabel.Position=UDim2.new(0,52,0,21)
+PlayerNameLabel.Text="Player: "..Player.Name
+PlayerNameLabel.TextColor3=C.PINK
+PlayerNameLabel.Font=Enum.Font.Gotham
+PlayerNameLabel.TextSize=8
+PlayerNameLabel.BackgroundTransparency=1
+PlayerNameLabel.TextXAlignment=Enum.TextXAlignment.Left
+PlayerNameLabel.Parent=InfoFrame
+
+local ExecutorLabel=Instance.new("TextLabel")
+ExecutorLabel.Size=UDim2.new(0.55,0,0,12)
+ExecutorLabel.Position=UDim2.new(0,52,0,34)
+ExecutorLabel.Text="Exec: "..(pcall(identifyexecutor) and identifyexecutor() or "Unknown")
+ExecutorLabel.TextColor3=C.PURPLE
+ExecutorLabel.Font=Enum.Font.Gotham
+ExecutorLabel.TextSize=8
+ExecutorLabel.BackgroundTransparency=1
+ExecutorLabel.TextXAlignment=Enum.TextXAlignment.Left
+ExecutorLabel.Parent=InfoFrame
+
+-- Sleeping Cat
+local CatFrame=Instance.new("Frame")
+CatFrame.Size=UDim2.new(1,0,0,85)
+CatFrame.BackgroundColor3=C.BG2
+CatFrame.BorderSizePixel=0
+CatFrame.Parent=mainPage
+Instance.new("UICorner",CatFrame).CornerRadius=UDim.new(0,15)
+
+local CatArt=Instance.new("TextLabel")
+CatArt.Size=UDim2.new(1,-8,1,-8)
+CatArt.Position=UDim2.new(0,4,0,4)
+CatArt.Text=""
+CatArt.TextColor3=C.PINK
+CatArt.Font=Enum.Font.Gotham
+CatArt.TextSize=9
+CatArt.BackgroundTransparency=1
+CatArt.TextXAlignment=Enum.TextXAlignment.Center
+CatArt.TextYAlignment=Enum.TextYAlignment.Center
+CatArt.Parent=CatFrame
+
+local CatFrames={
+    [[  ╱|、
+(˚ˎ 。7  
+ |、˜〵          
+じしˍ,)ノ
+
+   zzz]],
+    [[  ╱|、
+( -ˎ -)  
+ |、˜〵          
+じしˍ,)ノ
+
+  zzZ]],
+    [[  ╱|、
+( =ˎ =)  
+ |、˜〵          
+じしˍ,)ノ
+
+  zZz]],
+    [[  ╱|、
+( ˘ˎ ˘)  
+ |、˜〵          
+じしˍ,)ノ
+
+   zzz]]
+}
+local CatIdx=1
+spawn(function() while CatArt and CatArt.Parent do CatIdx=(CatIdx%#CatFrames)+1; CatArt.Text=CatFrames[CatIdx]; wait(1.2) end end)
+
+-- Status
+local StatusLabel=Instance.new("TextLabel")
+StatusLabel.Size=UDim2.new(1,0,0,14)
+StatusLabel.Text="uwu zzz..."
+StatusLabel.TextColor3=C.GRAY
+StatusLabel.Font=Enum.Font.Gotham
+StatusLabel.TextSize=9
+StatusLabel.BackgroundTransparency=1
+StatusLabel.TextXAlignment=Enum.TextXAlignment.Center
+StatusLabel.Parent=mainPage
+
+-- ================== ESP TAB ==================
+local espPage=TabPages["ESP"]
+PawToggle(espPage,"Fullbright",false,function(v) Settings.Fullbright=v; if v then EnableFB() else DisableFB() end end)
+PawToggle(espPage,"Show Anomaly",false,function(v) Settings.ShowAnomaly=v end)
+PawToggle(espPage,"Show Object",false,function(v) Settings.ShowObject=v end)
+PawToggle(espPage,"Show Changes",false,function(v) Settings.ShowChanges=v end)
+PawToggle(espPage,"Skin Detect",false,function(v) Settings.ShowSkinDetect=v end)
+PawToggle(espPage,"Size Detect",false,function(v) Settings.ShowSizeDetect=v end)
+PawToggle(espPage,"Show Notify",false,function(v) Settings.ShowNotify=v end)
+
+-- ================== DETECT TAB ==================
+local detPage=TabPages["Detect"]
+PawToggle(detPage,"Sound Detect",false,function(v) Settings.DetectSounds=v end)
+PawToggle(detPage,"Clock Detect",false,function(v) Settings.DetectClock=v end)
+PawToggle(detPage,"Face Detect",false,function(v) Settings.DetectFaces=v end)
+PawToggle(detPage,"Auto Copy",false,function(v) Settings.AutoCopy=v end)
+PawToggle(detPage,"Scanner",false,function(v) Settings.Scanner=v end)
+
+-- ================== LOG TAB ==================
+local logPage=TabPages["Log"]
+local LogBox=Instance.new("ScrollingFrame")
+LogBox.Size=UDim2.new(1,0,0,130)
+LogBox.BackgroundColor3=C.BG2
+LogBox.BorderSizePixel=0
+LogBox.CanvasSize=UDim2.new(0,0,0,0)
+LogBox.ScrollBarThickness=3
+LogBox.ScrollBarImageColor3=C.ACCENT
+LogBox.Parent=logPage
+Instance.new("UICorner",LogBox).CornerRadius=UDim.new(0,12)
+
+local LogLay=Instance.new("UIListLayout")
+LogLay.SortOrder=Enum.SortOrder.LayoutOrder
+LogLay.Padding=UDim.new(0,2)
+LogLay.Parent=LogBox
+
+local LogCnt=Instance.new("TextLabel")
+LogCnt.Size=UDim2.new(1,0,0,14)
+LogCnt.Text="0 entries"
+LogCnt.TextColor3=C.GRAY
+LogCnt.Font=Enum.Font.Gotham
+LogCnt.TextSize=9
+LogCnt.BackgroundTransparency=1
+LogCnt.TextXAlignment=Enum.TextXAlignment.Center
+LogCnt.Parent=logPage
+
+local LogN=0
+function AddLog(m,c)
+    LogN=LogN+1
+    if LogN>200 then for i=1,10 do local k=LogBox:GetChildren(); if k[i] and k[i]:IsA("TextLabel") then k[i]:Remove() end end end
+    local l=Instance.new("TextLabel")
+    l.Size=UDim2.new(1,-4,0,13)
+    l.Text=m
+    l.TextColor3=c or C.WHITE
+    l.Font=Enum.Font.Gotham
+    l.TextSize=8
+    l.BackgroundTransparency=1
+    l.TextXAlignment=Enum.TextXAlignment.Left
+    l.Parent=LogBox
+    LogBox.CanvasSize=UDim2.new(0,0,0,LogLay.AbsoluteContentSize.Y+2)
+    LogBox.CanvasPosition=Vector2.new(0,LogBox.CanvasSize.Y.Offset)
+    LogCnt.Text=LogN.." entries"
+end
+AddLog("UWU HUB HATE WORLD",C.PURPLE)
+AddLog("All systems offline",C.GRAY)
+
+-- MINIMIZE
+local MinIcon; local MinFaces={"uwu","owo",">.<","^-^"}; local MinIdx=1
+MinBtn.MouseButton1Click:Connect(function()
+    Main.Visible=false
+    if not MinIcon then
+        MinIcon=Instance.new("TextButton")
+        MinIcon.Size=UDim2.new(0,34,0,34)
+        MinIcon.Position=UDim2.new(0.5,-17,0.5,-17)
+        MinIcon.BackgroundColor3=C.BG2
+        MinIcon.TextColor3=C.PINK
+        MinIcon.Font=Enum.Font.GothamBold
+        MinIcon.TextSize=10
+        MinIcon.BorderSizePixel=0
+        MinIcon.Active=true
+        MinIcon.Draggable=true
+        MinIcon.Parent=Gui
+        Instance.new("UICorner",MinIcon).CornerRadius=UDim.new(1,0)
+        MinIcon.MouseButton1Click:Connect(function() MinIcon.Visible=false; Main.Visible=true end)
+        spawn(function() while MinIcon and MinIcon.Parent and MinIcon.Visible do MinIdx=(MinIdx%#MinFaces)+1; MinIcon.Text=MinFaces[MinIdx]; wait(0.6) end end)
+    else MinIcon.Visible=true end
+end)
+
+-- ================== ESP SYSTEM ==================
+local ANOMALY_NAMES={"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity"}
+local OBJECT_NAMES={"AnnoyingOrange","NormalOrange","Orange","Float Duck","Duck","Crib","Rockingmachine","Bar Soap","Soap","Mirror","Sink","Curtain","Bucket","TV","Telephone","Alarm Clock","WallClock","ClockFace","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","g Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Briefcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","Bed","Pillow","Glass","Bleach","crayon","pic1","pic2","pic3","Projector"}
+
+local DetectedESP={}
+local CirclePool={}
+local Cached={}
+local ObjectDB={}
+local ODB2={}
+local ESPLastScan=0
+local AnimTime=0
+
+for _,v in ipairs(workspace:GetDescendants()) do Cached[v]=true end
+workspace.DescendantAdded:Connect(function(v) Cached[v]=true end)
+workspace.DescendantRemoving:Connect(function(v) Cached[v]=nil; ObjectDB[v]=nil; ODB2[v]=nil end)
+
+local function InList(n,l) for _,k in ipairs(l) do if n==k then return true end end; return false end
+local function GetState(o)
+    if o:IsA("BasePart") then return{p=o.Position,s=o.Size,c=o.Color,t=o.Transparency,m=o.Material} end
+    local pp=o:FindFirstChildOfClass("BasePart")or o.PrimaryPart
+    if pp then return{p=pp.Position,s=pp.Size} end
+    return nil
+end
+
+function GetCircle()
+    if not Drawing then return nil end
+    for _,c in ipairs(CirclePool) do if not c.Visible then return c end end
+    local c=Drawing.new("Circle"); c.Thickness=2; c.Filled=false; c.Transparency=1; c.NumSides=32
+    table.insert(CirclePool,c); return c
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    AnimTime=AnimTime+dt
+    
+    if MasterOn and(Settings.ShowAnomaly or Settings.ShowObject or Settings.ShowChanges) then
+        ESPLastScan=ESPLastScan+dt
+        if ESPLastScan>=0.3 then ESPLastScan=0; DetectedESP={}
+            for _,o in ipairs(workspace:GetDescendants()) do
+                if not Cached[o] then continue end
+                if not(o:IsA("Model")or o:IsA("BasePart"))then continue end
+                local nm=o.Name; local ok=false; local col=C.PINK_ESP
+                if Settings.ShowAnomaly and InList(nm,ANOMALY_NAMES) then ok=true; col=C.RED
+                elseif Settings.ShowObject and InList(nm,OBJECT_NAMES) then ok=true; col=C.PINK_ESP
+                elseif Settings.ShowChanges then
+                    local p=o:IsA("BasePart")and o or o:FindFirstChildOfClass("BasePart")
+                    if p and p:IsA("BasePart")and(p.AssemblyLinearVelocity.Magnitude>0.1 or p.RotVelocity.Magnitude>0.1) then ok=true; col=C.YELLOW end
+                end
+                if ok then
+                    local r=5
+                    if o:IsA("BasePart")then r=math.clamp(math.max(o.Size.X,o.Size.Y,o.Size.Z)*0.7,4,35)
+                    elseif o:IsA("Model")then local pp=o:FindFirstChildOfClass("BasePart")or o.PrimaryPart; if pp then r=math.clamp(math.max(pp.Size.X,pp.Size.Y,pp.Size.Z)*0.7,4,35) end end
+                    DetectedESP[o]={col=col,r=r}
+                end
+            end
+        end
+        for _,c in ipairs(CirclePool) do c.Visible=false end
+        for o,d in pairs(DetectedESP) do
+            if o and o.Parent then
+                local p=o:IsA("BasePart")and o or o:FindFirstChildOfClass("BasePart")
+                if p then
+                    local pos,on=Camera:WorldToViewportPoint(p.Position)
+                    if on then
+                        local cr=GetCircle()
+                        if cr then
+                            local seed=string.byte(o.Name,1) or 1
+                            cr.Position=Vector2.new(pos.X,pos.Y)
+                            cr.Radius=d.r*(1+math.sin(AnimTime*2+seed)*0.04)
+                            cr.Color=d.col; cr.Visible=true
+                        end
+                    end
+                end
+            end
+        end
+    else
+        for _,c in ipairs(CirclePool) do c.Visible=false end
+    end
+    
+    if MasterOn and Settings.ShowSkinDetect then
+        for _,o in ipairs(workspace:GetDescendants()) do
+            if o:IsA("BasePart") and Cached[o] then
+                local newSt=GetState(o)
+                if newSt and ODB2[o] then
+                    if ODB2[o].c~=newSt.c then ShowNotif("SKIN",o.Name.." color",C.PINK); AddLog("[SKIN] "..o.Name.." color",C.PINK) end
+                    if ODB2[o].m~=newSt.m then ShowNotif("SKIN",o.Name.." material",C.PINK); AddLog("[SKIN] "..o.Name.." material",C.PINK) end
+                end
+                ODB2[o]=newSt
+            end
+        end
+    end
+    
+    if MasterOn and Settings.ShowSizeDetect then
+        for _,o in ipairs(workspace:GetDescendants()) do
+            if o:IsA("BasePart") and Cached[o] then
+                local newSt=GetState(o)
+                if newSt and ObjectDB[o] and(ObjectDB[o].s-newSt.s).Magnitude>0.1 then
+                    ShowNotif("SIZE",o.Name,C.YELLOW); AddLog("[SIZE] "..o.Name.." changed",C.YELLOW)
+                end
+                ObjectDB[o]=newSt
+            end
+        end
+    end
+    
+    if MasterOn then StatusLabel.Text="uwu on" else StatusLabel.Text="uwu zzz..." end
+end)
 -- SETTINGS ALL OFF
 local Settings = {
     Fullbright=false, ShowAnomaly=false, ShowObject=false, ShowChanges=false,
