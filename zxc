@@ -1,40 +1,35 @@
--- Anomaly Watch | Pink Paw GUI + Outline ESP | RAGE v15 FINAL
-
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local StarterGui = game:GetService("StarterGui")
-local PLAYERGUI = Player:WaitForChild("PlayerGui")
-
-local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-
--- ================== COLORS ==================
-local C = {
-    BG = Color3.fromRGB(25, 15, 20),
-    BG2 = Color3.fromRGB(35, 20, 28),
-    ACCENT = Color3.fromRGB(255, 140, 180),
-    ACCENT2 = Color3.fromRGB(200, 70, 120),
-    PINK = Color3.fromRGB(255, 170, 195),
-    WHITE = Color3.fromRGB(245, 235, 240),
-    GRAY = Color3.fromRGB(160, 140, 150),
-    ON = Color3.fromRGB(255, 120, 160),
-    OFF = Color3.fromRGB(55, 30, 40),
-    RED = Color3.fromRGB(255, 40, 60),
-    PINK_ESP = Color3.fromRGB(255, 150, 180),
-    YELLOW = Color3.fromRGB(255, 200, 100),
-    GLOW = Color3.fromRGB(255, 110, 150)
-}
-
--- ================== SETTINGS ==================
-local Settings = {
-    AnomalyESP = false,
-    ObjectESP = false,
-    ChangesESP = false,
-    Notifications = true
-}
+-- Anomaly Watch | Pink Paw GUI + Full Wireframe ESP | RAGE v16
+local a,b,c,d,e,f,g=game:GetService("Players"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("TweenService"),game:GetService("StarterGui"),a.LocalPlayer,c.TouchEnabled and not c.KeyboardEnabled,f:WaitForChild("PlayerGui")
+local h={BG=Color3.fromRGB(25,15,20),BG2=Color3.fromRGB(35,20,28),ACCENT=Color3.fromRGB(255,140,180),ACCENT2=Color3.fromRGB(200,70,120),PINK=Color3.fromRGB(255,170,195),WHITE=Color3.fromRGB(245,235,240),GRAY=Color3.fromRGB(160,140,150),ON=Color3.fromRGB(255,120,160),OFF=Color3.fromRGB(55,30,45),RED=Color3.fromRGB(255,40,60),PINK_ESP=Color3.fromRGB(255,150,180),YELLOW=Color3.fromRGB(255,200,100),GLOW=Color3.fromRGB(255,110,150)}
+local i={AnomalyESP=false,ObjectESP=false,ChangesESP=false,Notifications=true}
+function j(k,l)if not i.Notifications then return end;pcall(function()e:SetCore("SendNotification",{Title=k,Text=l,Duration=2.5})end)end
+local m=Instance.new("ScreenGui")m.Name="PawESP";m.IgnoreGuiInset=true;m.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;m.Parent=g
+local n=g and 230 or 260;local o=g and 330 or 360
+local p=Instance.new("Frame")p.Size=UDim2.new(0,n,0,o)p.Position=UDim2.new(0.5,-n/2,0.5,-o/2)p.BackgroundColor3=h.BG;p.BorderSizePixel=0;p.Active=true;p.Draggable=true;p.Parent=m;Instance.new("UICorner",p).CornerRadius=UDim.new(0,18)
+local q=Instance.new("Frame")q.Size=UDim2.new(1,8,1,8)q.Position=UDim2.new(0,-4,0,-4)q.BackgroundColor3=h.GLOW;q.BackgroundTransparency=0.65;q.BorderSizePixel=0;q.ZIndex=0;q.Parent=p;Instance.new("UICorner",q).CornerRadius=UDim.new(0,20)
+local r=Instance.new("UIGradient")r.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(30,16,22)),ColorSequenceKeypoint.new(0.5,Color3.fromRGB(24,12,18)),ColorSequenceKeypoint.new(1,Color3.fromRGB(28,14,20))}r.Rotation=140;r.Parent=p
+local s=Instance.new("Frame")s.Size=UDim2.new(1,0,0,36)s.BackgroundColor3=h.ACCENT2;s.BorderSizePixel=0;s.Parent=p;Instance.new("UICorner",s).CornerRadius=UDim.new(0,18)
+local t=Instance.new("TextLabel")t.Size=UDim2.new(0,100,1,0)t.Position=UDim2.new(0,12,0,0)t.Text="=^^= pawESP";t.TextColor3=h.WHITE;t.Font=Enum.Font.GothamBold;t.TextSize=13;t.BackgroundTransparency=1;t.TextXAlignment=Enum.TextXAlignment.Left;t.Parent=s
+local u=Instance.new("Frame")u.Size=UDim2.new(0,44,0,24)u.Position=UDim2.new(1,-56,0.5,-12)u.BackgroundColor3=h.OFF;u.BorderSizePixel=0;u.Parent=s;Instance.new("UICorner",u).CornerRadius=UDim.new(1,0)
+local v=Instance.new("Frame")v.Size=UDim2.new(0,20,0,20)v.Position=UDim2.new(0,2,0.5,-10)v.BackgroundColor3=h.WHITE;v.BorderSizePixel=0;v.Parent=u;Instance.new("UICorner",v).CornerRadius=UDim.new(1,0)
+local w=Instance.new("TextLabel")w.Size=UDim2.new(1,0,1,0)w.Text="=.=";w.TextColor3=h.GRAY;w.Font=Enum.Font.GothamBold;w.TextSize=7;w.BackgroundTransparency=1;w.Parent=v
+local x=true;local function y(z)x=z;if z then d:Create(u,TweenInfo.new(0.3),{BackgroundColor3=h.ON}):Play()d:Create(v,TweenInfo.new(0.3),{Position=UDim2.new(1,-22,0.5,-10)}):Play()w.Text="=^^=";w.TextColor3=h.ON else d:Create(u,TweenInfo.new(0.3),{BackgroundColor3=h.OFF}):Play()d:Create(v,TweenInfo.new(0.3),{Position=UDim2.new(0,2,0.5,-10)}):Play()w.Text="=.=";w.TextColor3=h.GRAY end end
+u.InputBegan:Connect(function(A)if A.UserInputType==Enum.UserInputType.MouseButton1 or A.UserInputType==Enum.UserInputType.Touch then y(not x)end end)
+local B=Instance.new("Frame")B.Size=UDim2.new(1,-16,1,-52)B.Position=UDim2.new(0,8,0,44)B.BackgroundTransparency=1;B.BorderSizePixel=0;B.Parent=p
+local C=Instance.new("UIListLayout")C.SortOrder=Enum.SortOrder.LayoutOrder;C.Padding=UDim.new(0,8)C.Parent=B
+local function D(E)local F=Instance.new("Frame")F.Size=UDim2.new(1,0,0,18)F.BackgroundTransparency=1;F.Parent=B;local G=Instance.new("Frame")G.Size=UDim2.new(1,0,0,1)G.Position=UDim2.new(0,0,0,16)G.BackgroundColor3=h.ACCENT;G.BackgroundTransparency=0.6;G.Parent=F;local H=Instance.new("TextLabel")H.Size=UDim2.new(1,0,0,16)H.Text=E;H.TextColor3=h.PINK;H.Font=Enum.Font.GothamBold;H.TextSize=g and 9 or 10;H.BackgroundTransparency=1;H.TextXAlignment=Enum.TextXAlignment.Left;H.Parent=F;return F end
+local function I(J,K,L)local M=K;local N=Instance.new("Frame")N.Size=UDim2.new(1,0,0,g and 34 or 30)N.BackgroundColor3=h.BG2;N.BorderSizePixel=0;N.Parent=B;Instance.new("UICorner",N).CornerRadius=UDim.new(0,10)local O=Instance.new("TextLabel")O.Size=UDim2.new(0.65,0,1,0)O.Position=UDim2.new(0,10,0,0)O.Text=J;O.TextColor3=h.GRAY;O.Font=Enum.Font.Gotham;O.TextSize=g and 10 or 11;O.BackgroundTransparency=1;O.TextXAlignment=Enum.TextXAlignment.Left;O.Parent=N;local P=Instance.new("Frame")P.Size=UDim2.new(0,38,0,20)P.Position=UDim2.new(1,-44,0.5,-10)P.BackgroundColor3=h.OFF;P.BorderSizePixel=0;P.Parent=N;Instance.new("UICorner",P).CornerRadius=UDim.new(1,0)local Q=Instance.new("Frame")Q.Size=UDim2.new(0,16,0,16)Q.Position=UDim2.new(0,2,0.5,-8)Q.BackgroundColor3=h.WHITE;Q.BorderSizePixel=0;Q.Parent=P;Instance.new("UICorner",Q).CornerRadius=UDim.new(1,0)local R=Instance.new("TextLabel")R.Size=UDim2.new(1,0,1,0)R.Text="=.=";R.TextColor3=h.GRAY;R.Font=Enum.Font.GothamBold;R.TextSize=6;R.BackgroundTransparency=1;R.Parent=Q;local function S(T)M=T;if T then d:Create(P,TweenInfo.new(0.25),{BackgroundColor3=h.ON}):Play()d:Create(Q,TweenInfo.new(0.25),{Position=UDim2.new(1,-18,0.5,-8)}):Play()R.Text="=^^=";R.TextColor3=h.ON;O.TextColor3=h.WHITE else d:Create(P,TweenInfo.new(0.25),{BackgroundColor3=h.OFF}):Play()d:Create(Q,TweenInfo.new(0.25),{Position=UDim2.new(0,2,0.5,-8)}):Play()R.Text="=.=";R.TextColor3=h.GRAY;O.TextColor3=h.GRAY end end;P.InputBegan:Connect(function(A)if A.UserInputType==Enum.UserInputType.MouseButton1 or A.UserInputType==Enum.UserInputType.Touch then S(not M)L(not M)end end)S(M)return N end
+D("Categories")I("Anomaly ESP",false,function(U)i.AnomalyESP=U;if U then j("=o_o=","Anomaly ESP on")end end)I("Object ESP",false,function(U)i.ObjectESP=U;if U then j("=^.^=","Object ESP on")end end)I("Changes ESP",false,function(U)i.ChangesESP=U;if U then j("=*.*=","Changes ESP on")end end)D("Settings")I("Notifications",true,function(U)i.Notifications=U end)
+local V=Instance.new("TextLabel")V.Size=UDim2.new(1,0,0,16)V.Text="=^.^= idle";V.TextColor3=h.GRAY;V.Font=Enum.Font.Gotham;V.TextSize=g and 9 or 10;V.BackgroundTransparency=1;V.TextXAlignment=Enum.TextXAlignment.Center;V.Parent=B
+local W={"Alternate","CornerAlternate","WindowAlternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","kaneki","aliveei_loli","Intruder","Monster","Creature","Entity"}
+local X={"AnnoyingOrange","Orange","FruitBowl","Duck","Crib","Rockingmachine","Soap","Mirror","Sink","Curtain","Bucket","Washing Machine","TV","Telephone","Alarm Clock","WallClock","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","StudyMonitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Nightstand","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","World Cup Trophy","Metal Bat","Bat","Screwdriver","Projector","ProjectorScreen","Bed","Bedframe","Mattress","Blanket","Pillow","Map","Board","Welcome Mat","Log","Glass","Shattered","Cracked","Broken"}
+local Y={}local Z={}local a0=0;local a1=g and 0.5 or 0.3;local a2=0
+function a3(a4)if a4:IsA("BasePart")then return a4 end;return a4:FindFirstChildOfClass("BasePart")or a4.PrimaryPart end
+function a5(a6,a7)a6=a6:lower()for a8,a9 in ipairs(a7)do if a6:find(a9:lower())then return true end end;return false end
+function aa()for a8,ab in ipairs(Z)do if not ab.Visible then return ab end end;local ac=Drawing.new("Line")ac.Thickness=2;ac.Transparency=1;table.insert(Z,ac)return ac end
+local function ad(ae)local af=ae.CFrame;local ag=ae.Size/2;return{af*Vector3.new(-ag.X,-ag.Y,-ag.Z),af*Vector3.new(ag.X,-ag.Y,-ag.Z),af*Vector3.new(ag.X,-ag.Y,ag.Z),af*Vector3.new(-ag.X,-ag.Y,ag.Z),af*Vector3.new(-ag.X,ag.Y,-ag.Z),af*Vector3.new(ag.X,ag.Y,-ag.Z),af*Vector3.new(ag.X,ag.Y,ag.Z),af*Vector3.new(-ag.X,ag.Y,ag.Z)}end
+local function ah(ae,ai,aj)local ak=ad(ae)local al={{1,2},{2,3},{3,4},{4,1},{5,6},{6,7},{7,8},{8,5},{1,5},{2,6},{3,7},{4,8}}local am=1+math.sin(a2*2.5+aj*0.01)*0.05;for a8,an in ipairs(al)do local ao=ak[an[1]]local ap=ak[an[2]]local aq,ar=Camera:WorldToViewportPoint(ao)local as_,at=Camera:WorldToViewportPoint(ap)if ar>0 and at>0 then local au=aa()au.From=Vector2.new(aq,ar)au.To=Vector2.new(as_,at)au.Color=ai;au.Thickness=2*am;au.Visible=true end end end
+b.RenderStepped:Connect(function(av)a2=a2+av;a0=a0+av;if a0>=a1 then a0=0;local aw={}for ax,ay in pairs(Y)do if not ax or not ax.Parent then table.insert(aw,ax)end end;for a8,ax in ipairs(aw)do Y[ax]=nil end;if x and(i.AnomalyESP or i.ObjectESP or i.ChangesESP)then for a8,ax in ipairs(workspace:GetDescendants())do if Y[ax]then continue end;if not(ax:IsA("Model")or ax:IsA("BasePart"))then continue end;local az=false;local aA=h.PINK_ESP;if i.AnomalyESP and a5(ax.Name,W)then az=true;aA=h.RED elseif i.ObjectESP and a5(ax.Name,X)then az=true;aA=h.PINK_ESP elseif i.ChangesESP then local aB=a3(ax)if aB and aB:IsA("BasePart")and(aB.Velocity.Magnitude>0.1 or aB.RotVelocity.Magnitude>0.1)then az=true;aA=h.YELLOW end end;if az then local aB=a3(ax)if aB then Y[ax]={p=aB,col=aA}end end end end end;local aC=0;for a8 in pairs(Y)do aC=aC+1 end;V.Text=x and("=^^= "..aC)or"=.= off";V.TextColor3=x and h.PINK or h.GRAY;for a8,ab in ipairs(Z)do ab.Visible=false end;if not x then return end;for ax,ay in pairs(Y)do local aB=ay.p;if aB and aB.Parent then if ax:IsA("Model")then local aD=ax:GetDescendants()for a8,aE in ipairs(aD)do if aE:IsA("BasePart")then ah(aE,ay.col,ax:GetHash())end end else ah(aB,ay.col,ax:GetHash())end end end end)j("=^^=","pawESP ready")}
 
 -- ================== NOTIFICATION ==================
 function Notify(title, text)
