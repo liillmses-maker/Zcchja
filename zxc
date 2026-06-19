@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | FULL STATE CHANGE DETECTOR | FINAL v12
+-- UWU HUB HATE WORLD | FULL STATE CHANGE DETECTOR + MONSTER DETECT | FINAL v13
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -24,7 +24,7 @@ local C={
 }
 
 local Settings={
-    Fullbright=false,ShowChanges=false,
+    Fullbright=false,ShowNPC=false,ShowChanges=false,
     SkinDetect=false,SizeDetect=false,ShowNotify=false,
     Scanner=false,AutoCopy=false,
     Speed=false,Fly=false,Fling=false,Noclip=false,FOV=false,JumpPower=false
@@ -72,8 +72,28 @@ local ROOMS={
 }
 local function GetRoom(pos)if not pos then return"?"end;for _,r in ipairs(ROOMS)do if pos.X>=r.min.X and pos.X<=r.max.X and pos.Y>=r.min.Y and pos.Y<=r.max.Y and pos.Z>=r.min.Z and pos.Z<=r.max.Z then return r.name end end;return"?"end
 
+-- ================== KNOWN MONSTERS ==================
+local KNOWN_MONSTERS = {
+    "Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart",
+    "Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity",
+    "Smiler","Fleshy","Screecher","Weeper","Crawler","Screamer","Watcher","Runner",
+    "Hanger","Skinner","Twitcher","Grabber","Burster","Seeker","Rusher","Lurker",
+    "Archangel","Gabriel","Shadow","Figure","Horror","Terror","Idle Intruder",
+    "Uncle Joe","Surprise Intruder","Geoffrey","The Walker","H.I.M","Hooded Intruder"
+}
+
+local function IsMonster(obj)
+    if obj:IsA("Model") then
+        if obj:FindFirstChildOfClass("Humanoid") then return true end
+        if obj:FindFirstChild("HumanoidRootPart") then return true end
+        for _,k in ipairs(KNOWN_MONSTERS) do if obj.Name==k then return true end end
+    end
+    return false
+end
+
 -- ================== FULL STATE DETECTOR ==================
 local WorldState={}
+local MonsterObjects={}
 local MissingObjects={}
 local Circles={}
 local TextLabels={}
@@ -152,11 +172,15 @@ workspace.DescendantAdded:Connect(function(obj)
     if not MasterOn then return end
     if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    
+    if IsMonster(obj) then MonsterObjects[obj]={name=obj.Name,time=tick()} end
+    
     local st=GetFullState(obj)
     if st then if not WorldState[obj]then MissingObjects[obj]=nil end;WorldState[obj]=st end
 end)
 
 workspace.DescendantRemoving:Connect(function(obj)
+    MonsterObjects[obj]=nil
     if WorldState[obj]then MissingObjects[obj]={state=WorldState[obj],time=tick()};WorldState[obj]=nil end
 end)
 
@@ -164,33 +188,65 @@ RunService.RenderStepped:Connect(function(dt)
     AnimTime=AnimTime+dt
     if not MasterOn then for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end;return end
     for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end
-    if not Settings.ShowChanges then return end
+    
     local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    for obj,oldSt in pairs(WorldState)do
-        if obj and obj.Parent then
-            local newSt=GetFullState(obj)
-            if newSt then
-                local changes=CompareStates(oldSt,newSt)
-                if changes then
-                    WorldState[obj]=newSt
-                    local part=GetPart(obj);if not part then continue end
+    
+    -- ================== MONSTER ESP (RED) ==================
+    if Settings.ShowNPC then
+        for obj,data in pairs(MonsterObjects)do
+            if obj and obj.Parent then
+                local part=GetPart(obj)
+                if part then
                     local pos,on=Camera:WorldToViewportPoint(part.Position)
-                    if on and root and(part.Position-root.Position).Magnitude<100 then
+                    if on and root and(part.Position-root.Position).Magnitude<150 then
                         local cr=GetCircle();local txt=GetText()
                         if cr and txt then
-                            local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,5,30)
+                            local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
                             local room=GetRoom(part.Position)
-                            local ctype=table.concat(changes,"+")
-                            local col=ctype:find("APPEARED")and C.GREEN or C.YELLOW
-                            cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=col;cr.Visible=true
-                            txt.Position=Vector2.new(pos.X,pos.Y-r-14)
-                            txt.Text=obj.Name.."\n"..room.." | "..ctype;txt.Color=C.WHITE;txt.Visible=true
+                            local dist=root and math.floor((part.Position-root.Position).Magnitude)or 0
+                            local vel=part.AssemblyLinearVelocity or part.Velocity or Vector3.zero
+                            local status=vel.Magnitude>0.3 and"ACTIVE"or"IDLE"
+                            cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=C.RED;cr.Visible=true
+                            txt.Position=Vector2.new(pos.X,pos.Y-r-16)
+                            txt.Text="R "..data.name.."\n"..room.." | "..status.." | "..dist.."m"
+                            txt.Color=C.WHITE;txt.Visible=true
                         end
                     end
                 end
             end
         end
     end
+    
+    -- ================== CHANGE DETECTOR ESP (YELLOW/GREEN) ==================
+    if Settings.ShowChanges then
+        for obj,oldSt in pairs(WorldState)do
+            if obj and obj.Parent then
+                local newSt=GetFullState(obj)
+                if newSt then
+                    local changes=CompareStates(oldSt,newSt)
+                    if changes then
+                        WorldState[obj]=newSt
+                        local part=GetPart(obj);if not part then continue end
+                        local pos,on=Camera:WorldToViewportPoint(part.Position)
+                        if on and root and(part.Position-root.Position).Magnitude<100 then
+                            local cr=GetCircle();local txt=GetText()
+                            if cr and txt then
+                                local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,5,30)
+                                local room=GetRoom(part.Position)
+                                local ctype=table.concat(changes,"+")
+                                local col=ctype:find("APPEARED")and C.GREEN or C.YELLOW
+                                cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=col;cr.Visible=true
+                                txt.Position=Vector2.new(pos.X,pos.Y-r-14)
+                                txt.Text=obj.Name.."\n"..room.." | "..ctype;txt.Color=C.WHITE;txt.Visible=true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- ================== MISSING OBJECTS (RED GHOST) ==================
     local now=tick()
     for obj,data in pairs(MissingObjects)do
         if now-data.time<8 then
@@ -288,7 +344,7 @@ function CreateMain()
     
     local ib=Instance.new("Frame");ib.Size=UDim2.new(1,0,0,35);ib.BackgroundColor3=C.BG2;ib.BorderSizePixel=0;ib.Parent=mf;Instance.new("UICorner",ib).CornerRadius=UDim.new(0,10)
     local it=Instance.new("TextLabel");it.Size=UDim2.new(1,-10,1,-10);it.Position=UDim2.new(0,5,0,5)
-    it.Text="Anomaly Watch\n"..Player.Name.."\nState Change Detector";it.TextColor3=C.WHITE;it.Font=Enum.Font.Gotham;it.TextSize=9;it.BackgroundTransparency=1;it.TextXAlignment=Enum.TextXAlignment.Left;it.TextYAlignment=Enum.TextYAlignment.Top;it.Parent=ib
+    it.Text="Anomaly Watch\n"..Player.Name.."\nMonsters + Change Detector";it.TextColor3=C.WHITE;it.Font=Enum.Font.Gotham;it.TextSize=9;it.BackgroundTransparency=1;it.TextXAlignment=Enum.TextXAlignment.Left;it.TextYAlignment=Enum.TextYAlignment.Top;it.Parent=ib
     
     local cb=Instance.new("Frame");cb.Size=UDim2.new(1,0,0,80);cb.BackgroundColor3=C.BG2;cb.BorderSizePixel=0;cb.Parent=mf;Instance.new("UICorner",cb).CornerRadius=UDim.new(0,10)
     local ca=Instance.new("TextLabel");ca.Size=UDim2.new(1,-6,1,-6);ca.Position=UDim2.new(0,3,0,3)
@@ -316,8 +372,13 @@ function CreateMain()
    zzz]]};local ci=1
     spawn(function()while ca and ca.Parent do ci=ci%#cfs+1;ca.Text=cfs[ci];wait(1.2)end end)
     
+    -- ESP TAB - BOTH MODES
     Toggle(tabFrames["ESP"],"Fullbright","Fullbright",false,function(v)if v then EnableFB()else DisableFB()end end)
-    local l1=Instance.new("TextLabel");l1.Size=UDim2.new(1,0,0,16);l1.Text="CHANGE DETECTOR";l1.TextColor3=C.YELLOW;l1.Font=Enum.Font.GothamBold;l1.TextSize=8;l1.BackgroundTransparency=1;l1.TextXAlignment=Enum.TextXAlignment.Left;l1.Parent=tabFrames["ESP"]
+    
+    local l1=Instance.new("TextLabel");l1.Size=UDim2.new(1,0,0,16);l1.Text="MONSTERS (RED)";l1.TextColor3=C.RED;l1.Font=Enum.Font.GothamBold;l1.TextSize=8;l1.BackgroundTransparency=1;l1.TextXAlignment=Enum.TextXAlignment.Left;l1.Parent=tabFrames["ESP"]
+    Toggle(tabFrames["ESP"],"Show NPCs","ShowNPC",false,function(v)end)
+    
+    local l2=Instance.new("TextLabel");l2.Size=UDim2.new(1,0,0,16);l2.Text="CHANGES (YELLOW/GREEN)";l2.TextColor3=C.YELLOW;l2.Font=Enum.Font.GothamBold;l2.TextSize=8;l2.BackgroundTransparency=1;l2.TextXAlignment=Enum.TextXAlignment.Left;l2.Parent=tabFrames["ESP"]
     Toggle(tabFrames["ESP"],"Show Changes","ShowChanges",false,function(v)end)
     Toggle(tabFrames["ESP"],"Skin Detect","SkinDetect",false,function(v)end)
     Toggle(tabFrames["ESP"],"Size Detect","SizeDetect",false,function(v)end)
@@ -342,14 +403,15 @@ function CreateMain()
         ls.CanvasSize=UDim2.new(0,0,0,ll.AbsoluteContentSize.Y+10);ls.CanvasPosition=Vector2.new(0,ls.CanvasSize.Y.Offset)
     end
     AddLog("UWU HUB HATE WORLD",C.PURPLE)
-    AddLog("State Change Detector Active",C.CYAN)
-    AddLog("Size/Color/Material/Texture/Sound/Movement",C.GRAY)
+    AddLog("Monsters: "..#KNOWN_MONSTERS.." known",C.RED)
+    AddLog("Changes: Size/Color/Texture/Sound/Movement",C.YELLOW)
     
     spawn(function()
         while Main and Main.Parent do wait(1)
-            local count=0;for _ in pairs(WorldState)do count=count+1 end
-            local missing=0;for _ in pairs(MissingObjects)do missing=missing+1 end
-            StatusText.Text=MasterOn and("OBJ:"..count.." MISS:"..missing)or"=;= Idle"
+            local mc=0;for _ in pairs(MonsterObjects)do mc=mc+1 end
+            local cc=0;for _ in pairs(WorldState)do cc=cc+1 end
+            local miss=0;for _ in pairs(MissingObjects)do miss=miss+1 end
+            StatusText.Text=MasterOn and("NPC:"..mc.." OBJ:"..cc.." MISS:"..miss)or"=;= Idle"
             StatusText.TextColor3=MasterOn and C.PINK or C.GRAY
         end
     end)
