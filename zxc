@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | ANOMALY NOTIFICATIONS + ESP | FINAL v14
+-- UWU HUB HATE WORLD | PRO ESP ENGINE + SLEEPING CAT | FINAL v16
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
 local PLAYERGUI = Player:WaitForChild("PlayerGui")
 
 local OrigBright = Lighting.Brightness; local OrigClock = Lighting.ClockTime
@@ -72,231 +73,109 @@ local ROOMS={
 }
 local function GetRoom(pos)if not pos then return"?"end;for _,r in ipairs(ROOMS)do if pos.X>=r.min.X and pos.X<=r.max.X and pos.Y>=r.min.Y and pos.Y<=r.max.Y and pos.Z>=r.min.Z and pos.Z<=r.max.Z then return r.name end end;return"?"end
 
--- KNOWN MONSTERS
-local KNOWN_MONSTERS={"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity","Smiler","Fleshy","Screecher","Weeper","Crawler","Screamer","Watcher","Runner","Hanger","Skinner","Twitcher","Grabber","Burster","Seeker","Rusher","Lurker","Archangel","Gabriel","Shadow","Figure","Idle Intruder","Uncle Joe","Surprise Intruder","Geoffrey","The Walker","H.I.M","Hooded Intruder"}
+-- ================== PRO ESP ENGINE ==================
+local MAX_ESP=60;local SCAN_INTERVAL=0.3;local BASELINE_COOLDOWN=3
+local CirclePool={};local TextPool={};local ActiveESP={}
+function GetCircle()for i,c in ipairs(CirclePool)do if not c.Visible then return c,i end end;if#CirclePool>=MAX_ESP then return CirclePool[1],1 end;if Drawing then local c=Drawing.new("Circle");c.Thickness=2;c.Filled=false;c.Transparency=1;c.NumSides=32;table.insert(CirclePool,c);return c,#CirclePool end;return nil end
+function GetText()for i,t in ipairs(TextPool)do if not t.Visible then return t,i end end;if#TextPool>=MAX_ESP then return TextPool[1],1 end;if Drawing then local t=Drawing.new("Text");t.Size=12;t.Center=true;t.Outline=true;t.OutlineColor=Color3.new();table.insert(TextPool,t);return t,#TextPool end;return nil end
+local function IsMonster(obj)if obj:IsA("Model")then if obj:FindFirstChildOfClass("Humanoid")then return true end;if obj:FindFirstChild("HumanoidRootPart")then return true end;if CollectionService:HasTag(obj,"Monster")then return true end;if CollectionService:HasTag(obj,"Enemy")then return true end;if CollectionService:HasTag(obj,"NPC")then return true end end;return false end
+local function IsValidTarget(obj)if not obj.Parent then return false end;if obj:IsDescendantOf(Player.Character or workspace)==false then return false end;if obj:IsA("BasePart")and obj.Transparency>0.95 then return false end;if obj.Name=="Terrain"then return false end;if obj:IsA("BasePart")and obj.Anchored and obj.Size.Magnitude<1 then return false end;if obj:IsA("GuiObject")or obj:IsA("ScreenGui")then return false end;return true end
+local function GetState(obj)if not IsValidTarget(obj)then return nil end;local s={name=obj.Name};if obj:IsA("BasePart")then s.pos=obj.Position;s.size=obj.Size;s.color=obj.Color;s.material=obj.Material;s.transparency=obj.Transparency elseif obj:IsA("Model")then local pp=obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart;if pp then s.pos=pp.Position;s.size=pp.Size end end;return s end
+local function HasChanged(old,new)if not old or not new then return true end;if old.pos and new.pos then local d=(old.pos-new.pos);if math.abs(d.X)>0.15 or math.abs(d.Y)>0.15 or math.abs(d.Z)>0.15 then return true end end;if old.size and new.size then local d=(old.size-new.size);if math.abs(d.X)>0.15 or math.abs(d.Y)>0.15 or math.abs(d.Z)>0.15 then return true end end;if old.color and new.color and old.color~=new.color then return true end;if old.material and new.material and old.material~=new.material then return true end;if old.transparency and new.transparency and math.abs(old.transparency-new.transparency)>0.02 then return true end;return false end
+local BaselineState={};local LiveState={};local ESPData={};local MonsterData={};local MissingData={};local LastBaselineUpdate={};local AnimTime=0
 
-local function IsMonster(obj)
-    if obj:IsA("Model")then if obj:FindFirstChildOfClass("Humanoid")then return true end;if obj:FindFirstChild("HumanoidRootPart")then return true end;for _,k in ipairs(KNOWN_MONSTERS)do if obj.Name==k then return true end end end
-    return false
-end
+task.spawn(function()while true do task.wait(SCAN_INTERVAL);if not MasterOn then continue end;local now=tick();for obj,baseline in pairs(BaselineState)do if obj and obj.Parent then local live=GetState(obj);if live then LiveState[obj]=live;if HasChanged(baseline,live)then local room=GetRoom(baseline.pos or live.pos);ESPData[obj]={name=obj.Name,pos=live.pos,size=live.size,room=room,type="CHANGED",time=now,color=C.YELLOW}end;if not LastBaselineUpdate[obj]or now-LastBaselineUpdate[obj]>BASELINE_COOLDOWN then BaselineState[obj]=live;LastBaselineUpdate[obj]=now end else if baseline.pos then MissingData[obj]={name=baseline.name,pos=baseline.pos,time=now}end;BaselineState[obj]=nil;LiveState[obj]=nil;ESPData[obj]=nil end end end end)
+
+workspace.DescendantAdded:Connect(function(obj)if not MasterOn then return end;if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end;if not IsValidTarget(obj)then return end;if IsMonster(obj)then local part=obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart;if part then MonsterData[obj]={name=obj.Name,pos=part.Position,size=part.Size,time=tick()}end end;local st=GetState(obj);if st then BaselineState[obj]=st;LiveState[obj]=st;LastBaselineUpdate[obj]=tick();local room=GetRoom(st.pos);ESPData[obj]={name=obj.Name,pos=st.pos,size=st.size,room=room,type="NEW",time=tick(),color=C.GREEN}end end)
+workspace.DescendantRemoving:Connect(function(obj)if BaselineState[obj]then MissingData[obj]={name=BaselineState[obj].name,pos=BaselineState[obj].pos,time=tick()}end;BaselineState[obj]=nil;LiveState[obj]=nil;ESPData[obj]=nil;MonsterData[obj]=nil end)
+
+RunService.RenderStepped:Connect(function(dt)
+    AnimTime+=dt;for _,c in ipairs(CirclePool)do c.Visible=false end;for _,t in ipairs(TextPool)do t.Visible=false end
+    if not MasterOn then return end
+    local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart");local now=tick();local ac=0
+    if Settings.ShowNPC and ac<MAX_ESP then for obj,data in pairs(MonsterData)do if obj and obj.Parent and ac<MAX_ESP then local part=obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart;if part then data.pos=part.Position;local pos,on=Camera:WorldToViewportPoint(data.pos);if on and root and(data.pos-root.Position).Magnitude<150 then local cr,ci=GetCircle();local txt,ti=GetText();if cr then local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35);local room=GetRoom(data.pos);local dist=math.floor((data.pos-root.Position).Magnitude);local vel=part.AssemblyLinearVelocity or part.Velocity or Vector3.zero;local status=vel.Magnitude>0.3 and"ACTIVE"or"IDLE";cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=C.RED;cr.Visible=true;txt.Position=Vector2.new(pos.X,pos.Y-r-14);txt.Text=data.name.."\n"..room.." | "..status.." | "..dist.."m";txt.Color=C.WHITE;txt.Visible=true;ac+=1 end end end end end end
+    if Settings.ShowChanges and ac<MAX_ESP then for obj,data in pairs(ESPData)do if obj and obj.Parent and now-data.time<3 and ac<MAX_ESP then if data.pos then local pos,on=Camera:WorldToViewportPoint(data.pos);if on and root and(data.pos-root.Position).Magnitude<100 then local cr,ci=GetCircle();local txt,ti=GetText();if cr then local r=math.clamp(math.max(data.size.X,data.size.Y,data.size.Z)*0.7,5,30);cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=data.color;cr.Visible=true;txt.Position=Vector2.new(pos.X,pos.Y-r-12);txt.Text=data.name.."\n"..data.room.." | "..data.type;txt.Color=C.WHITE;txt.Visible=true;ac+=1 end end end end end end
+    if Settings.ShowChanges and ac<MAX_ESP then for obj,data in pairs(MissingData)do if now-data.time<5 and ac<MAX_ESP then if data.pos then local pos,on=Camera:WorldToViewportPoint(data.pos);if on and root and(data.pos-root.Position).Magnitude<100 then local cr,ci=GetCircle();local txt,ti=GetText();if cr then local room=GetRoom(data.pos);cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=10;cr.Color=C.RED;cr.Visible=true;txt.Position=Vector2.new(pos.X,pos.Y-14);txt.Text="MISSING\n"..room.." | "..data.name;txt.Color=C.RED;txt.Visible=true;ac+=1 end end end end end end
+    for obj,data in pairs(ESPData)do if now-data.time>5 then ESPData[obj]=nil end end;for obj,data in pairs(MissingData)do if now-data.time>8 then MissingData[obj]=nil end end
+end)
 
 -- ================== NOTIFICATION SYSTEM ==================
 local NotifPool={}
 local function ShowNotification(title,text,color)
     if not Settings.ShowNotify then return end
-    local Frame=Instance.new("Frame")
-    Frame.Size=UDim2.new(0,220,0,50)
-    Frame.Position=UDim2.new(1,-230,0,10)
-    Frame.BackgroundColor3=C.BG2
-    Frame.BackgroundTransparency=0.2
-    Frame.BorderSizePixel=0
-    Frame.Parent=PLAYERGUI
-    Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,14)
-    
-    local Icon=Instance.new("Frame")
-    Icon.Size=UDim2.new(0,4,0,42);Icon.Position=UDim2.new(0,4,0,4)
-    Icon.BackgroundColor3=color or C.GREEN;Icon.BorderSizePixel=0;Icon.Parent=Frame
-    Instance.new("UICorner",Icon).CornerRadius=UDim.new(1,0)
-    
-    local Tl=Instance.new("TextLabel");Tl.Size=UDim2.new(1,-16,0,18);Tl.Position=UDim2.new(0,12,0,4)
-    Tl.Text=title;Tl.TextColor3=color or C.GREEN;Tl.Font=Enum.Font.GothamBold;Tl.TextSize=10;Tl.BackgroundTransparency=1;Tl.TextXAlignment=Enum.TextXAlignment.Left;Tl.Parent=Frame
-    local Tx=Instance.new("TextLabel");Tx.Size=UDim2.new(1,-16,0,22);Tx.Position=UDim2.new(0,12,0,22)
-    Tx.Text=text;Tx.TextColor3=C.WHITE;Tx.Font=Enum.Font.Gotham;Tx.TextSize=8;Tx.BackgroundTransparency=1;Tx.TextXAlignment=Enum.TextXAlignment.Left;Tx.Parent=Frame
-    
-    table.insert(NotifPool,Frame)
-    if#NotifPool>5 then NotifPool[1]:Destroy();table.remove(NotifPool,1)end
-    for i,f in ipairs(NotifPool)do f.Position=UDim2.new(1,-230,0,10+(i-1)*55)end
-    
-    spawn(function()wait(5);if Frame.Parent then TweenService:Create(Frame,TweenInfo.new(0.5),{BackgroundTransparency=1}):Play();wait(0.5);Frame:Destroy()end end)
+    local Frame=Instance.new("Frame");Frame.Size=UDim2.new(0,220,0,50);Frame.Position=UDim2.new(1,-230,0,10);Frame.BackgroundColor3=C.BG2;Frame.BackgroundTransparency=0.2;Frame.BorderSizePixel=0;Frame.Parent=PLAYERGUI;Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,14)
+    local Icon=Instance.new("Frame");Icon.Size=UDim2.new(0,4,0,42);Icon.Position=UDim2.new(0,4,0,4);Icon.BackgroundColor3=color or C.GREEN;Icon.BorderSizePixel=0;Icon.Parent=Frame;Instance.new("UICorner",Icon).CornerRadius=UDim.new(1,0)
+    local Tl=Instance.new("TextLabel");Tl.Size=UDim2.new(1,-16,0,18);Tl.Position=UDim2.new(0,12,0,4);Tl.Text=title;Tl.TextColor3=color or C.GREEN;Tl.Font=Enum.Font.GothamBold;Tl.TextSize=10;Tl.BackgroundTransparency=1;Tl.TextXAlignment=Enum.TextXAlignment.Left;Tl.Parent=Frame
+    local Tx=Instance.new("TextLabel");Tx.Size=UDim2.new(1,-16,0,22);Tx.Position=UDim2.new(0,12,0,22);Tx.Text=text;Tx.TextColor3=C.WHITE;Tx.Font=Enum.Font.Gotham;Tx.TextSize=8;Tx.BackgroundTransparency=1;Tx.TextXAlignment=Enum.TextXAlignment.Left;Tx.Parent=Frame
+    table.insert(NotifPool,Frame);if#NotifPool>5 then NotifPool[1]:Destroy();table.remove(NotifPool,1)end;for i,f in ipairs(NotifPool)do f.Position=UDim2.new(1,-230,0,10+(i-1)*55)end;spawn(function()wait(5);if Frame.Parent then TweenService:Create(Frame,TweenInfo.new(0.5),{BackgroundTransparency=1}):Play();wait(0.5);Frame:Destroy()end end)
 end
 
--- ================== FULL STATE DETECTOR ==================
-local WorldState={}
-local MonsterObjects={}
-local MissingObjects={}
-local Circles={}
-local TextLabels={}
-local AnimTime=0
+-- ================== SLEEPING CAT (LEZHAT) ==================
+local CatArt
+local SleepingCatFrames = {
+    [[
+   ╱|、
+  ( -  -)  zZz
+   |  ~ |
+   じしˍ,)ノ
+  =========]],
+    [[
+   ╱|、
+  ( -  -)  zzZ
+   |  ~ |
+   じしˍ,)ノ
+  =========]],
+    [[
+   ╱|、
+  ( =  =)  Zzz
+   |  ~ |
+   じしˍ,)ノ
+  =========]],
+    [[
+   ╱|、
+  ( ˘  ˘)  zZz
+   |  ~ |
+   じしˍ,)ノ
+  =========]],
+    [[
+   ╱|、
+  ( ˚  ˚)  zzZ
+   |  ~ |
+   じしˍ,)ノ
+  =========]]
+}
 
-function GetCircle()
-    for _,c in ipairs(Circles)do if not c.Visible then return c end end
-    if Drawing then local c=Drawing.new("Circle");c.Thickness=2;c.Filled=false;c.Transparency=1;c.NumSides=32;table.insert(Circles,c);return c end
-    return nil
-end
-function GetText()
-    for _,t in ipairs(TextLabels)do if not t.Visible then return t end end
-    if Drawing then local t=Drawing.new("Text");t.Size=12;t.Center=true;t.Outline=true;t.OutlineColor=Color3.new();table.insert(TextLabels,t);return t end
-    return nil
-end
-
-local function GetFullState(obj)
-    if not obj or not obj.Parent then return nil end
-    local s={name=obj.Name,class=obj.ClassName}
-    if obj:IsA("BasePart")then
-        s.pos=obj.Position;s.size=obj.Size;s.color=obj.Color;s.material=obj.Material;s.transparency=obj.Transparency
-        local vel=obj.AssemblyLinearVelocity or obj.Velocity;s.velocity=vel or Vector3.zero
-        s.rotvelocity=obj.RotVelocity or Vector3.zero
-    elseif obj:IsA("Model")then
-        local pp=obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart
-        if pp then s.pos=pp.Position;s.size=pp.Size end
-        s.humanoid=obj:FindFirstChildOfClass("Humanoid")~=nil
-    end
-    local textures={}
-    for _,child in ipairs(obj:GetDescendants())do
-        if child:IsA("Decal")then textures[#textures+1]=child.Texture
-        elseif child:IsA("Texture")then textures[#textures+1]=child.Texture
-        elseif child:IsA("ImageLabel")then textures[#textures+1]=child.Image end
-    end
-    s.textures=textures
-    local sounds={}
-    for _,child in ipairs(obj:GetDescendants())do
-        if child:IsA("Sound")then sounds[#sounds+1]={id=child.SoundId,playing=child.IsPlaying,volume=child.Volume}end
-    end
-    s.sounds=sounds
-    local count=0;for _ in ipairs(obj:GetChildren())do count=count+1 end
-    s.childCount=count
-    return s
-end
-
-local function CompareStates(old,new)
-    if not old or not new then return{"APPEARED"}end
-    local changes={}
-    if old.pos and new.pos then local diff=(old.pos-new.pos);if math.abs(diff.X)>0.1 or math.abs(diff.Y)>0.1 or math.abs(diff.Z)>0.1 then changes[#changes+1]="MOVED" end end
-    if old.size and new.size then local diff=(old.size-new.size);if math.abs(diff.X)>0.1 or math.abs(diff.Y)>0.1 or math.abs(diff.Z)>0.1 then changes[#changes+1]="SIZE" end end
-    if old.color and new.color and old.color~=new.color then changes[#changes+1]="COLOR" end
-    if old.material and new.material and old.material~=new.material then changes[#changes+1]="MATERIAL" end
-    if old.transparency and new.transparency and math.abs(old.transparency-new.transparency)>0.01 then changes[#changes+1]="ALPHA" end
-    if old.velocity and old.velocity.Magnitude>0.3 then changes[#changes+1]="MOVING" end
-    if old.childCount and new.childCount and old.childCount~=new.childCount then changes[#changes+1]="CHILDREN" end
-    if old.textures and new.textures then if#old.textures~=#new.textures then changes[#changes+1]="TEXTURE"else for i=1,#old.textures do if old.textures[i]~=new.textures[i]then changes[#changes+1]="TEXTURE";break end end end end
-    if old.sounds and new.sounds then if#old.sounds~=#new.sounds then changes[#changes+1]="SOUND"else for i=1,#old.sounds do if old.sounds[i].id~=new.sounds[i].id or old.sounds[i].playing~=new.sounds[i].playing then changes[#changes+1]="SOUND";break end end end end
-    return#changes>0 and changes or nil
-end
-
-local function GetPart(obj)return obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart end
-
--- ================== EVENT: NEW OBJECT ==================
-workspace.DescendantAdded:Connect(function(obj)
-    if not MasterOn then return end
-    if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end
-    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+local function StartSleepingCat(parentFrame)
+    if CatArt and CatArt.Parent then CatArt:Destroy() end
     
-    if IsMonster(obj)then
-        MonsterObjects[obj]={name=obj.Name,time=tick()}
-        local part=GetPart(obj);local room=part and GetRoom(part.Position)or"?"
-        local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        local dist=root and math.floor((part.Position-root.Position).Magnitude)or 0
-        ShowNotification("MONSTER DETECTED",obj.Name.."\nRoom: "..room.." | Distance: "..dist.."m",C.RED)
-    end
+    local CatContainer = Instance.new("Frame")
+    CatContainer.Size = UDim2.new(1, 0, 0, 95)
+    CatContainer.BackgroundColor3 = C.BG2
+    CatContainer.BorderSizePixel = 0
+    CatContainer.Parent = parentFrame
+    Instance.new("UICorner", CatContainer).CornerRadius = UDim.new(0, 12)
     
-    local st=GetFullState(obj)
-    if st then
-        if not WorldState[obj]then
-            local part=GetPart(obj);local room=part and GetRoom(part.Position)or"?"
-            local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-            local dist=root and math.floor((part.Position-root.Position).Magnitude)or 0
-            ShowNotification("NEW ANOMALY",obj.Name.."\nRoom: "..room.." | Distance: "..dist.."m",C.GREEN)
+    CatArt = Instance.new("TextLabel")
+    CatArt.Size = UDim2.new(1, -8, 1, -8)
+    CatArt.Position = UDim2.new(0, 4, 0, 4)
+    CatArt.Text = SleepingCatFrames[1]
+    CatArt.TextColor3 = C.PINK
+    CatArt.Font = Enum.Font.Gotham
+    CatArt.TextSize = 8
+    CatArt.BackgroundTransparency = 1
+    CatArt.TextXAlignment = Enum.TextXAlignment.Center
+    CatArt.TextYAlignment = Enum.TextYAlignment.Center
+    CatArt.Parent = CatContainer
+    
+    local catIdx = 1
+    spawn(function()
+        while CatArt and CatArt.Parent do
+            catIdx = catIdx % #SleepingCatFrames + 1
+            CatArt.Text = SleepingCatFrames[catIdx]
+            wait(1.5)
         end
-        MissingObjects[obj]=nil;WorldState[obj]=st
-    end
-end)
-
--- ================== EVENT: OBJECT REMOVED ==================
-workspace.DescendantRemoving:Connect(function(obj)
-    MonsterObjects[obj]=nil
-    if WorldState[obj]then
-        local part=GetPart(obj);local room=part and GetRoom(part.Position)or"?"
-        local pos=WorldState[obj].pos
-        ShowNotification("ANOMALY DISAPPEARED",obj.Name.."\nRoom: "..room,C.RED)
-        MissingObjects[obj]={state=WorldState[obj],time=tick()};WorldState[obj]=nil
-    end
-end)
-
--- ================== RENDER LOOP ==================
-RunService.RenderStepped:Connect(function(dt)
-    AnimTime=AnimTime+dt
-    if not MasterOn then for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end;return end
-    for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end
-    
-    local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    
-    -- MONSTERS
-    if Settings.ShowNPC then
-        for obj,data in pairs(MonsterObjects)do
-            if obj and obj.Parent then
-                local part=GetPart(obj)
-                if part then
-                    local pos,on=Camera:WorldToViewportPoint(part.Position)
-                    if on and root and(part.Position-root.Position).Magnitude<150 then
-                        local cr=GetCircle();local txt=GetText()
-                        if cr and txt then
-                            local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,6,35)
-                            local room=GetRoom(part.Position)
-                            local dist=math.floor((part.Position-root.Position).Magnitude)
-                            local vel=part.AssemblyLinearVelocity or part.Velocity or Vector3.zero
-                            local status=vel.Magnitude>0.3 and"ACTIVE"or"IDLE"
-                            cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=C.RED;cr.Visible=true
-                            txt.Position=Vector2.new(pos.X,pos.Y-r-16)
-                            txt.Text="R "..data.name.."\n"..room.." | "..status.." | "..dist.."m"
-                            txt.Color=C.WHITE;txt.Visible=true
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- CHANGES
-    if Settings.ShowChanges then
-        for obj,oldSt in pairs(WorldState)do
-            if obj and obj.Parent then
-                local newSt=GetFullState(obj)
-                if newSt then
-                    local changes=CompareStates(oldSt,newSt)
-                    if changes then
-                        WorldState[obj]=newSt
-                        local part=GetPart(obj);if not part then continue end
-                        local pos,on=Camera:WorldToViewportPoint(part.Position)
-                        if on and root and(part.Position-root.Position).Magnitude<100 then
-                            local cr=GetCircle();local txt=GetText()
-                            if cr and txt then
-                                local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.7,5,30)
-                                local room=GetRoom(part.Position)
-                                local ctype=table.concat(changes,"+")
-                                local col=ctype:find("APPEARED")and C.GREEN or C.YELLOW
-                                cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=col;cr.Visible=true
-                                txt.Position=Vector2.new(pos.X,pos.Y-r-14)
-                                txt.Text=obj.Name.."\n"..room.." | "..ctype;txt.Color=C.WHITE;txt.Visible=true
-                                
-                                ShowNotification("ANOMALY CHANGED",obj.Name.."\nRoom: "..room.." | "..ctype,C.YELLOW)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- MISSING
-    local now=tick()
-    for obj,data in pairs(MissingObjects)do
-        if now-data.time<8 then
-            local pos=data.state and data.state.pos
-            if pos then
-                local pos2,on=Camera:WorldToViewportPoint(pos)
-                if on and root and(pos-root.Position).Magnitude<100 then
-                    local cr=GetCircle();local txt=GetText()
-                    if cr and txt then
-                        local room=GetRoom(pos)
-                        cr.Position=Vector2.new(pos2.X,pos2.Y);cr.Radius=10;cr.Color=C.RED;cr.Visible=true
-                        txt.Position=Vector2.new(pos2.X,pos2.Y-14)
-                        txt.Text="MISSING\n"..room.." | "..data.state.name;txt.Color=C.RED;txt.Visible=true
-                    end
-                end
-            end
-        else MissingObjects[obj]=nil end
-    end
-end)
+    end)
+end
 
 -- ================== GUI ==================
 local Gui=Instance.new("ScreenGui");Gui.Name="UwUHub";Gui.Parent=PLAYERGUI;Gui.IgnoreGuiInset=true;Gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
@@ -318,7 +197,7 @@ function CreateMain()
     if Main then Main:Destroy()end;if MinIcon then MinIcon:Destroy();MinIcon=nil end
     ToggleButtons={}
     
-    Main=Instance.new("Frame");Main.Size=UDim2.new(0,320,0,300);Main.Position=UDim2.new(0.5,-160,0.5,-150)
+    Main=Instance.new("Frame");Main.Size=UDim2.new(0,320,0,310);Main.Position=UDim2.new(0.5,-160,0.5,-155)
     Main.BackgroundColor3=C.BG;Main.BorderSizePixel=0;Main.Active=true;Main.Draggable=true;Main.Parent=Gui
     Instance.new("UICorner",Main).CornerRadius=UDim.new(0,18)
     Main.BackgroundTransparency=1;TweenService:Create(Main,TweenInfo.new(0.3),{BackgroundTransparency=0}):Play()
@@ -373,35 +252,12 @@ function CreateMain()
     masterBtn.Text=MasterOn and"=^^= ON"or"=;= OFF";masterBtn.BackgroundColor3=MasterOn and C.ON or C.OFF;masterBtn.TextColor3=C.WHITE;masterBtn.Font=Enum.Font.GothamBold;masterBtn.TextSize=8;masterBtn.BorderSizePixel=0;masterBtn.Parent=masterRow;Instance.new("UICorner",masterBtn).CornerRadius=UDim.new(0,10)
     masterBtn.MouseButton1Click:Connect(function()MasterOn=not MasterOn;masterBtn.Text=MasterOn and"=^^= ON"or"=;= OFF";masterBtn.BackgroundColor3=MasterOn and C.ON or C.OFF end)
     
-    local ib=Instance.new("Frame");ib.Size=UDim2.new(1,0,0,35);ib.BackgroundColor3=C.BG2;ib.BorderSizePixel=0;ib.Parent=mf;Instance.new("UICorner",ib).CornerRadius=UDim.new(0,10)
+    local ib=Instance.new("Frame");ib.Size=UDim2.new(1,0,0,30);ib.BackgroundColor3=C.BG2;ib.BorderSizePixel=0;ib.Parent=mf;Instance.new("UICorner",ib).CornerRadius=UDim.new(0,10)
     local it=Instance.new("TextLabel");it.Size=UDim2.new(1,-10,1,-10);it.Position=UDim2.new(0,5,0,5)
-    it.Text="Anomaly Watch\n"..Player.Name.."\nEvent-Based ESP + Notify";it.TextColor3=C.WHITE;it.Font=Enum.Font.Gotham;it.TextSize=9;it.BackgroundTransparency=1;it.TextXAlignment=Enum.TextXAlignment.Left;it.TextYAlignment=Enum.TextYAlignment.Top;it.Parent=ib
+    it.Text="Anomaly Watch | "..Player.Name.."\nPRO ESP Engine";it.TextColor3=C.WHITE;it.Font=Enum.Font.Gotham;it.TextSize=9;it.BackgroundTransparency=1;it.TextXAlignment=Enum.TextXAlignment.Left;it.TextYAlignment=Enum.TextYAlignment.Top;it.Parent=ib
     
-    local cb=Instance.new("Frame");cb.Size=UDim2.new(1,0,0,80);cb.BackgroundColor3=C.BG2;cb.BorderSizePixel=0;cb.Parent=mf;Instance.new("UICorner",cb).CornerRadius=UDim.new(0,10)
-    local ca=Instance.new("TextLabel");ca.Size=UDim2.new(1,-6,1,-6);ca.Position=UDim2.new(0,3,0,3)
-    ca.Text=[[  ╱|、
-(˚ˎ 。7  
- |、˜〵          
-じしˍ,)ノ
-   zzz]];ca.TextColor3=C.PINK;ca.Font=Enum.Font.Gotham;ca.TextSize=9;ca.BackgroundTransparency=1;ca.TextXAlignment=Enum.TextXAlignment.Center;ca.TextYAlignment=Enum.TextYAlignment.Center;ca.Parent=cb
-    local cfs={[[  ╱|、
-(˚ˎ 。7  
- |、˜〵          
-じしˍ,)ノ
-   zzz]],[[  ╱|、
-( -ˎ -)  
- |、˜〵          
-じしˍ,)ノ
-  zzZ]],[[  ╱|、
-( =ˎ =)  
- |、˜〵          
-じしˍ,)ノ
-  zZz]],[[  ╱|、
-( ˘ˎ ˘)  
- |、˜〵          
-じしˍ,)ノ
-   zzz]]};local ci=1
-    spawn(function()while ca and ca.Parent do ci=ci%#cfs+1;ca.Text=cfs[ci];wait(1.2)end end)
+    -- Sleeping Cat
+    StartSleepingCat(mf)
     
     Toggle(tabFrames["ESP"],"Fullbright","Fullbright",false,function(v)if v then EnableFB()else DisableFB()end end)
     local l1=Instance.new("TextLabel");l1.Size=UDim2.new(1,0,0,16);l1.Text="MONSTERS (RED)";l1.TextColor3=C.RED;l1.Font=Enum.Font.GothamBold;l1.TextSize=8;l1.BackgroundTransparency=1;l1.TextXAlignment=Enum.TextXAlignment.Left;l1.Parent=tabFrames["ESP"]
@@ -430,15 +286,16 @@ function CreateMain()
         l.BackgroundTransparency=1;TweenService:Create(l,TweenInfo.new(0.2),{BackgroundTransparency=0}):Play()
         ls.CanvasSize=UDim2.new(0,0,0,ll.AbsoluteContentSize.Y+10);ls.CanvasPosition=Vector2.new(0,ls.CanvasSize.Y.Offset)
     end
-    AddLog("UWU HUB HATE WORLD",C.PURPLE)
-    AddLog("Event-Based + Notifications",C.CYAN)
+    AddLog("PRO ESP ENGINE",C.PURPLE)
+    AddLog("2-Layer State System",C.CYAN)
+    AddLog("Max ESP: "..MAX_ESP.." | Scan: "..SCAN_INTERVAL.."s",C.GRAY)
     
     spawn(function()
         while Main and Main.Parent do wait(1)
-            local mc=0;for _ in pairs(MonsterObjects)do mc=mc+1 end
-            local cc=0;for _ in pairs(WorldState)do cc=cc+1 end
-            local miss=0;for _ in pairs(MissingObjects)do miss=miss+1 end
-            StatusText.Text=MasterOn and("NPC:"..mc.." OBJ:"..cc.." MISS:"..miss)or"=;= Idle"
+            local mc=0;for _ in pairs(MonsterData)do mc=mc+1 end
+            local ec=0;for _ in pairs(ESPData)do ec=ec+1 end
+            local miss=0;for _ in pairs(MissingData)do miss=miss+1 end
+            StatusText.Text=MasterOn and("M:"..mc.." C:"..ec.." X:"..miss)or"=;= Idle"
             StatusText.TextColor3=MasterOn and C.PINK or C.GRAY
         end
     end)
