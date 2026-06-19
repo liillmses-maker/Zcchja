@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | FULL STATE CHANGE DETECTOR | FINAL v11
+-- UWU HUB HATE WORLD | FULL STATE CHANGE DETECTOR | FINAL v12
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -23,9 +23,8 @@ local C={
     GREEN=Color3.fromRGB(100,255,100),ORANGE=Color3.fromRGB(255,150,50),BLUE=Color3.fromRGB(80,150,255)
 }
 
--- ================== GLOBAL SETTINGS ==================
 local Settings={
-    Fullbright=false,ShowNPC=false,ShowChanges=false,
+    Fullbright=false,ShowChanges=false,
     SkinDetect=false,SizeDetect=false,ShowNotify=false,
     Scanner=false,AutoCopy=false,
     Speed=false,Fly=false,Fling=false,Noclip=false,FOV=false,JumpPower=false
@@ -91,22 +90,18 @@ function GetText()
     return nil
 end
 
--- Get FULL state of any object
 local function GetFullState(obj)
     if not obj or not obj.Parent then return nil end
     local s={name=obj.Name,class=obj.ClassName}
-    
     if obj:IsA("BasePart")then
         s.pos=obj.Position;s.size=obj.Size;s.color=obj.Color;s.material=obj.Material;s.transparency=obj.Transparency
-        s.velocity=obj.AssemblyLinearVelocity or obj.Velocity or Vector3.zero
+        local vel=obj.AssemblyLinearVelocity or obj.Velocity;s.velocity=vel or Vector3.zero
         s.rotvelocity=obj.RotVelocity or Vector3.zero
     elseif obj:IsA("Model")then
         local pp=obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart
         if pp then s.pos=pp.Position;s.size=pp.Size end
         s.humanoid=obj:FindFirstChildOfClass("Humanoid")~=nil
     end
-    
-    -- Images/Textures/Decals
     local textures={}
     for _,child in ipairs(obj:GetDescendants())do
         if child:IsA("Decal")then textures[#textures+1]=child.Texture
@@ -114,92 +109,63 @@ local function GetFullState(obj)
         elseif child:IsA("ImageLabel")then textures[#textures+1]=child.Image end
     end
     s.textures=textures
-    
-    -- Sounds
     local sounds={}
     for _,child in ipairs(obj:GetDescendants())do
-        if child:IsA("Sound")then sounds[#sounds+1]={id=child.SoundId,playing=child.IsPlaying,volume=child.Volume} end
+        if child:IsA("Sound")then sounds[#sounds+1]={id=child.SoundId,playing=child.IsPlaying,volume=child.Volume}end
     end
     s.sounds=sounds
-    
-    -- Children count
     local count=0;for _ in ipairs(obj:GetChildren())do count=count+1 end
     s.childCount=count
-    
     return s
 end
 
--- Compare two states, return changes
 local function CompareStates(old,new)
-    if not old or not new then return{"APPEARED"}
+    if not old or not new then return{"APPEARED"}end
     local changes={}
-    if old.pos and new.pos and(old.pos-new.pos).Magnitude>0.1 then changes[#changes+1]="MOVED" end
-    if old.size and new.size and(old.size-new.size).Magnitude>0.1 then changes[#changes+1]="SIZE" end
+    if old.pos and new.pos then
+        local diff=(old.pos-new.pos)
+        if math.abs(diff.X)>0.1 or math.abs(diff.Y)>0.1 or math.abs(diff.Z)>0.1 then changes[#changes+1]="MOVED" end
+    end
+    if old.size and new.size then
+        local diff=(old.size-new.size)
+        if math.abs(diff.X)>0.1 or math.abs(diff.Y)>0.1 or math.abs(diff.Z)>0.1 then changes[#changes+1]="SIZE" end
+    end
     if old.color and new.color and old.color~=new.color then changes[#changes+1]="COLOR" end
     if old.material and new.material and old.material~=new.material then changes[#changes+1]="MATERIAL" end
     if old.transparency and new.transparency and math.abs(old.transparency-new.transparency)>0.01 then changes[#changes+1]="ALPHA" end
     if old.velocity and old.velocity.Magnitude>0.3 then changes[#changes+1]="MOVING" end
-    if old.childCount~=new.childCount then changes[#changes+1]="CHILDREN" end
-    
-    -- Texture change
+    if old.childCount and new.childCount and old.childCount~=new.childCount then changes[#changes+1]="CHILDREN" end
     if old.textures and new.textures then
-        if#old.textures~=#new.textures then changes[#changes+1]="TEXTURE"
+        if #old.textures~=#new.textures then changes[#changes+1]="TEXTURE"
         else for i=1,#old.textures do if old.textures[i]~=new.textures[i]then changes[#changes+1]="TEXTURE";break end end end
     end
-    
-    -- Sound change
     if old.sounds and new.sounds then
-        if#old.sounds~=#new.sounds then changes[#changes+1]="SOUND"
+        if #old.sounds~=#new.sounds then changes[#changes+1]="SOUND"
         else for i=1,#old.sounds do if old.sounds[i].id~=new.sounds[i].id or old.sounds[i].playing~=new.sounds[i].playing then changes[#changes+1]="SOUND";break end end end
     end
-    
-    return#changes>0 and changes or nil
+    return #changes>0 and changes or nil
 end
 
 local function GetPart(obj)return obj:IsA("BasePart")and obj or obj:FindFirstChildOfClass("BasePart")or obj.PrimaryPart end
 
--- ================== EVENTS ==================
 workspace.DescendantAdded:Connect(function(obj)
     if not MasterOn then return end
     if not(obj:IsA("Model")or obj:IsA("BasePart"))then return end
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
-    
     local st=GetFullState(obj)
-    if st then
-        local old=WorldState[obj]
-        WorldState[obj]=st
-        if not old then
-            -- NEW object
-            MissingObjects[obj]=nil
-        end
-    end
+    if st then if not WorldState[obj]then MissingObjects[obj]=nil end;WorldState[obj]=st end
 end)
 
 workspace.DescendantRemoving:Connect(function(obj)
-    if WorldState[obj]then
-        MissingObjects[obj]={state=WorldState[obj],time=tick()}
-        WorldState[obj]=nil
-    end
+    if WorldState[obj]then MissingObjects[obj]={state=WorldState[obj],time=tick()};WorldState[obj]=nil end
 end)
 
--- ================== RENDER LOOP ==================
 RunService.RenderStepped:Connect(function(dt)
     AnimTime=AnimTime+dt
-    
-    if not MasterOn then
-        for _,c in ipairs(Circles)do c.Visible=false end
-        for _,t in ipairs(TextLabels)do t.Visible=false end
-        return
-    end
-    
-    for _,c in ipairs(Circles)do c.Visible=false end
-    for _,t in ipairs(TextLabels)do t.Visible=false end
-    
+    if not MasterOn then for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end;return end
+    for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(TextLabels)do t.Visible=false end
     if not Settings.ShowChanges then return end
-    
     local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    
-    -- Draw changed/new objects
     for obj,oldSt in pairs(WorldState)do
         if obj and obj.Parent then
             local newSt=GetFullState(obj)
@@ -225,12 +191,9 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
     end
-    
-    -- Draw missing objects (ghost)
     local now=tick()
     for obj,data in pairs(MissingObjects)do
         if now-data.time<8 then
-            local part=data.state and GetPart(obj)
             local pos=data.state and data.state.pos
             if pos then
                 local pos2,on=Camera:WorldToViewportPoint(pos)
@@ -312,7 +275,6 @@ function CreateMain()
         return row
     end
     
-    -- MAIN TAB
     local mf=tabFrames["Main"]
     local StatusText=Instance.new("TextLabel");StatusText.Size=UDim2.new(1,0,0,16)
     StatusText.Text="=^^= Active";StatusText.TextColor3=C.PINK;StatusText.Font=Enum.Font.GothamBold;StatusText.TextSize=10;StatusText.BackgroundTransparency=1;StatusText.TextXAlignment=Enum.TextXAlignment.Center;StatusText.Parent=mf
@@ -354,7 +316,6 @@ function CreateMain()
    zzz]]};local ci=1
     spawn(function()while ca and ca.Parent do ci=ci%#cfs+1;ca.Text=cfs[ci];wait(1.2)end end)
     
-    -- ESP TAB
     Toggle(tabFrames["ESP"],"Fullbright","Fullbright",false,function(v)if v then EnableFB()else DisableFB()end end)
     local l1=Instance.new("TextLabel");l1.Size=UDim2.new(1,0,0,16);l1.Text="CHANGE DETECTOR";l1.TextColor3=C.YELLOW;l1.Font=Enum.Font.GothamBold;l1.TextSize=8;l1.BackgroundTransparency=1;l1.TextXAlignment=Enum.TextXAlignment.Left;l1.Parent=tabFrames["ESP"]
     Toggle(tabFrames["ESP"],"Show Changes","ShowChanges",false,function(v)end)
@@ -362,7 +323,6 @@ function CreateMain()
     Toggle(tabFrames["ESP"],"Size Detect","SizeDetect",false,function(v)end)
     Toggle(tabFrames["ESP"],"Show Notify","ShowNotify",false,function(v)end)
     
-    -- PLAYER TAB
     Toggle(tabFrames["Player"],"Speed","Speed",false,function(v)SetSpeed(v)end)
     Toggle(tabFrames["Player"],"Fly","Fly",false,function(v)SetFly(v)end)
     Toggle(tabFrames["Player"],"Fling","Fling",false,function(v)SetFling(v)end)
@@ -370,11 +330,9 @@ function CreateMain()
     Toggle(tabFrames["Player"],"FOV","FOV",false,function(v)SetFOV(v)end)
     Toggle(tabFrames["Player"],"Jump Power","JumpPower",false,function(v)SetJump(v)end)
     
-    -- DETECT TAB
     Toggle(tabFrames["Detect"],"Scanner","Scanner",false,function(v)end)
     Toggle(tabFrames["Detect"],"Auto Copy","AutoCopy",false,function(v)end)
     
-    -- LOG TAB
     local ls=Instance.new("ScrollingFrame");ls.Size=UDim2.new(1,0,0,170);ls.BackgroundColor3=C.BG2;ls.BorderSizePixel=0
     ls.CanvasSize=UDim2.new(0,0,0,0);ls.ScrollBarThickness=3;ls.ScrollBarImageColor3=C.PINK;ls.Parent=tabFrames["Log"];Instance.new("UICorner",ls).CornerRadius=UDim.new(0,10)
     local ll=Instance.new("UIListLayout");ll.SortOrder=Enum.SortOrder.LayoutOrder;ll.Padding=UDim.new(0,1);ll.Parent=ls
@@ -385,7 +343,7 @@ function CreateMain()
     end
     AddLog("UWU HUB HATE WORLD",C.PURPLE)
     AddLog("State Change Detector Active",C.CYAN)
-    AddLog("Tracks: Size/Color/Material/Texture/Sound/Movement",C.GRAY)
+    AddLog("Size/Color/Material/Texture/Sound/Movement",C.GRAY)
     
     spawn(function()
         while Main and Main.Parent do wait(1)
