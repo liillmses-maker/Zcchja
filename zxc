@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | ALL TABS WORKING | v12 FINAL
+-- UWU HUB HATE WORLD | FULL GUI FIX | v13
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -34,7 +34,674 @@ local C = {
     PURPLE = Color3.new(0.7,0.3,1)
 }
 
+-- ================== SETTINGS ==================
 local Settings = {
+    Fullbright = false,
+    ShowAnomaly = false,
+    ShowObject = false,
+    ShowChanges = false,
+    SkinDetect = false,
+    SizeDetect = false,
+    ShowNotify = false,
+    Scanner = false,
+    AutoCopy = false
+}
+local MasterOn = false
+
+-- ================== GAME INFO ==================
+local GameName = "Anomaly Watch"
+local GameIcon = ""
+pcall(function() local i = MarketplaceService:GetProductInfo(game.PlaceId); GameName = i.Name; GameIcon = i.IconImage end)
+
+-- ================== NOTIFICATIONS ==================
+local function ShowNotif(title, text, color)
+    if not Settings.ShowNotify then return end
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0,200,0,36)
+    Frame.AnchorPoint = Vector2.new(1,0)
+    Frame.Position = UDim2.new(0.98,0,0,8)
+    Frame.BackgroundColor3 = C.BG2
+    Frame.BackgroundTransparency = 0.2
+    Frame.BorderSizePixel = 0
+    Frame.Parent = PLAYERGUI
+    Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,14)
+    
+    local Tl = Instance.new("TextLabel")
+    Tl.Size = UDim2.new(1,-12,0,16)
+    Tl.Position = UDim2.new(0,6,0,4)
+    Tl.Text = title
+    Tl.TextColor3 = color or C.PINK
+    Tl.Font = Enum.Font.GothamBold
+    Tl.TextSize = 9
+    Tl.BackgroundTransparency = 1
+    Tl.TextXAlignment = Enum.TextXAlignment.Left
+    Tl.Parent = Frame
+    
+    local Tx = Instance.new("TextLabel")
+    Tx.Size = UDim2.new(1,-12,0,12)
+    Tx.Position = UDim2.new(0,6,0,20)
+    Tx.Text = text
+    Tx.TextColor3 = C.WHITE
+    Tx.Font = Enum.Font.Gotham
+    Tx.TextSize = 7
+    Tx.BackgroundTransparency = 1
+    Tx.TextXAlignment = Enum.TextXAlignment.Left
+    Tx.Parent = Frame
+    
+    spawn(function()
+        wait(3)
+        if Frame.Parent then
+            TweenService:Create(Frame,TweenInfo.new(0.4),{BackgroundTransparency=1}):Play()
+            wait(0.4)
+            Frame:Destroy()
+        end
+    end)
+end
+
+-- ================== GUI ==================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "UwUHub"
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PLAYERGUI
+
+local W = 310
+local H = 250
+local Main = Instance.new("Frame")
+Main.Name = "MainCard"
+Main.Size = UDim2.new(0,W,0,H)
+Main.Position = UDim2.new(0.5,-W/2,0.5,-H/2)
+Main.BackgroundColor3 = C.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Gui
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,22)
+
+-- Glass effect
+local Glass = Instance.new("Frame")
+Glass.Size = UDim2.new(1,0,1,0)
+Glass.BackgroundColor3 = C.WHITE
+Glass.BackgroundTransparency = 0.96
+Glass.BorderSizePixel = 0
+Glass.Parent = Main
+Instance.new("UICorner",Glass).CornerRadius = UDim.new(0,22)
+
+-- Glow border
+local Glow = Instance.new("Frame")
+Glow.Size = UDim2.new(1,6,1,6)
+Glow.Position = UDim2.new(0,-3,0,-3)
+Glow.BackgroundColor3 = C.ACCENT
+Glow.BackgroundTransparency = 0.75
+Glow.BorderSizePixel = 0
+Glow.ZIndex = 0
+Glow.Parent = Main
+Instance.new("UICorner",Glow).CornerRadius = UDim.new(0,24)
+
+-- ================== HEADER ==================
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,28)
+Header.BackgroundColor3 = C.BG2
+Header.BorderSizePixel = 0
+Header.Parent = Main
+Instance.new("UICorner",Header).CornerRadius = UDim.new(0,22)
+
+local HeaderTitle = Instance.new("TextLabel")
+HeaderTitle.Size = UDim2.new(0,120,1,0)
+HeaderTitle.Position = UDim2.new(0,10,0,0)
+HeaderTitle.Text = "UWU HUB"
+HeaderTitle.TextColor3 = C.PINK
+HeaderTitle.Font = Enum.Font.GothamBold
+HeaderTitle.TextSize = 10
+HeaderTitle.BackgroundTransparency = 1
+HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeaderTitle.Parent = Header
+
+-- Close button "-"
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0,20,0,20)
+CloseBtn.Position = UDim2.new(1,-40,0.5,-10)
+CloseBtn.Text = "-"
+CloseBtn.BackgroundColor3 = C.OFF
+CloseBtn.TextColor3 = C.PINK
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 12
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Header
+Instance.new("UICorner",CloseBtn).CornerRadius = UDim.new(1,0)
+CloseBtn.MouseButton1Click:Connect(function() Gui:Destroy() end)
+
+-- Master toggle
+local MTog = Instance.new("Frame")
+MTog.Size = UDim2.new(0,32,0,16)
+MTog.Position = UDim2.new(1,-36,0.5,-8)
+MTog.BackgroundColor3 = C.OFF
+MTog.BorderSizePixel = 0
+MTog.Parent = Header
+Instance.new("UICorner",MTog).CornerRadius = UDim.new(1,0)
+
+local MKnob = Instance.new("Frame")
+MKnob.Size = UDim2.new(0,12,0,12)
+MKnob.Position = UDim2.new(0,2,0.5,-6)
+MKnob.BackgroundColor3 = C.WHITE
+MKnob.BorderSizePixel = 0
+MKnob.Parent = MTog
+Instance.new("UICorner",MKnob).CornerRadius = UDim.new(1,0)
+
+local MFace = Instance.new("TextLabel")
+MFace.Size = UDim2.new(1,0,1,0)
+MFace.Text = "=;="
+MFace.TextColor3 = C.GRAY
+MFace.Font = Enum.Font.GothamBold
+MFace.TextSize = 7
+MFace.BackgroundTransparency = 1
+MFace.Parent = MKnob
+
+local function UpdateMaster(s)
+    MasterOn = s
+    if s then
+        TweenService:Create(MTog,TweenInfo.new(0.2),{BackgroundColor3 = C.ON}):Play()
+        TweenService:Create(MKnob,TweenInfo.new(0.2),{Position = UDim2.new(1,-14,0.5,-6)}):Play()
+        MFace.Text = "=^^="
+        MFace.TextColor3 = C.ON
+    else
+        TweenService:Create(MTog,TweenInfo.new(0.2),{BackgroundColor3 = C.OFF}):Play()
+        TweenService:Create(MKnob,TweenInfo.new(0.2),{Position = UDim2.new(0,2,0.5,-6)}):Play()
+        MFace.Text = "=;="
+        MFace.TextColor3 = C.GRAY
+    end
+end
+MTog.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        UpdateMaster(not MasterOn)
+    end
+end)
+
+-- ================== TABS ==================
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1,0,0,22)
+TabBar.Position = UDim2.new(0,0,0,28)
+TabBar.BackgroundColor3 = C.BG
+TabBar.BorderSizePixel = 0
+TabBar.Parent = Main
+
+local TabNames = {"Main","ESP","Detect","Log"}
+local TabButtons = {}
+local TabFrames = {}
+
+for i, name in ipairs(TabNames) do
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.25, -1, 1, -1)
+    Btn.Position = UDim2.new((i-1)*0.25, 0, 0, 0)
+    Btn.Text = name
+    Btn.BackgroundColor3 = C.BG2
+    Btn.TextColor3 = C.GRAY
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 9
+    Btn.BorderSizePixel = 0
+    Btn.Parent = TabBar
+    Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,10)
+    
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, -12, 1, -56)
+    Frame.Position = UDim2.new(0, 6, 0, 54)
+    Frame.BackgroundTransparency = 1
+    Frame.Visible = false
+    Frame.Parent = Main
+    
+    local Layout = Instance.new("UIListLayout")
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.Padding = UDim.new(0, 3)
+    Layout.Parent = Frame
+    
+    TabButtons[name] = Btn
+    TabFrames[name] = Frame
+    
+    Btn.MouseButton1Click:Connect(function()
+        for n, b in pairs(TabButtons) do
+            if n == name then
+                b.BackgroundColor3 = C.ACCENT2
+                b.TextColor3 = C.WHITE
+                TabFrames[n].Visible = true
+            else
+                b.BackgroundColor3 = C.BG2
+                b.TextColor3 = C.GRAY
+                TabFrames[n].Visible = false
+            end
+        end
+    end)
+end
+
+-- Default: show Main
+TabButtons["Main"].BackgroundColor3 = C.ACCENT2
+TabButtons["Main"].TextColor3 = C.WHITE
+TabFrames["Main"].Visible = true
+
+-- ================== PAW TOGGLE BUILDER ==================
+local function CreatePawToggle(parent, name, default, callback)
+    local enabled = default
+    
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, 0, 0, 34)
+    Row.BackgroundColor3 = C.BG2
+    Row.BorderSizePixel = 0
+    Row.Parent = parent
+    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,14)
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.5, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Text = name
+    Label.TextColor3 = C.GRAY
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 10
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Row
+    
+    local PawBtn = Instance.new("TextButton")
+    PawBtn.Size = UDim2.new(0, 44, 0, 44)
+    PawBtn.Position = UDim2.new(1, -50, 0.5, -22)
+    PawBtn.Text = "=;="
+    PawBtn.BackgroundColor3 = C.OFF
+    PawBtn.TextColor3 = C.GRAY
+    PawBtn.Font = Enum.Font.GothamBold
+    PawBtn.TextSize = 11
+    PawBtn.BorderSizePixel = 0
+    PawBtn.Parent = Row
+    Instance.new("UICorner",PawBtn).CornerRadius = UDim.new(1,0)
+    
+    -- Glow effect
+    local GlowEffect = Instance.new("Frame")
+    GlowEffect.Size = UDim2.new(1, 6, 1, 6)
+    GlowEffect.Position = UDim2.new(0, -3, 0, -3)
+    GlowEffect.BackgroundColor3 = C.ACCENT
+    GlowEffect.BackgroundTransparency = 1
+    GlowEffect.BorderSizePixel = 0
+    GlowEffect.ZIndex = 0
+    GlowEffect.Parent = PawBtn
+    Instance.new("UICorner",GlowEffect).CornerRadius = UDim.new(1,0)
+    
+    local function SetState(state)
+        enabled = state
+        if state then
+            PawBtn.Text = "=^^="
+            TweenService:Create(PawBtn, TweenInfo.new(0.25, Enum.EasingStyle.Back), {
+                Size = UDim2.new(0, 48, 0, 48),
+                Position = UDim2.new(1, -52, 0.5, -24),
+                BackgroundColor3 = C.ON,
+                TextColor3 = C.WHITE
+            }):Play()
+            TweenService:Create(GlowEffect, TweenInfo.new(0.3), {BackgroundTransparency = 0.6}):Play()
+            Label.TextColor3 = C.WHITE
+        else
+            PawBtn.Text = "=;="
+            TweenService:Create(PawBtn, TweenInfo.new(0.2), {
+                Size = UDim2.new(0, 44, 0, 44),
+                Position = UDim2.new(1, -50, 0.5, -22),
+                BackgroundColor3 = C.OFF,
+                TextColor3 = C.GRAY
+            }):Play()
+            TweenService:Create(GlowEffect, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+            Label.TextColor3 = C.GRAY
+        end
+    end
+    
+    PawBtn.MouseButton1Click:Connect(function()
+        SetState(not enabled)
+        callback(not enabled)
+    end)
+    
+    SetState(default)
+    return Row
+end
+
+-- ================== MAIN TAB CONTENT ==================
+local mainFrame = TabFrames["Main"]
+
+-- Game Info
+local InfoBox = Instance.new("Frame")
+InfoBox.Size = UDim2.new(1, 0, 0, 55)
+InfoBox.BackgroundColor3 = C.BG2
+InfoBox.BorderSizePixel = 0
+InfoBox.Parent = mainFrame
+Instance.new("UICorner",InfoBox).CornerRadius = UDim.new(0,14)
+
+local GameImg = Instance.new("ImageLabel")
+GameImg.Size = UDim2.new(0, 38, 0, 38)
+GameImg.Position = UDim2.new(0, 8, 0, 8)
+GameImg.BackgroundTransparency = 1
+GameImg.Image = GameIcon
+GameImg.Parent = InfoBox
+Instance.new("UICorner",GameImg).CornerRadius = UDim.new(1,0)
+
+local GameText = Instance.new("TextLabel")
+GameText.Size = UDim2.new(0.55, 0, 0, 13)
+GameText.Position = UDim2.new(0, 52, 0, 6)
+GameText.Text = "Game: "..GameName
+GameText.TextColor3 = C.WHITE
+GameText.Font = Enum.Font.GothamBold
+GameText.TextSize = 8
+GameText.BackgroundTransparency = 1
+GameText.TextXAlignment = Enum.TextXAlignment.Left
+GameText.TextTruncate = Enum.TextTruncate.AtEnd
+GameText.Parent = InfoBox
+
+local PlayerText = Instance.new("TextLabel")
+PlayerText.Size = UDim2.new(0.55, 0, 0, 11)
+PlayerText.Position = UDim2.new(0, 52, 0, 20)
+PlayerText.Text = "Player: "..Player.Name
+PlayerText.TextColor3 = C.PINK
+PlayerText.Font = Enum.Font.Gotham
+PlayerText.TextSize = 7
+PlayerText.BackgroundTransparency = 1
+PlayerText.TextXAlignment = Enum.TextXAlignment.Left
+PlayerText.Parent = InfoBox
+
+local ExecText = Instance.new("TextLabel")
+ExecText.Size = UDim2.new(0.55, 0, 0, 11)
+ExecText.Position = UDim2.new(0, 52, 0, 32)
+ExecText.Text = "Exec: "..(pcall(identifyexecutor) and identifyexecutor() or "Unknown")
+ExecText.TextColor3 = C.PURPLE
+ExecText.Font = Enum.Font.Gotham
+ExecText.TextSize = 7
+ExecText.BackgroundTransparency = 1
+ExecText.TextXAlignment = Enum.TextXAlignment.Left
+ExecText.Parent = InfoBox
+
+local HubText = Instance.new("TextLabel")
+HubText.Size = UDim2.new(0.55, 0, 0, 11)
+HubText.Position = UDim2.new(0, 52, 0, 43)
+HubText.Text = "HATE WORLD"
+HubText.TextColor3 = C.GRAY
+HubText.Font = Enum.Font.Gotham
+HubText.TextSize = 7
+HubText.BackgroundTransparency = 1
+HubText.TextXAlignment = Enum.TextXAlignment.Left
+HubText.Parent = InfoBox
+
+-- Sleeping Cat
+local CatBox = Instance.new("Frame")
+CatBox.Size = UDim2.new(1, 0, 0, 85)
+CatBox.BackgroundColor3 = C.BG2
+CatBox.BorderSizePixel = 0
+CatBox.Parent = mainFrame
+Instance.new("UICorner",CatBox).CornerRadius = UDim.new(0,14)
+
+local CatArt = Instance.new("TextLabel")
+CatArt.Size = UDim2.new(1, -6, 1, -6)
+CatArt.Position = UDim2.new(0, 3, 0, 3)
+CatArt.Text = ""
+CatArt.TextColor3 = C.PINK
+CatArt.Font = Enum.Font.Gotham
+CatArt.TextSize = 10
+CatArt.BackgroundTransparency = 1
+CatArt.TextXAlignment = Enum.TextXAlignment.Center
+CatArt.TextYAlignment = Enum.TextYAlignment.Center
+CatArt.Parent = CatBox
+
+local CatFrames = {
+    [[  ╱|、
+(˚ˎ 。7  
+ |、˜〵          
+じしˍ,)ノ
+
+   zzz]],
+    [[  ╱|、
+( -ˎ -)  
+ |、˜〵          
+じしˍ,)ノ
+
+  zzZ]],
+    [[  ╱|、
+( =ˎ =)  
+ |、˜〵          
+じしˍ,)ノ
+
+  zZz]],
+    [[  ╱|、
+( ˘ˎ ˘)  
+ |、˜〵          
+じしˍ,)ノ
+
+   zzz]]
+}
+local CatIdx = 1
+spawn(function()
+    while CatArt and CatArt.Parent do
+        CatIdx = (CatIdx % #CatFrames) + 1
+        CatArt.Text = CatFrames[CatIdx]
+        wait(1.2)
+    end
+end)
+
+-- Status
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, 0, 0, 14)
+StatusText.Text = "uwu zzz..."
+StatusText.TextColor3 = C.GRAY
+StatusText.Font = Enum.Font.Gotham
+StatusText.TextSize = 9
+StatusText.BackgroundTransparency = 1
+StatusText.TextXAlignment = Enum.TextXAlignment.Center
+StatusText.Parent = mainFrame
+
+-- ================== ESP TAB CONTENT ==================
+local espFrame = TabFrames["ESP"]
+
+CreatePawToggle(espFrame, "Fullbright", false, function(v) Settings.Fullbright = v; if v then EnableFB() else DisableFB() end end)
+CreatePawToggle(espFrame, "Show Anomaly", false, function(v) Settings.ShowAnomaly = v end)
+CreatePawToggle(espFrame, "Show Object", false, function(v) Settings.ShowObject = v end)
+CreatePawToggle(espFrame, "Show Changes", false, function(v) Settings.ShowChanges = v end)
+CreatePawToggle(espFrame, "Skin Detect", false, function(v) Settings.SkinDetect = v end)
+CreatePawToggle(espFrame, "Size Detect", false, function(v) Settings.SizeDetect = v end)
+CreatePawToggle(espFrame, "Show Notify", false, function(v) Settings.ShowNotify = v end)
+
+-- ================== DETECT TAB CONTENT ==================
+local detFrame = TabFrames["Detect"]
+
+CreatePawToggle(detFrame, "Scanner", false, function(v) Settings.Scanner = v end)
+CreatePawToggle(detFrame, "Auto Copy", false, function(v) Settings.AutoCopy = v end)
+
+-- ================== LOG TAB CONTENT ==================
+local logFrame = TabFrames["Log"]
+
+local LogScroll = Instance.new("ScrollingFrame")
+LogScroll.Size = UDim2.new(1, 0, 0, 145)
+LogScroll.BackgroundColor3 = C.BG2
+LogScroll.BorderSizePixel = 0
+LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+LogScroll.ScrollBarThickness = 3
+LogScroll.ScrollBarImageColor3 = C.ACCENT
+LogScroll.Parent = logFrame
+Instance.new("UICorner",LogScroll).CornerRadius = UDim.new(0,12)
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LogLayout.Padding = UDim.new(0, 1)
+LogLayout.Parent = LogScroll
+
+local LogCounter = Instance.new("TextLabel")
+LogCounter.Size = UDim2.new(1, 0, 0, 14)
+LogCounter.Text = "0 entries"
+LogCounter.TextColor3 = C.GRAY
+LogCounter.Font = Enum.Font.Gotham
+LogCounter.TextSize = 8
+LogCounter.BackgroundTransparency = 1
+LogCounter.TextXAlignment = Enum.TextXAlignment.Center
+LogCounter.Parent = logFrame
+
+local LogCount = 0
+function AddLog(msg, color)
+    LogCount = LogCount + 1
+    if LogCount > 200 then
+        for i = 1, 10 do
+            local kids = LogScroll:GetChildren()
+            if kids[i] and kids[i]:IsA("TextLabel") then kids[i]:Remove() end
+        end
+    end
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -4, 0, 13)
+    lbl.Text = msg
+    lbl.TextColor3 = color or C.WHITE
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 8
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = LogScroll
+    LogScroll.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 2)
+    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+    LogCounter.Text = LogCount .. " entries"
+end
+
+AddLog("UWU HUB HATE WORLD", C.PURPLE)
+AddLog("Ready", C.GRAY)
+
+-- ================== ESP SYSTEM ==================
+local ANOMALY_NAMES = {"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity"}
+local OBJECT_NAMES = {"AnnoyingOrange","NormalOrange","Orange","Float Duck","Duck","Crib","Rockingmachine","Bar Soap","Soap","Mirror","Sink","Curtain","Bucket","TV","Telephone","Alarm Clock","WallClock","ClockFace","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","g Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Briefcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","Bed","Pillow","Glass","Bleach","crayon","pic1","pic2","pic3","Projector"}
+
+local Detected = {}
+local Circles = {}
+local LastScan = 0
+local Time = 0
+
+function GetCircle()
+    for _, c in ipairs(Circles) do
+        if not c.Visible then return c end
+    end
+    local c = Drawing.new("Circle")
+    c.Thickness = 2
+    c.Filled = false
+    c.Transparency = 1
+    c.NumSides = 32
+    table.insert(Circles, c)
+    return c
+end
+
+local function InList(name, list)
+    for _, k in ipairs(list) do if name == k then return true end end
+    return false
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    Time = Time + dt
+    
+    if MasterOn and (Settings.ShowAnomaly or Settings.ShowObject or Settings.ShowChanges) then
+        LastScan = LastScan + dt
+        if LastScan >= 0.3 then
+            LastScan = 0
+            Detected = {}
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if not (obj:IsA("Model") or obj:IsA("BasePart")) then continue end
+                local name = obj.Name
+                local ok = false
+                local col = C.PINK_ESP
+                
+                if Settings.ShowAnomaly and InList(name, ANOMALY_NAMES) then
+                    ok = true; col = C.RED
+                elseif Settings.ShowObject and InList(name, OBJECT_NAMES) then
+                    ok = true; col = C.PINK_ESP
+                elseif Settings.ShowChanges then
+                    local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
+                    if part and part:IsA("BasePart") then
+                        if part.AssemblyLinearVelocity.Magnitude > 0.1 or part.RotVelocity.Magnitude > 0.1 then
+                            ok = true; col = C.YELLOW
+                        end
+                    end
+                end
+                
+                if ok then
+                    local radius = 5
+                    if obj:IsA("BasePart") then
+                        radius = math.clamp(math.max(obj.Size.X, obj.Size.Y, obj.Size.Z) * 0.7, 4, 35)
+                    elseif obj:IsA("Model") then
+                        local pp = obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
+                        if pp then radius = math.clamp(math.max(pp.Size.X, pp.Size.Y, pp.Size.Z) * 0.7, 4, 35) end
+                    end
+                    Detected[obj] = {col = col, r = radius}
+                end
+            end
+        end
+        
+        for _, c in ipairs(Circles) do c.Visible = false end
+        
+        for obj, data in pairs(Detected) do
+            if obj and obj.Parent then
+                local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
+                if part then
+                    local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen then
+                        local circle = GetCircle()
+                        if circle then
+                            local seed = string.byte(obj.Name, 1) or 1
+                            circle.Position = Vector2.new(pos.X, pos.Y)
+                            circle.Radius = data.r * (1 + math.sin(Time * 2 + seed) * 0.04)
+                            circle.Color = data.col
+                            circle.Visible = true
+                        end
+                    end
+                end
+            end
+        end
+    else
+        for _, c in ipairs(Circles) do c.Visible = false end
+    end
+    
+    if MasterOn then StatusText.Text = "uwu on" else StatusText.Text = "uwu zzz..." end
+end)
+
+-- ================== SCANNER ==================
+local ObjectDB = {}
+local ObjectDB2 = {}
+
+workspace.DescendantRemoving:Connect(function(v)
+    ObjectDB[v] = nil
+    ObjectDB2[v] = nil
+end)
+
+spawn(function()
+    while true do
+        wait(0.5)
+        if MasterOn and Settings.Scanner then
+            -- Skin detect
+            if Settings.SkinDetect then
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") then
+                        local st = {c = obj.Color, m = obj.Material}
+                        if ObjectDB2[obj] then
+                            if ObjectDB2[obj].c ~= st.c then
+                                ShowNotif("SKIN", obj.Name .. " color changed", C.PINK)
+                                AddLog("[SKIN] " .. obj.Name .. " color", C.PINK)
+                            end
+                            if ObjectDB2[obj].m ~= st.m then
+                                ShowNotif("SKIN", obj.Name .. " material changed", C.PINK)
+                                AddLog("[SKIN] " .. obj.Name .. " material", C.PINK)
+                            end
+                        end
+                        ObjectDB2[obj] = st
+                    end
+                end
+            end
+            
+            -- Size detect
+            if Settings.SizeDetect then
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") then
+                        local st = {s = obj.Size}
+                        if ObjectDB[obj] and (ObjectDB[obj].s - st.s).Magnitude > 0.1 then
+                            ShowNotif("SIZE", obj.Name .. " resized", C.YELLOW)
+                            AddLog("[SIZE] " .. obj.Name .. " changed", C.YELLOW)
+                        end
+                        ObjectDB[obj] = st
+                    end
+                end
+            end
+            
+            StatusText.Text = "~scanning"
+        end
+    end
+end)local Settings = {
     Fullbright=false, ShowAnomaly=false, ShowObject=false, ShowChanges=false,
     ShowSkinDetect=false, ShowSizeDetect=false, ShowNotify=false,
     DetectSounds=false, DetectClock=false, DetectFaces=false,
