@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | FINAL WORKING VERSION
+-- UWU HUB HATE WORLD | CORRECT ESP COLORS | FINAL v2
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -22,463 +22,580 @@ local function DisableFB() Lighting.Brightness = OrigBright; Lighting.ClockTime 
 
 -- ================== COLORS ==================
 local C = {
-    BG = Color3.fromRGB(20,12,15),
-    BG2 = Color3.fromRGB(30,18,23),
-    PINK = Color3.fromRGB(255,170,195),
-    WHITE = Color3.fromRGB(245,235,240),
-    GRAY = Color3.fromRGB(160,140,150),
-    ON = Color3.fromRGB(255,120,160),
-    OFF = Color3.fromRGB(55,30,40),
-    RED = Color3.fromRGB(255,40,60),
-    PINK_ESP = Color3.fromRGB(255,150,180),
-    YELLOW = Color3.fromRGB(255,200,100),
-    PURPLE = Color3.fromRGB(180,75,255)
+    BG = Color3.fromRGB(20,12,15), BG2 = Color3.fromRGB(30,18,23),
+    PINK = Color3.fromRGB(255,170,195), WHITE = Color3.fromRGB(245,235,240),
+    GRAY = Color3.fromRGB(160,140,150), ON = Color3.fromRGB(255,120,160),
+    OFF = Color3.fromRGB(55,30,40), RED = Color3.fromRGB(255,40,60),
+    PINK_ESP = Color3.fromRGB(255,130,170), YELLOW = Color3.fromRGB(255,200,100),
+    PURPLE = Color3.fromRGB(180,75,255), CYAN = Color3.fromRGB(100,200,255),
+    ORANGE = Color3.fromRGB(255,150,50)
 }
 
 -- ================== SETTINGS ==================
 local Settings = {
-    Fullbright = false,
-    ShowAnomaly = false,
-    ShowObject = false,
-    ShowChanges = false,
-    SkinDetect = false,
-    SizeDetect = false,
-    ShowNotify = false,
-    Scanner = false,
-    AutoCopy = false
+    Fullbright = false, ShowAnomaly = false, ShowObject = false, ShowChanges = false,
+    SkinDetect = false, SizeDetect = false, ShowNotify = false,
+    Scanner = false, AutoCopy = false
 }
 local MasterOn = true
+
+-- ================== ROOMS ==================
+local ROOMS = {
+    {name="Living Room", min=Vector3.new(-30,0,-30), max=Vector3.new(30,20,30)},
+    {name="Garage", min=Vector3.new(30,0,-30), max=Vector3.new(60,20,30)},
+    {name="Kitchen", min=Vector3.new(-30,0,30), max=Vector3.new(30,20,60)},
+    {name="Basement", min=Vector3.new(-30,-20,-30), max=Vector3.new(30,0,30)},
+    {name="Study", min=Vector3.new(-60,0,-30), max=Vector3.new(-30,20,30)},
+    {name="Nursery", min=Vector3.new(30,0,30), max=Vector3.new(60,20,60)},
+    {name="Master Bedroom", min=Vector3.new(-60,0,30), max=Vector3.new(-30,20,60)},
+    {name="Upstairs Hall", min=Vector3.new(-30,5,-60), max=Vector3.new(30,20,-30)},
+    {name="Storage Room", min=Vector3.new(30,5,60), max=Vector3.new(60,20,90)},
+    {name="Movie Room", min=Vector3.new(-60,5,60), max=Vector3.new(-30,20,90)}
+}
+
+local function GetRoomName(pos)
+    if not pos then return "Unknown" end
+    for _, room in ipairs(ROOMS) do
+        if pos.X >= room.min.X and pos.X <= room.max.X and
+           pos.Y >= room.min.Y and pos.Y <= room.max.Y and
+           pos.Z >= room.min.Z and pos.Z <= room.max.Z then
+            return room.name
+        end
+    end
+    return "Unknown"
+end
 
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "UwUHub"
 Gui.Parent = PLAYERGUI
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 300, 0, 250)
-Main.Position = UDim2.new(0.5, -150, 0.5, -125)
-Main.BackgroundColor3 = C.BG
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.Parent = Gui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
+local Main
+local MinimizeIcon
 
--- HEADER
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 28)
-Header.BackgroundColor3 = C.BG2
-Header.BorderSizePixel = 0
-Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 16)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 150, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "=^^= UWU HUB"
-Title.TextColor3 = C.PINK
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
-
--- Close btn
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-CloseBtn.Position = UDim2.new(1, -28, 0.5, -11)
-CloseBtn.Text = "_"
-CloseBtn.BackgroundColor3 = C.OFF
-CloseBtn.TextColor3 = C.PINK
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 14
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Parent = Header
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
-CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
-
--- Master toggle
-local MTog = Instance.new("TextButton")
-MTog.Size = UDim2.new(0, 40, 0, 22)
-MTog.Position = UDim2.new(1, -70, 0.5, -11)
-MTog.Text = "ON"
-MTog.BackgroundColor3 = C.ON
-MTog.TextColor3 = C.WHITE
-MTog.Font = Enum.Font.GothamBold
-MTog.TextSize = 10
-MTog.BorderSizePixel = 0
-MTog.Parent = Header
-Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
-
-MTog.MouseButton1Click:Connect(function()
-    MasterOn = not MasterOn
-    if MasterOn then
-        MTog.Text = "ON"
-        MTog.BackgroundColor3 = C.ON
-    else
-        MTog.Text = "OFF"
-        MTog.BackgroundColor3 = C.OFF
-    end
-end)
-
--- ================== TABS ==================
-local TabBar = Instance.new("Frame")
-TabBar.Size = UDim2.new(1, 0, 0, 22)
-TabBar.Position = UDim2.new(0, 0, 0, 28)
-TabBar.BackgroundColor3 = C.BG
-TabBar.BorderSizePixel = 0
-TabBar.Parent = Main
-
-local tabs = {"Main", "ESP", "Detect", "Log"}
-local tabBtns = {}
-local tabFrames = {}
-
-for i, name in ipairs(tabs) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.25, -2, 1, -2)
-    btn.Position = UDim2.new((i-1)*0.25, 1, 0, 1)
-    btn.Text = name
-    btn.BackgroundColor3 = C.BG2
-    btn.TextColor3 = C.GRAY
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 9
-    btn.BorderSizePixel = 0
-    btn.Parent = TabBar
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+local function CreateMinimizeIcon()
+    if MinimizeIcon then MinimizeIcon:Destroy() end
+    MinimizeIcon = Instance.new("TextButton")
+    MinimizeIcon.Size = UDim2.new(0, 34, 0, 34)
+    MinimizeIcon.Position = UDim2.new(0.5, -17, 0.02, 0)
+    MinimizeIcon.BackgroundTransparency = 1
+    MinimizeIcon.Text = "uwu"
+    MinimizeIcon.TextColor3 = C.PINK
+    MinimizeIcon.Font = Enum.Font.GothamBold
+    MinimizeIcon.TextSize = 10
+    MinimizeIcon.BorderSizePixel = 0
+    MinimizeIcon.Active = true
+    MinimizeIcon.Draggable = true
+    MinimizeIcon.Parent = Gui
     
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 1, -56)
-    frame.Position = UDim2.new(0, 6, 0, 54)
-    frame.BackgroundTransparency = 1
-    frame.Visible = false
-    frame.Parent = Main
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = C.BG2
+    bg.BackgroundTransparency = 0.3
+    bg.BorderSizePixel = 0
+    bg.ZIndex = 0
+    bg.Parent = MinimizeIcon
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
     
-    local layout = Instance.new("UIListLayout")
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 3)
-    layout.Parent = frame
-    
-    tabBtns[name] = btn
-    tabFrames[name] = frame
-    
-    btn.MouseButton1Click:Connect(function()
-        for n, b in pairs(tabBtns) do
-            if n == name then
-                b.BackgroundColor3 = C.PINK
-                b.TextColor3 = C.WHITE
-                tabFrames[n].Visible = true
-            else
-                b.BackgroundColor3 = C.BG2
-                b.TextColor3 = C.GRAY
-                tabFrames[n].Visible = false
-            end
+    local faces = {"uwu", "owo", ">.<", "^-^"}
+    local idx = 1
+    spawn(function()
+        while MinimizeIcon and MinimizeIcon.Parent do
+            idx = idx % #faces + 1
+            MinimizeIcon.Text = faces[idx]
+            wait(0.6)
         end
+    end)
+    
+    MinimizeIcon.MouseButton1Click:Connect(function()
+        MinimizeIcon:Destroy()
+        MinimizeIcon = nil
+        CreateMainGUI()
     end)
 end
 
-tabBtns["Main"].BackgroundColor3 = C.PINK
-tabBtns["Main"].TextColor3 = C.WHITE
-tabFrames["Main"].Visible = true
-
--- ================== TOGGLE FUNCTION ==================
-local function CreateToggle(parent, label, default, callback)
-    local enabled = default
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 30)
-    row.BackgroundColor3 = C.BG2
-    row.BorderSizePixel = 0
-    row.Parent = parent
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+function CreateMainGUI()
+    if Main then Main:Destroy() end
+    if MinimizeIcon then MinimizeIcon:Destroy(); MinimizeIcon = nil end
     
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0.55, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 8, 0, 0)
-    lbl.Text = label
-    lbl.TextColor3 = C.GRAY
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 10
-    lbl.BackgroundTransparency = 1
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = row
+    Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 310, 0, 280)
+    Main.Position = UDim2.new(0.5, -155, 0.5, -140)
+    Main.BackgroundColor3 = C.BG
+    Main.BackgroundTransparency = 0
+    Main.BorderSizePixel = 0
+    Main.Active = true
+    Main.Draggable = true
+    Main.Parent = Gui
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 18)
     
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 50, 0, 24)
-    btn.Position = UDim2.new(1, -56, 0.5, -12)
-    btn.Text = default and "=^^= ON" or "=;= OFF"
-    btn.BackgroundColor3 = default and C.ON or C.OFF
-    btn.TextColor3 = C.WHITE
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 8
-    btn.BorderSizePixel = 0
-    btn.Parent = row
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    Main.BackgroundTransparency = 1
+    TweenService:Create(Main, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
     
-    btn.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        if enabled then
-            btn.Text = "=^^= ON"
-            btn.BackgroundColor3 = C.ON
-            lbl.TextColor3 = C.WHITE
+    -- HEADER
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 28)
+    Header.BackgroundColor3 = C.BG2
+    Header.BorderSizePixel = 0
+    Header.Parent = Main
+    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 18)
+    
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(0, 150, 1, 0)
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Text = "=^^= UWU HUB"
+    Title.TextColor3 = C.PINK
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 11
+    Title.BackgroundTransparency = 1
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Header
+    
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
+    CloseBtn.Position = UDim2.new(1, -50, 0.5, -11)
+    CloseBtn.Text = "-"
+    CloseBtn.BackgroundColor3 = C.OFF
+    CloseBtn.TextColor3 = C.PINK
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.TextSize = 14
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.Parent = Header
+    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
+    
+    CloseBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(Main, TweenInfo.new(0.25), {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        wait(0.25)
+        Main:Destroy()
+        Main = nil
+        CreateMinimizeIcon()
+    end)
+    
+    local MTog = Instance.new("TextButton")
+    MTog.Size = UDim2.new(0, 40, 0, 22)
+    MTog.Position = UDim2.new(1, -45, 0.5, -11)
+    MTog.Text = "ON"
+    MTog.BackgroundColor3 = C.ON
+    MTog.TextColor3 = C.WHITE
+    MTog.Font = Enum.Font.GothamBold
+    MTog.TextSize = 10
+    MTog.BorderSizePixel = 0
+    MTog.Parent = Header
+    Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
+    
+    MTog.MouseButton1Click:Connect(function()
+        MasterOn = not MasterOn
+        if MasterOn then
+            MTog.Text = "ON"; MTog.BackgroundColor3 = C.ON
         else
-            btn.Text = "=;= OFF"
-            btn.BackgroundColor3 = C.OFF
-            lbl.TextColor3 = C.GRAY
+            MTog.Text = "OFF"; MTog.BackgroundColor3 = C.OFF
         end
-        callback(enabled)
     end)
     
-    return row
-end
-
--- ================== MAIN TAB ==================
-local mainFrame = tabFrames["Main"]
-
-local infoBox = Instance.new("Frame")
-infoBox.Size = UDim2.new(1, 0, 0, 45)
-infoBox.BackgroundColor3 = C.BG2
-infoBox.BorderSizePixel = 0
-infoBox.Parent = mainFrame
-Instance.new("UICorner", infoBox).CornerRadius = UDim.new(0, 10)
-
-local infoText = Instance.new("TextLabel")
-infoText.Size = UDim2.new(1, -10, 1, -10)
-infoText.Position = UDim2.new(0, 5, 0, 5)
-infoText.Text = "Anomaly Watch\n" .. Player.Name .. "\nUWU HUB HATE WORLD"
-infoText.TextColor3 = C.WHITE
-infoText.Font = Enum.Font.Gotham
-infoText.TextSize = 9
-infoText.BackgroundTransparency = 1
-infoText.TextXAlignment = Enum.TextXAlignment.Left
-infoText.TextYAlignment = Enum.TextYAlignment.Top
-infoText.Parent = infoBox
-
--- Status
-local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, 0, 0, 14)
-StatusText.Text = "=^^= Ready"
-StatusText.TextColor3 = C.PINK
-StatusText.Font = Enum.Font.GothamBold
-StatusText.TextSize = 9
-StatusText.BackgroundTransparency = 1
-StatusText.TextXAlignment = Enum.TextXAlignment.Center
-StatusText.Parent = mainFrame
-
--- Cat
-local catBox = Instance.new("Frame")
-catBox.Size = UDim2.new(1, 0, 0, 90)
-catBox.BackgroundColor3 = C.BG2
-catBox.BorderSizePixel = 0
-catBox.Parent = mainFrame
-Instance.new("UICorner", catBox).CornerRadius = UDim.new(0, 10)
-
-local catArt = Instance.new("TextLabel")
-catArt.Size = UDim2.new(1, -6, 1, -6)
-catArt.Position = UDim2.new(0, 3, 0, 3)
-catArt.Text = [[  ╱|、
+    -- TABS
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, 0, 0, 22)
+    TabBar.Position = UDim2.new(0, 0, 0, 28)
+    TabBar.BackgroundColor3 = C.BG
+    TabBar.BorderSizePixel = 0
+    TabBar.Parent = Main
+    
+    local tabs = {"Main", "ESP", "Detect", "Log"}
+    local tabBtns = {}
+    local tabFrames = {}
+    
+    for i, name in ipairs(tabs) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.25, -2, 1, -2)
+        btn.Position = UDim2.new((i-1)*0.25, 1, 0, 1)
+        btn.Text = name
+        btn.BackgroundColor3 = C.BG2
+        btn.TextColor3 = C.GRAY
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 9
+        btn.BorderSizePixel = 0
+        btn.Parent = TabBar
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+        
+        local frame = Instance.new("ScrollingFrame")
+        frame.Size = UDim2.new(1, -12, 1, -56)
+        frame.Position = UDim2.new(0, 6, 0, 54)
+        frame.BackgroundTransparency = 1
+        frame.BorderSizePixel = 0
+        frame.ScrollBarThickness = 3
+        frame.ScrollBarImageColor3 = C.PINK
+        frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        frame.Visible = false
+        frame.Parent = Main
+        
+        local layout = Instance.new("UIListLayout")
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 3)
+        layout.Parent = frame
+        
+        frame.ChildAdded:Connect(function()
+            frame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+        end)
+        
+        tabBtns[name] = btn
+        tabFrames[name] = frame
+        
+        btn.MouseButton1Click:Connect(function()
+            for n, b in pairs(tabBtns) do
+                if n == name then
+                    b.BackgroundColor3 = C.PINK; b.TextColor3 = C.WHITE; tabFrames[n].Visible = true
+                else
+                    b.BackgroundColor3 = C.BG2; b.TextColor3 = C.GRAY; tabFrames[n].Visible = false
+                end
+            end
+        end)
+    end
+    
+    tabBtns["Main"].BackgroundColor3 = C.PINK
+    tabBtns["Main"].TextColor3 = C.WHITE
+    tabFrames["Main"].Visible = true
+    
+    -- ================== TOGGLE ==================
+    local function CreateToggle(parent, label, default, callback)
+        local enabled = default
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 30)
+        row.BackgroundColor3 = C.BG2
+        row.BorderSizePixel = 0
+        row.Parent = parent
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+        
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(0.55, 0, 1, 0)
+        lbl.Position = UDim2.new(0, 8, 0, 0)
+        lbl.Text = label
+        lbl.TextColor3 = C.GRAY
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 10
+        lbl.BackgroundTransparency = 1
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = row
+        
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 50, 0, 24)
+        btn.Position = UDim2.new(1, -56, 0.5, -12)
+        btn.Text = default and "=^^= ON" or "=;= OFF"
+        btn.BackgroundColor3 = default and C.ON or C.OFF
+        btn.TextColor3 = C.WHITE
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 8
+        btn.BorderSizePixel = 0
+        btn.Parent = row
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+        
+        btn.MouseButton1Click:Connect(function()
+            enabled = not enabled
+            if enabled then
+                btn.Text = "=^^= ON"; btn.BackgroundColor3 = C.ON; lbl.TextColor3 = C.WHITE
+            else
+                btn.Text = "=;= OFF"; btn.BackgroundColor3 = C.OFF; lbl.TextColor3 = C.GRAY
+            end
+            callback(enabled)
+        end)
+        
+        return row
+    end
+    
+    -- ================== MAIN TAB ==================
+    local mainFrame = tabFrames["Main"]
+    
+    local infoBox = Instance.new("Frame")
+    infoBox.Size = UDim2.new(1, 0, 0, 50)
+    infoBox.BackgroundColor3 = C.BG2
+    infoBox.BorderSizePixel = 0
+    infoBox.Parent = mainFrame
+    Instance.new("UICorner", infoBox).CornerRadius = UDim.new(0, 10)
+    
+    local infoText = Instance.new("TextLabel")
+    infoText.Size = UDim2.new(1, -10, 1, -10)
+    infoText.Position = UDim2.new(0, 5, 0, 5)
+    infoText.Text = "Game: Anomaly Watch\nPlayer: " .. Player.Name .. "\nHub: UWU HATE WORLD"
+    infoText.TextColor3 = C.WHITE
+    infoText.Font = Enum.Font.Gotham
+    infoText.TextSize = 9
+    infoText.BackgroundTransparency = 1
+    infoText.TextXAlignment = Enum.TextXAlignment.Left
+    infoText.TextYAlignment = Enum.TextYAlignment.Top
+    infoText.Parent = infoBox
+    
+    local StatusText = Instance.new("TextLabel")
+    StatusText.Size = UDim2.new(1, 0, 0, 16)
+    StatusText.Text = "=^^= Active"
+    StatusText.TextColor3 = C.PINK
+    StatusText.Font = Enum.Font.GothamBold
+    StatusText.TextSize = 10
+    StatusText.BackgroundTransparency = 1
+    StatusText.TextXAlignment = Enum.TextXAlignment.Center
+    StatusText.Parent = mainFrame
+    
+    local catBox = Instance.new("Frame")
+    catBox.Size = UDim2.new(1, 0, 0, 100)
+    catBox.BackgroundColor3 = C.BG2
+    catBox.BorderSizePixel = 0
+    catBox.Parent = mainFrame
+    Instance.new("UICorner", catBox).CornerRadius = UDim.new(0, 10)
+    
+    local catArt = Instance.new("TextLabel")
+    catArt.Size = UDim2.new(1, -6, 1, -6)
+    catArt.Position = UDim2.new(0, 3, 0, 3)
+    catArt.Text = [[  ╱|、
 (˚ˎ 。7  
  |、˜〵          
 じしˍ,)ノ
    zzz]]
-catArt.TextColor3 = C.PINK
-catArt.Font = Enum.Font.Gotham
-catArt.TextSize = 9
-catArt.BackgroundTransparency = 1
-catArt.TextXAlignment = Enum.TextXAlignment.Center
-catArt.TextYAlignment = Enum.TextYAlignment.Center
-catArt.Parent = catBox
-
-local catFrames = {
-    [[  ╱|、
+    catArt.TextColor3 = C.PINK
+    catArt.Font = Enum.Font.Gotham
+    catArt.TextSize = 9
+    catArt.BackgroundTransparency = 1
+    catArt.TextXAlignment = Enum.TextXAlignment.Center
+    catArt.TextYAlignment = Enum.TextYAlignment.Center
+    catArt.Parent = catBox
+    
+    local catFrames = {
+        [[  ╱|、
 (˚ˎ 。7  
  |、˜〵          
 じしˍ,)ノ
    zzz]],
-    [[  ╱|、
+        [[  ╱|、
 ( -ˎ -)  
  |、˜〵          
 じしˍ,)ノ
   zzZ]],
-    [[  ╱|、
+        [[  ╱|、
 ( =ˎ =)  
  |、˜〵          
 じしˍ,)ノ
   zZz]],
-    [[  ╱|、
+        [[  ╱|、
 ( ˘ˎ ˘)  
  |、˜〵          
 じしˍ,)ノ
    zzz]]
-}
-local catIdx = 1
-spawn(function()
-    while catArt and catArt.Parent do
-        catIdx = catIdx % #catFrames + 1
-        catArt.Text = catFrames[catIdx]
-        wait(1.2)
-    end
-end)
-
--- ================== ESP TAB ==================
-local espFrame = tabFrames["ESP"]
-
-CreateToggle(espFrame, "Fullbright", Settings.Fullbright, function(v)
-    Settings.Fullbright = v
-    if v then EnableFB() else DisableFB() end
-end)
-
-CreateToggle(espFrame, "Show Anomaly", Settings.ShowAnomaly, function(v)
-    Settings.ShowAnomaly = v
-end)
-
-CreateToggle(espFrame, "Show Object", Settings.ShowObject, function(v)
-    Settings.ShowObject = v
-end)
-
-CreateToggle(espFrame, "Show Changes", Settings.ShowChanges, function(v)
-    Settings.ShowChanges = v
-end)
-
-CreateToggle(espFrame, "Skin Detect", Settings.SkinDetect, function(v)
-    Settings.SkinDetect = v
-end)
-
-CreateToggle(espFrame, "Size Detect", Settings.SizeDetect, function(v)
-    Settings.SizeDetect = v
-end)
-
-CreateToggle(espFrame, "Show Notify", Settings.ShowNotify, function(v)
-    Settings.ShowNotify = v
-end)
-
--- ================== DETECT TAB ==================
-local detFrame = tabFrames["Detect"]
-
-CreateToggle(detFrame, "Scanner", Settings.Scanner, function(v)
-    Settings.Scanner = v
-end)
-
-CreateToggle(detFrame, "Auto Copy", Settings.AutoCopy, function(v)
-    Settings.AutoCopy = v
-end)
-
--- ================== LOG TAB ==================
-local logFrame = tabFrames["Log"]
-
-local logScroll = Instance.new("ScrollingFrame")
-logScroll.Size = UDim2.new(1, 0, 0, 150)
-logScroll.BackgroundColor3 = C.BG2
-logScroll.BorderSizePixel = 0
-logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-logScroll.ScrollBarThickness = 3
-logScroll.ScrollBarImageColor3 = C.PINK
-logScroll.Parent = logFrame
-Instance.new("UICorner", logScroll).CornerRadius = UDim.new(0, 10)
-
-local logLayout = Instance.new("UIListLayout")
-logLayout.SortOrder = Enum.SortOrder.LayoutOrder
-logLayout.Padding = UDim.new(0, 1)
-logLayout.Parent = logScroll
-
-local logCount = 0
-function AddLog(msg, color)
-    logCount = logCount + 1
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -4, 0, 12)
-    lbl.Text = msg
-    lbl.TextColor3 = color or C.WHITE
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 8
-    lbl.BackgroundTransparency = 1
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = logScroll
-    logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 2)
-    logScroll.CanvasPosition = Vector2.new(0, logScroll.CanvasSize.Y.Offset)
-end
-
-AddLog("UWU HUB HATE WORLD", C.PURPLE)
-AddLog("All systems ready", C.PINK)
-
--- ================== ESP SYSTEM ==================
-local ANOMALY_NAMES = {"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N"}
-local OBJECT_NAMES = {"AnnoyingOrange","NormalOrange","Orange","Float Duck","Duck","Crib","Rockingmachine","Bar Soap","Soap","Mirror","Sink","Curtain","Bucket","TV","Telephone","Alarm Clock","WallClock","ClockFace","Whiteboard","To-Do-List","StickyNotes","Papers","Paper","Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor","Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table","Desk","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge","Oven","Frying Pan","Cup","g Cup","CoffeeJar","SugarJar","Container","Cola","ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Briefcase","Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","Bed","Pillow","Glass","Bleach","crayon","pic1","pic2","pic3","Projector"}
-
-local Detected = {}
-local Circles = {}
-local LastScan = 0
-local AnimTime = 0
-
-function GetCircle()
-    for _, c in ipairs(Circles) do if not c.Visible then return c end end
-    if Drawing then
-        local c = Drawing.new("Circle")
-        c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 32
-        table.insert(Circles, c); return c
-    end
-    return nil
-end
-
-local function InList(name, list)
-    for _, k in ipairs(list) do if name == k then return true end end
-    return false
-end
-
-RunService.RenderStepped:Connect(function(dt)
-    AnimTime = AnimTime + dt
+    }
+    local catIdx = 1
+    spawn(function() while catArt and catArt.Parent do catIdx = catIdx % #catFrames + 1; catArt.Text = catFrames[catIdx]; wait(1.2) end end)
     
-    if MasterOn and (Settings.ShowAnomaly or Settings.ShowObject or Settings.ShowChanges) then
-        LastScan = LastScan + dt
-        if LastScan >= 0.3 then
-            LastScan = 0; Detected = {}
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if not (obj:IsA("Model") or obj:IsA("BasePart")) then continue end
-                local ok = false; local col = C.PINK_ESP
-                
-                if Settings.ShowAnomaly and InList(obj.Name, ANOMALY_NAMES) then ok = true; col = C.RED
-                elseif Settings.ShowObject and InList(obj.Name, OBJECT_NAMES) then ok = true; col = C.PINK_ESP
-                elseif Settings.ShowChanges then
-                    local p = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
-                    if p and p:IsA("BasePart") then
-                        local vel = p.AssemblyLinearVelocity or p.Velocity
-                        if vel and vel.Magnitude > 0.1 then ok = true; col = C.YELLOW end
-                        if p.RotVelocity and p.RotVelocity.Magnitude > 0.1 then ok = true; col = C.YELLOW end
-                    end
-                end
-                
-                if ok then
-                    local r = 5
-                    if obj:IsA("BasePart") then r = math.clamp(math.max(obj.Size.X, obj.Size.Y, obj.Size.Z) * 0.7, 4, 35)
-                    elseif obj:IsA("Model") then
-                        local pp = obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
-                        if pp then r = math.clamp(math.max(pp.Size.X, pp.Size.Y, pp.Size.Z) * 0.7, 4, 35) end
-                    end
-                    Detected[obj] = {col = col, r = r}
-                end
-            end
+    -- ================== ESP TAB ==================
+    CreateToggle(tabFrames["ESP"], "Fullbright", Settings.Fullbright, function(v) Settings.Fullbright = v; if v then EnableFB() else DisableFB() end end)
+    CreateToggle(tabFrames["ESP"], "Show Anomaly", Settings.ShowAnomaly, function(v) Settings.ShowAnomaly = v end)
+    CreateToggle(tabFrames["ESP"], "Show Object", Settings.ShowObject, function(v) Settings.ShowObject = v end)
+    CreateToggle(tabFrames["ESP"], "Show Changes", Settings.ShowChanges, function(v) Settings.ShowChanges = v end)
+    CreateToggle(tabFrames["ESP"], "Skin Detect", Settings.SkinDetect, function(v) Settings.SkinDetect = v end)
+    CreateToggle(tabFrames["ESP"], "Size Detect", Settings.SizeDetect, function(v) Settings.SizeDetect = v end)
+    CreateToggle(tabFrames["ESP"], "Show Notify", Settings.ShowNotify, function(v) Settings.ShowNotify = v end)
+    
+    -- ================== DETECT TAB ==================
+    CreateToggle(tabFrames["Detect"], "Scanner", Settings.Scanner, function(v) Settings.Scanner = v end)
+    CreateToggle(tabFrames["Detect"], "Auto Copy", Settings.AutoCopy, function(v) Settings.AutoCopy = v end)
+    
+    -- ================== LOG TAB ==================
+    local logScroll = Instance.new("ScrollingFrame")
+    logScroll.Size = UDim2.new(1, 0, 0, 160)
+    logScroll.BackgroundColor3 = C.BG2
+    logScroll.BorderSizePixel = 0
+    logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    logScroll.ScrollBarThickness = 3
+    logScroll.ScrollBarImageColor3 = C.PINK
+    logScroll.Parent = tabFrames["Log"]
+    Instance.new("UICorner", logScroll).CornerRadius = UDim.new(0, 10)
+    
+    local logLayout = Instance.new("UIListLayout")
+    logLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    logLayout.Padding = UDim.new(0, 1)
+    logLayout.Parent = logScroll
+    
+    function AddLog(msg, color)
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, -4, 0, 14)
+        lbl.Text = msg
+        lbl.TextColor3 = color or C.WHITE
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 8
+        lbl.BackgroundTransparency = 1
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = logScroll
+        lbl.BackgroundTransparency = 1
+        TweenService:Create(lbl, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+        logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 10)
+        logScroll.CanvasPosition = Vector2.new(0, logScroll.CanvasSize.Y.Offset)
+    end
+    
+    AddLog("UWU HUB HATE WORLD", C.PURPLE)
+    AddLog("PINK = Changes/Objects | RED = Monsters", C.PINK)
+    
+    -- ================== ESP SYSTEM ==================
+    -- RED = Monsters / Anomalies / Danger
+    local MONSTER_NAMES = {
+        "Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart",
+        "Pentagram","Eyes","Jumpscares","N","Intruder","Monster","Creature","Entity",
+        "Smiler","Fleshy","Screecher","Weeper","Crawler","Screamer","Watcher","Runner",
+        "Hanger","Skinner","Twitcher","Grabber","Burster","Seeker","Rusher","Lurker",
+        "Archangel","Gabriel","Shadow","Figure","Horror","Terror"
+    }
+    
+    -- PINK = Changed objects / Anomalous items
+    local OBJECT_NAMES = {
+        "AnnoyingOrange","NormalOrange","Orange","Float Duck","Duck","Crib","Rockingmachine",
+        "Bar Soap","Soap","Mirror","Sink","Curtain","Bucket","TV","Telephone","Alarm Clock",
+        "WallClock","ClockFace","Whiteboard","To-Do-List","StickyNotes","Papers","Paper",
+        "Books","Open Book","Poster","Painting","MonaLisa","WallDrawing","Frame","Monitor",
+        "Screen","Keyboard","Mouse","Carpet","Chair","Table","RoundTable","Pool Table",
+        "Desk","Shelf","Shoe Rack","Shoes","Wardrobe","Closet","Door","Window","Fridge",
+        "Oven","Frying Pan","Cup","g Cup","CoffeeJar","SugarJar","Container","Cola",
+        "ToiletPaperRoll","ToiletPlunger","Trash Can","Trash Bag","Suitcase","Briefcase",
+        "Box","Cardboard","Tire","Plant","Vase","Light","Lamp","Neon","Figurine","Bed",
+        "Pillow","Glass","Bleach","crayon","pic1","pic2","pic3","Projector"
+    }
+    
+    local Detected = {}
+    local Circles = {}
+    local AnimTime = 0
+    local DetectedNames = {}
+    
+    function GetCircle()
+        for _, c in ipairs(Circles) do if not c.Visible then return c end end
+        if Drawing then
+            local c = Drawing.new("Circle")
+            c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 32
+            table.insert(Circles, c); return c
         end
-        
-        for _, c in ipairs(Circles) do c.Visible = false end
-        for obj, data in pairs(Detected) do
-            if obj and obj.Parent then
-                local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
-                if part then
-                    local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                    if onScreen then
-                        local cr = GetCircle()
-                        if cr then
-                            local seed = string.byte(obj.Name, 1) or 1
-                            cr.Position = Vector2.new(pos.X, pos.Y)
-                            cr.Radius = data.r * (1 + math.sin(AnimTime * 2 + seed) * 0.04)
-                            cr.Color = data.col
-                            cr.Visible = true
+        return nil
+    end
+    
+    local function InList(name, list)
+        for _, k in ipairs(list) do if name == k then return true end end
+        return false
+    end
+    
+    -- ESP Update loop
+    spawn(function()
+        while Main and Main.Parent do
+            wait(0.25)
+            if MasterOn and (Settings.ShowAnomaly or Settings.ShowObject or Settings.ShowChanges) then
+                Detected = {}
+                DetectedNames = {}
+                
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if not (obj:IsA("Model") or obj:IsA("BasePart")) then continue end
+                    local name = obj.Name
+                    local ok = false
+                    local col = C.PINK_ESP
+                    local etype = "OBJECT"
+                    
+                    -- Check MONSTERS first = RED
+                    if Settings.ShowAnomaly and InList(name, MONSTER_NAMES) then
+                        ok = true; col = C.RED; etype = "MONSTER"
+                    -- Check changed/objects = PINK
+                    elseif Settings.ShowObject and InList(name, OBJECT_NAMES) then
+                        ok = true; col = C.PINK_ESP; etype = "OBJECT"
+                    -- Check active changes = PINK (changed items)
+                    elseif Settings.ShowChanges then
+                        local p = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
+                        if p and p:IsA("BasePart") then
+                            local vel = p.AssemblyLinearVelocity or p.Velocity
+                            if (vel and vel.Magnitude > 0.1) or (p.RotVelocity and p.RotVelocity.Magnitude > 0.1) then
+                                ok = true; col = C.PINK_ESP; etype = "CHANGE"
+                            end
+                        end
+                    end
+                    
+                    if ok then
+                        local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
+                        if part then
+                            local room = GetRoomName(part.Position)
+                            local r = math.clamp(math.max(part.Size.X, part.Size.Y, part.Size.Z) * 0.7, 4, 35)
+                            Detected[obj] = {col = col, r = r, room = room, name = name, etype = etype}
+                            
+                            if not DetectedNames[name] then
+                                DetectedNames[name] = true
+                                local icon = etype == "MONSTER" and "R" or "P"
+                                AddLog("[" .. icon .. "] [" .. room .. "] " .. etype .. ": " .. name, col)
+                            end
                         end
                     end
                 end
             end
         end
-    else
-        for _, c in ipairs(Circles) do c.Visible = false end
-    end
+    end)
     
-    StatusText.Text = MasterOn and "=^^= Active" or "=;= Idle"
-    StatusText.TextColor3 = MasterOn and C.PINK or C.GRAY
-end)
+    -- ESP Render loop
+    RunService.RenderStepped:Connect(function(dt)
+        AnimTime = AnimTime + dt
+        
+        if MasterOn and (Settings.ShowAnomaly or Settings.ShowObject or Settings.ShowChanges) then
+            for _, c in ipairs(Circles) do c.Visible = false end
+            
+            for obj, data in pairs(Detected) do
+                if obj and obj.Parent then
+                    local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
+                    if part then
+                        local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                        if onScreen then
+                            local cr = GetCircle()
+                            if cr then
+                                local seed = string.byte(obj.Name, 1) or 1
+                                cr.Position = Vector2.new(pos.X, pos.Y)
+                                cr.Radius = data.r * (1 + math.sin(AnimTime * 2 + seed) * 0.04)
+                                cr.Color = data.col
+                                cr.Visible = true
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            for _, c in ipairs(Circles) do c.Visible = false end
+        end
+        
+        local monsterCount = 0
+        local objectCount = 0
+        for _, data in pairs(Detected) do
+            if data.etype == "MONSTER" then monsterCount = monsterCount + 1
+            else objectCount = objectCount + 1 end
+        end
+        
+        StatusText.Text = MasterOn and ("R:" .. monsterCount .. " P:" .. objectCount) or "=;= Idle"
+        StatusText.TextColor3 = MasterOn and C.PINK or C.GRAY
+    end)
+    
+    -- Scanner for Skin/Size detect
+    spawn(function()
+        local ODB = {}
+        while Main and Main.Parent do
+            wait(0.5)
+            if MasterOn and Settings.Scanner then
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") then
+                        local st = {s = obj.Size, c = obj.Color, m = obj.Material}
+                        if ODB[obj] then
+                            if Settings.SkinDetect and (ODB[obj].c ~= st.c or ODB[obj].m ~= st.m) then
+                                local room = GetRoomName(obj.Position)
+                                AddLog("[SKIN] [" .. room .. "] " .. obj.Name .. " changed", C.PINK)
+                            end
+                            if Settings.SizeDetect and (ODB[obj].s - st.s).Magnitude > 0.1 then
+                                local room = GetRoomName(obj.Position)
+                                AddLog("[SIZE] [" .. room .. "] " .. obj.Name .. " resized", C.PINK)
+                            end
+                        end
+                        ODB[obj] = st
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ================== START ==================
+CreateMainGUI()
