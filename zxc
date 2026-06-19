@@ -1,4 +1,4 @@
--- Anomaly Watch | FULL SCANNER + SOUND + CLOCK + ORANGE FACE | RAGE v26 FINAL
+-- Anomaly Watch | SCANNER v26 | FIXED
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -8,7 +8,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
-local SoundService = game:GetService("SoundService")
 local PLAYERGUI = Player:WaitForChild("PlayerGui")
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
@@ -25,8 +24,8 @@ local function EnableFB()
     Lighting.Brightness = 5
     Lighting.ClockTime = 12
     Lighting.FogEnd = 99999
-    Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
     Lighting.GlobalShadows = false
 end
 
@@ -42,14 +41,21 @@ end
 
 -- ================== COLORS ==================
 local C = {
-    BG = Color3.fromRGB(25, 15, 20), BG2 = Color3.fromRGB(35, 20, 28),
-    ACCENT = Color3.fromRGB(255, 140, 180), ACCENT2 = Color3.fromRGB(200, 70, 120),
-    PINK = Color3.fromRGB(255, 170, 195), WHITE = Color3.fromRGB(245, 235, 240),
-    GRAY = Color3.fromRGB(160, 140, 150), ON = Color3.fromRGB(255, 120, 160),
-    OFF = Color3.fromRGB(55, 30, 45), RED = Color3.fromRGB(255, 40, 60),
-    PINK_ESP = Color3.fromRGB(255, 150, 180), YELLOW = Color3.fromRGB(255, 200, 100),
-    GLOW = Color3.fromRGB(255, 110, 150), GREEN = Color3.fromRGB(100, 255, 100),
-    CYAN = Color3.fromRGB(100, 200, 255)
+    BG = Color3.new(0.098, 0.059, 0.078),
+    BG2 = Color3.new(0.137, 0.078, 0.110),
+    ACCENT = Color3.new(1, 0.549, 0.706),
+    ACCENT2 = Color3.new(0.784, 0.275, 0.471),
+    PINK = Color3.new(1, 0.667, 0.765),
+    WHITE = Color3.new(0.961, 0.922, 0.941),
+    GRAY = Color3.new(0.627, 0.549, 0.588),
+    ON = Color3.new(1, 0.471, 0.627),
+    OFF = Color3.new(0.216, 0.118, 0.176),
+    RED = Color3.new(1, 0.157, 0.235),
+    PINK_ESP = Color3.new(1, 0.588, 0.706),
+    YELLOW = Color3.new(1, 0.784, 0.392),
+    GLOW = Color3.new(1, 0.431, 0.588),
+    GREEN = Color3.new(0.392, 1, 0.392),
+    CYAN = Color3.new(0.392, 0.784, 1)
 }
 
 local Settings = {
@@ -64,7 +70,7 @@ function Notify(t, txt)
     pcall(function() StarterGui:SetCore("SendNotification", {Title = t, Text = txt, Duration = 2}) end)
 end
 
--- ================== ROOM DETECTION ==================
+-- ================== ROOMS ==================
 local ROOMS = {
     "Living Room", "LivingRoom", "Garage", "Downstairs Bathroom", "Downstairs Hall",
     "Study", "Kitchen", "Basement", "Master Bedroom", "Nursery",
@@ -91,45 +97,83 @@ local function GetRoomName(obj)
             end
         end
     end
-    return "Unknown"
+    return "?"
 end
 
 -- ================== GUI ==================
-local Gui = Instance.new("ScreenGui"); Gui.Name = "PawESP"
-Gui.IgnoreGuiInset = true; Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; Gui.Parent = PLAYERGUI
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "PawESP"
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PLAYERGUI
 
-local W, H = IsMobile and 250 or 280, IsMobile and 530 or 570
-local Main = Instance.new("Frame"); Main.Name = "MainCard"
-Main.Size = UDim2.new(0, W, 0, H); Main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
-Main.BackgroundColor3 = C.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Parent = Gui
+local W = 270
+local H = 550
+local Main = Instance.new("Frame")
+Main.Name = "MainCard"
+Main.Size = UDim2.new(0, W, 0, H)
+Main.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+Main.BackgroundColor3 = C.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Gui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
 
-local Glow = Instance.new("Frame"); Glow.Size = UDim2.new(1, 4, 1, 4); Glow.Position = UDim2.new(0, -2, 0, -2)
-Glow.BackgroundColor3 = C.GLOW; Glow.BackgroundTransparency = 0.55; Glow.BorderSizePixel = 0; Glow.ZIndex = 0; Glow.Parent = Main
+local Glow = Instance.new("Frame")
+Glow.Size = UDim2.new(1, 4, 1, 4)
+Glow.Position = UDim2.new(0, -2, 0, -2)
+Glow.BackgroundColor3 = C.GLOW
+Glow.BackgroundTransparency = 0.55
+Glow.BorderSizePixel = 0
+Glow.ZIndex = 0
+Glow.Parent = Main
 Instance.new("UICorner", Glow).CornerRadius = UDim.new(0, 15)
 
-local Header = Instance.new("Frame"); Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = C.ACCENT2; Header.BorderSizePixel = 0; Header.Parent = Main
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 30)
+Header.BackgroundColor3 = C.ACCENT2
+Header.BorderSizePixel = 0
+Header.Parent = Main
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
-local Title = Instance.new("TextLabel"); Title.Size = UDim2.new(0, 100, 1, 0); Title.Position = UDim2.new(0, 8, 0, 0)
-Title.Text = "=^^= scanner"; Title.TextColor3 = C.WHITE; Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 100, 1, 0)
+Title.Position = UDim2.new(0, 8, 0, 0)
+Title.Text = "=^^= scanner"
+Title.TextColor3 = C.WHITE
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 11
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
 
-local MinBtn = Instance.new("TextButton"); MinBtn.Size = UDim2.new(0, 20, 0, 20)
-MinBtn.Position = UDim2.new(1, -48, 0.5, -10); MinBtn.Text = "-"
-MinBtn.BackgroundColor3 = Color3.fromRGB(50, 25, 35); MinBtn.TextColor3 = C.PINK
-MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextSize = 12; MinBtn.BorderSizePixel = 0; MinBtn.Parent = Header
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 20, 0, 20)
+MinBtn.Position = UDim2.new(1, -48, 0.5, -10)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.new(0.196, 0.098, 0.137)
+MinBtn.TextColor3 = C.PINK
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 12
+MinBtn.BorderSizePixel = 0
+MinBtn.Parent = Header
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
-local MTog = Instance.new("Frame"); MTog.Size = UDim2.new(0, 32, 0, 16)
-MTog.Position = UDim2.new(1, -36, 0.5, -8); MTog.BackgroundColor3 = C.ON
-MTog.BorderSizePixel = 0; MTog.Parent = Header
+local MTog = Instance.new("Frame")
+MTog.Size = UDim2.new(0, 32, 0, 16)
+MTog.Position = UDim2.new(1, -36, 0.5, -8)
+MTog.BackgroundColor3 = C.ON
+MTog.BorderSizePixel = 0
+MTog.Parent = Header
 Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
 
-local MKnob = Instance.new("Frame"); MKnob.Size = UDim2.new(0, 12, 0, 12)
-MKnob.Position = UDim2.new(1, -14, 0.5, -6); MKnob.BackgroundColor3 = C.WHITE
-MKnob.BorderSizePixel = 0; MKnob.Parent = MTog
+local MKnob = Instance.new("Frame")
+MKnob.Size = UDim2.new(0, 12, 0, 12)
+MKnob.Position = UDim2.new(1, -14, 0.5, -6)
+MKnob.BackgroundColor3 = C.WHITE
+MKnob.BorderSizePixel = 0
+MKnob.Parent = MTog
 Instance.new("UICorner", MKnob).CornerRadius = UDim.new(1, 0)
 
 local function UpdateMaster(s)
@@ -142,37 +186,75 @@ local function UpdateMaster(s)
         TweenService:Create(MKnob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -6)}):Play()
     end
 end
-MTog.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then UpdateMaster(not MasterOn) end end)
+MTog.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        UpdateMaster(not MasterOn)
+    end
+end)
 
-local Body = Instance.new("Frame"); Body.Size = UDim2.new(1, -12, 1, -40)
-Body.Position = UDim2.new(0, 6, 0, 36); Body.BackgroundTransparency = 1; Body.BorderSizePixel = 0; Body.Parent = Main
-local BL = Instance.new("UIListLayout"); BL.SortOrder = Enum.SortOrder.LayoutOrder; BL.Padding = UDim.new(0, 3); BL.Parent = Body
+local Body = Instance.new("Frame")
+Body.Size = UDim2.new(1, -12, 1, -40)
+Body.Position = UDim2.new(0, 6, 0, 36)
+Body.BackgroundTransparency = 1
+Body.BorderSizePixel = 0
+Body.Parent = Main
+local BL = Instance.new("UIListLayout")
+BL.SortOrder = Enum.SortOrder.LayoutOrder
+BL.Padding = UDim.new(0, 3)
+BL.Parent = Body
 
 local function Section(title)
-    local Sec = Instance.new("Frame"); Sec.Size = UDim2.new(1, 0, 0, 14); Sec.BackgroundTransparency = 1; Sec.Parent = Body
-    local Txt = Instance.new("TextLabel"); Txt.Size = UDim2.new(1, 0, 0, 14); Txt.Text = title
-    Txt.TextColor3 = C.PINK; Txt.Font = Enum.Font.GothamBold; Txt.TextSize = 8
-    Txt.BackgroundTransparency = 1; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Sec
+    local Sec = Instance.new("Frame")
+    Sec.Size = UDim2.new(1, 0, 0, 14)
+    Sec.BackgroundTransparency = 1
+    Sec.Parent = Body
+    local Txt = Instance.new("TextLabel")
+    Txt.Size = UDim2.new(1, 0, 0, 14)
+    Txt.Text = title
+    Txt.TextColor3 = C.PINK
+    Txt.Font = Enum.Font.GothamBold
+    Txt.TextSize = 8
+    Txt.BackgroundTransparency = 1
+    Txt.TextXAlignment = Enum.TextXAlignment.Left
+    Txt.Parent = Sec
 end
 
 local function ToggleRow(name, default, cb)
     local enabled = default
-    local Row = Instance.new("Frame"); Row.Size = UDim2.new(1, 0, 0, IsMobile and 28 or 24)
-    Row.BackgroundColor3 = C.BG2; Row.BorderSizePixel = 0; Row.Parent = Body
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, 0, 0, 24)
+    Row.BackgroundColor3 = C.BG2
+    Row.BorderSizePixel = 0
+    Row.Parent = Body
     Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 6)
-    
-    local Lbl = Instance.new("TextLabel"); Lbl.Size = UDim2.new(0.55, 0, 1, 0); Lbl.Position = UDim2.new(0, 6, 0, 0)
-    Lbl.Text = name; Lbl.TextColor3 = C.GRAY; Lbl.Font = Enum.Font.Gotham
-    Lbl.TextSize = IsMobile and 9 or 10; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left; Lbl.Parent = Row
-    
-    local Tog = Instance.new("Frame"); Tog.Size = UDim2.new(0, 30, 0, 16)
-    Tog.Position = UDim2.new(1, -34, 0.5, -8); Tog.BackgroundColor3 = C.OFF; Tog.BorderSizePixel = 0; Tog.Parent = Row
+
+    local Lbl = Instance.new("TextLabel")
+    Lbl.Size = UDim2.new(0.55, 0, 1, 0)
+    Lbl.Position = UDim2.new(0, 6, 0, 0)
+    Lbl.Text = name
+    Lbl.TextColor3 = C.GRAY
+    Lbl.Font = Enum.Font.Gotham
+    Lbl.TextSize = 10
+    Lbl.BackgroundTransparency = 1
+    Lbl.TextXAlignment = Enum.TextXAlignment.Left
+    Lbl.Parent = Row
+
+    local Tog = Instance.new("Frame")
+    Tog.Size = UDim2.new(0, 30, 0, 16)
+    Tog.Position = UDim2.new(1, -34, 0.5, -8)
+    Tog.BackgroundColor3 = C.OFF
+    Tog.BorderSizePixel = 0
+    Tog.Parent = Row
     Instance.new("UICorner", Tog).CornerRadius = UDim.new(1, 0)
-    
-    local Knob = Instance.new("Frame"); Knob.Size = UDim2.new(0, 12, 0, 12)
-    Knob.Position = UDim2.new(0, 2, 0.5, -6); Knob.BackgroundColor3 = C.WHITE; Knob.BorderSizePixel = 0; Knob.Parent = Tog
+
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 12, 0, 12)
+    Knob.Position = UDim2.new(0, 2, 0.5, -6)
+    Knob.BackgroundColor3 = C.WHITE
+    Knob.BorderSizePixel = 0
+    Knob.Parent = Tog
     Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
-    
+
     local function Set(s)
         enabled = s
         if s then
@@ -185,7 +267,12 @@ local function ToggleRow(name, default, cb)
             Lbl.TextColor3 = C.GRAY
         end
     end
-    Tog.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then Set(not enabled); cb(not enabled) end end)
+    Tog.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            Set(not enabled)
+            cb(not enabled)
+        end
+    end)
     Set(default)
 end
 
@@ -205,44 +292,77 @@ ToggleRow("Face Detect", true, function(v) Settings.DetectFaces = v end)
 Section("Scanner")
 ToggleRow("Auto Copy", true, function(v) Settings.AutoCopy = v end)
 
--- Change log
 local ChangeLog = Instance.new("ScrollingFrame")
-ChangeLog.Size = UDim2.new(1, 0, 0, 140); ChangeLog.BackgroundColor3 = Color3.fromRGB(20, 12, 16)
-ChangeLog.BorderSizePixel = 0; ChangeLog.CanvasSize = UDim2.new(0, 0, 0, 0)
-ChangeLog.ScrollBarThickness = 2; ChangeLog.ScrollBarImageColor3 = C.ACCENT; ChangeLog.Parent = Body
+ChangeLog.Size = UDim2.new(1, 0, 0, 150)
+ChangeLog.BackgroundColor3 = Color3.new(0.078, 0.047, 0.063)
+ChangeLog.BorderSizePixel = 0
+ChangeLog.CanvasSize = UDim2.new(0, 0, 0, 0)
+ChangeLog.ScrollBarThickness = 2
+ChangeLog.ScrollBarImageColor3 = C.ACCENT
+ChangeLog.Parent = Body
 Instance.new("UICorner", ChangeLog).CornerRadius = UDim.new(0, 6)
-local CLL = Instance.new("UIListLayout"); CLL.SortOrder = Enum.SortOrder.LayoutOrder; CLL.Padding = UDim.new(0, 1); CLL.Parent = ChangeLog
+local CLL = Instance.new("UIListLayout")
+CLL.SortOrder = Enum.SortOrder.LayoutOrder
+CLL.Padding = UDim.new(0, 1)
+CLL.Parent = ChangeLog
 
 local function AddLog(msg, color)
-    local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -4, 0, 14)
-    lbl.Text = msg; lbl.TextColor3 = color or C.WHITE; lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 8; lbl.BackgroundTransparency = 1; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = ChangeLog
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -4, 0, 14)
+    lbl.Text = msg
+    lbl.TextColor3 = color or C.WHITE
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 8
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = ChangeLog
     ChangeLog.CanvasSize = UDim2.new(0, 0, 0, CLL.AbsoluteContentSize.Y + 2)
     ChangeLog.CanvasPosition = Vector2.new(0, ChangeLog.CanvasSize.Y.Offset)
-    return lbl
 end
 
 Section("Other")
 ToggleRow("Notify", true, function(v) Settings.Notifications = v end)
 
-local Status = Instance.new("TextLabel"); Status.Size = UDim2.new(1, 0, 0, 12)
-Status.Text = "scanning..."; Status.TextColor3 = C.GRAY; Status.Font = Enum.Font.Gotham
-Status.TextSize = 8; Status.BackgroundTransparency = 1
-Status.TextXAlignment = Enum.TextXAlignment.Center; Status.Parent = Body
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, 0, 0, 12)
+Status.Text = "scanning..."
+Status.TextColor3 = C.GRAY
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 8
+Status.BackgroundTransparency = 1
+Status.TextXAlignment = Enum.TextXAlignment.Center
+Status.Parent = Body
 
 -- ================== MINIMIZE ==================
-local MinIcon, CatFrames, CatFrame = nil, {"=^.^=", "=o.o=", "=-.=", "=*.*=", "=^^="}, 1
+local MinIcon
+local CatFrames = {"=^.^=", "=o.o=", "=-.=", "=*.*=", "=^^="}
+local CatFrame = 1
 MinBtn.MouseButton1Click:Connect(function()
     Main.Visible = false
     if not MinIcon then
-        MinIcon = Instance.new("TextButton"); MinIcon.Size = UDim2.new(0, 34, 0, 34)
-        MinIcon.Position = UDim2.new(0.5, -17, 0.5, -17); MinIcon.BackgroundColor3 = C.BG2
-        MinIcon.TextColor3 = C.PINK; MinIcon.Font = Enum.Font.GothamBold; MinIcon.TextSize = 10
-        MinIcon.BorderSizePixel = 0; MinIcon.Active = true; MinIcon.Draggable = true; MinIcon.Parent = Gui
+        MinIcon = Instance.new("TextButton")
+        MinIcon.Size = UDim2.new(0, 34, 0, 34)
+        MinIcon.Position = UDim2.new(0.5, -17, 0.5, -17)
+        MinIcon.BackgroundColor3 = C.BG2
+        MinIcon.TextColor3 = C.PINK
+        MinIcon.Font = Enum.Font.GothamBold
+        MinIcon.TextSize = 10
+        MinIcon.BorderSizePixel = 0
+        MinIcon.Active = true
+        MinIcon.Draggable = true
+        MinIcon.Parent = Gui
         Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(0, 9)
         MinIcon.MouseButton1Click:Connect(function() MinIcon.Visible = false; Main.Visible = true end)
-        spawn(function() while MinIcon and MinIcon.Parent and MinIcon.Visible do CatFrame = (CatFrame % #CatFrames) + 1; MinIcon.Text = CatFrames[CatFrame]; wait(0.7) end end)
-    else MinIcon.Visible = true end
+        spawn(function()
+            while MinIcon and MinIcon.Parent and MinIcon.Visible do
+                CatFrame = (CatFrame % #CatFrames) + 1
+                MinIcon.Text = CatFrames[CatFrame]
+                wait(0.7)
+            end
+        end)
+    else
+        MinIcon.Visible = true
+    end
 end)
 
 -- ================== SCANNER ==================
@@ -253,19 +373,29 @@ local LastSoundCheck = 0
 local LastClockCheck = 0
 local LastFaceCheck = 0
 local CopiedChanges = {}
-local ClockSpeed = 1
 local PrevClockTime = Lighting.ClockTime
+local SoundReported = {}
 
 local function GetObjectState(obj)
     if obj:IsA("BasePart") then
         return {
-            pos = obj.Position, rot = obj.Orientation, size = obj.Size,
-            color = obj.Color, transparency = obj.Transparency,
-            material = obj.Material, anchored = obj.Anchored
+            pos = obj.Position,
+            rot = obj.Orientation,
+            size = obj.Size,
+            color = obj.Color,
+            transparency = obj.Transparency,
+            material = obj.Material,
+            anchored = obj.Anchored
         }
     elseif obj:IsA("Model") then
         local part = obj:FindFirstChildOfClass("BasePart") or obj.PrimaryPart
-        if part then return {pos = part.Position, rot = part.Orientation, size = part.Size} end
+        if part then
+            return {
+                pos = part.Position,
+                rot = part.Orientation,
+                size = part.Size
+            }
+        end
     end
     return nil
 end
@@ -287,9 +417,9 @@ local function GetChangeType(old, new)
     if old.pos and new.pos and (old.pos - new.pos).Magnitude > 0.1 then table.insert(changes, "MOVED") end
     if old.rot and new.rot and (old.rot - new.rot).Magnitude > 0.5 then table.insert(changes, "ROTATED") end
     if old.size and new.size and (old.size - new.size).Magnitude > 0.1 then table.insert(changes, "RESIZED") end
-    if old.color and new.color and old.color ~= new.color then table.insert(changes, "COLOR_CHANGE") end
-    if old.material and new.material and old.material ~= new.material then table.insert(changes, "MATERIAL_CHANGE") end
-    return table.concat(changes, "+")
+    if old.color and new.color and old.color ~= new.color then table.insert(changes, "COLOR") end
+    if old.material and new.material and old.material ~= new.material then table.insert(changes, "MATERIAL") end
+    return #changes > 0 and table.concat(changes, "+") or "CHANGED"
 end
 
 RunService.RenderStepped:Connect(function(dt)
@@ -298,109 +428,93 @@ RunService.RenderStepped:Connect(function(dt)
     LastSoundCheck = LastSoundCheck + dt
     LastClockCheck = LastClockCheck + dt
     LastFaceCheck = LastFaceCheck + dt
-    
-    -- ================== SOUND DETECTOR ==================
+
+    -- SOUND DETECTOR
     if Settings.DetectSounds and LastSoundCheck >= 1 then
         LastSoundCheck = 0
-        local sounds = workspace:GetDescendants()
-        for _, obj in ipairs(sounds) do
-            if obj:IsA("Sound") and obj.IsPlaying and obj.Volume > 0.1 then
-                if not obj:GetAttribute("Reported") then
-                    obj:SetAttribute("Reported", true)
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("Sound") and obj.IsPlaying and obj.Volume > 0.05 then
+                local id = obj:GetFullName()
+                if not SoundReported[id] then
+                    SoundReported[id] = true
                     local room = GetRoomName(obj)
-                    local msg = "[SOUND] [" .. room .. "] " .. obj.Name .. " | " .. (obj.SoundId or "unknown")
+                    local sid = obj.SoundId or "unknown"
+                    local sname = sid:match("([^/]+)$") or sid
+                    local msg = "[SOUND] [" .. room .. "] " .. sname
                     table.insert(CopiedChanges, msg)
                     AddLog(msg, C.CYAN)
-                    Notify("SOUND", msg, 3)
+                    Notify("SOUND", msg, 2)
                 end
             end
         end
+        -- Clear old sounds
+        for id in pairs(SoundReported) do
+            local obj = workspace:FindFirstChild(id)
+            if not obj or not obj:IsA("Sound") or not obj.IsPlaying then
+                SoundReported[id] = nil
+            end
+        end
     end
-    
-    -- ================== CLOCK DETECTOR ==================
+
+    -- CLOCK DETECTOR
     if Settings.DetectClock and LastClockCheck >= 0.5 then
         LastClockCheck = 0
         local currentTime = Lighting.ClockTime
         local timeDiff = math.abs(currentTime - PrevClockTime)
-        if timeDiff > 0.05 then
-            local speed = timeDiff / 0.5
-            if speed > 2 then
-                local msg = "[CLOCK] Time accelerated x" .. math.floor(speed)
-                table.insert(CopiedChanges, msg)
-                AddLog(msg, Color3.fromRGB(255, 150, 50))
-                Notify("CLOCK", msg, 2)
-            end
+        if timeDiff > 0.08 then
+            local msg = "[CLOCK] Time speed x" .. math.floor(timeDiff / 0.03)
+            table.insert(CopiedChanges, msg)
+            AddLog(msg, Color3.new(1, 0.588, 0.196))
+            Notify("CLOCK", msg, 2)
         end
         PrevClockTime = currentTime
     end
-    
-    -- ================== FACE DETECTOR (ORANGE + OBJECTS) ==================
+
+    -- FACE DETECTOR
     if Settings.DetectFaces and LastFaceCheck >= 0.5 then
         LastFaceCheck = 0
         for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("Model") or obj:IsA("BasePart") then
-                local name = obj.Name:lower()
-                -- Check for AnnoyingOrange or any orange with face
-                if name:find("annoying") or name:find("orange") then
-                    -- Check if it has a Decal/Texture (face)
-                    for _, child in ipairs(obj:GetDescendants()) do
-                        if child:IsA("Decal") or child:IsA("Texture") then
-                            if not obj:GetAttribute("FaceReported") then
-                                obj:SetAttribute("FaceReported", true)
-                                local room = GetRoomName(obj)
-                                local msg = "[FACE] [" .. room .. "] " .. obj.Name .. " has a FACE!"
-                                table.insert(CopiedChanges, msg)
-                                AddLog(msg, Color3.fromRGB(255, 100, 255))
-                                Notify("FACE", msg, 3)
-                            end
-                        end
+            local name = obj.Name:lower()
+            if name:find("annoying") or name:find("orange") or name:find("painting") or name:find("mona") or name:find("portrait") then
+                local hasDecal = false
+                for _, child in ipairs(obj:GetDescendants()) do
+                    if child:IsA("Decal") or child:IsA("Texture") then
+                        hasDecal = true
+                        break
                     end
                 end
-                -- Check for face on paintings/walls
-                if name:find("painting") or name:find("portrait") or name:find("mona") then
-                    for _, child in ipairs(obj:GetDescendants()) do
-                        if child:IsA("Decal") or child:IsA("Texture") then
-                            local texture = child:IsA("Texture") and child.Texture or ""
-                            if texture ~= "" and not obj:GetAttribute("FaceReported") then
-                                obj:SetAttribute("FaceReported", true)
-                                local room = GetRoomName(obj)
-                                local msg = "[FACE] [" .. room .. "] " .. obj.Name .. " texture changed!"
-                                table.insert(CopiedChanges, msg)
-                                AddLog(msg, Color3.fromRGB(255, 100, 255))
-                                Notify("FACE", msg, 3)
-                            end
-                        end
-                    end
+                if hasDecal and not obj:GetAttribute("FaceReported") then
+                    obj:SetAttribute("FaceReported", true)
+                    local room = GetRoomName(obj)
+                    local msg = "[FACE] [" .. room .. "] " .. obj.Name
+                    table.insert(CopiedChanges, msg)
+                    AddLog(msg, Color3.new(1, 0.392, 1))
+                    Notify("FACE", msg, 2)
                 end
             end
         end
     end
-    
-    -- ================== OBJECT SCANNER ==================
+
+    -- OBJECT SCANNER
     if LastScan >= 0.5 then
         LastScan = 0
-        
         local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if not root then return end
-        
+
         local currentObjects = {}
-        
         for _, obj in ipairs(workspace:GetDescendants()) do
             if not (obj:IsA("Model") or obj:IsA("BasePart")) then continue end
             if obj:IsA("BasePart") and obj.Transparency > 0.95 then continue end
             if obj.Name == "Terrain" then continue end
-            
+
             local part = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
             if not part then continue end
-            
-            local dist = (part.Position - root.Position).Magnitude
-            if dist > Settings.ScanRange then continue end
-            
+            if (part.Position - root.Position).Magnitude > Settings.ScanRange then continue end
+
             local state = GetObjectState(obj)
             if not state then continue end
-            
             currentObjects[obj] = state
-            
+
             if ObjectDB[obj] then
                 if HasStateChanged(ObjectDB[obj], state) then
                     local room = GetRoomName(obj)
@@ -408,7 +522,6 @@ RunService.RenderStepped:Connect(function(dt)
                     local msg = "[CHANGE] [" .. room .. "] " .. obj.Name .. ": " .. changeType
                     table.insert(CopiedChanges, msg)
                     AddLog(msg, C.YELLOW)
-                    Notify("CHANGE", msg, 2)
                 end
             else
                 if not obj:GetAttribute("NewReported") then
@@ -420,39 +533,43 @@ RunService.RenderStepped:Connect(function(dt)
                 end
             end
         end
-        
-        -- Check removed
-        for obj, oldState in pairs(ObjectDB) do
+
+        -- REMOVED
+        for obj in pairs(ObjectDB) do
             if not currentObjects[obj] then
                 local room = GetRoomName(obj)
                 local msg = "[REMOVED] [" .. room .. "] " .. obj.Name
                 table.insert(CopiedChanges, msg)
                 AddLog(msg, C.RED)
-                Notify("REMOVED", msg, 2)
             end
         end
-        
+
         ObjectDB = currentObjects
-        
-        -- Auto copy
+
+        -- AUTO COPY
         if Settings.AutoCopy and #CopiedChanges > 0 and LastCopy >= 5 and setclipboard then
             LastCopy = 0
-            local unique = {}
-            for _, v in ipairs(CopiedChanges) do unique[v] = true end
+            local seen = {}
             local text = ""
-            for k in pairs(unique) do text = text .. k .. "\n" end
+            for _, v in ipairs(CopiedChanges) do
+                if not seen[v] then
+                    seen[v] = true
+                    text = text .. v .. "\n"
+                end
+            end
             setclipboard(text)
             CopiedChanges = {}
             Status.Text = "~ copied!"
             Status.TextColor3 = C.GREEN
             spawn(function() wait(2) Status.TextColor3 = C.GRAY end)
         end
-        
-        local total = 0; for _ in pairs(ObjectDB) do total = total + 1 end
-        Status.Text = "~ " .. total .. " obj | " .. Settings.ScanRange .. "m"
+
+        local total = 0
+        for _ in pairs(ObjectDB) do total = total + 1 end
+        Status.Text = "~ " .. total .. " obj"
     end
 end)
 
-Notify("=^^=", "Full scanner ready! Sound+Clock+Faces")
+Notify("=^^=", "Scanner ready!")
 AddLog("Scanner v26: Sound+Clock+Faces", C.PINK)
 AddLog("Range: " .. Settings.ScanRange .. "m", C.GRAY)
