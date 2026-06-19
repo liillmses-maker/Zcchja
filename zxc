@@ -1,4 +1,4 @@
--- UWU HUB HATE WORLD | EVERYTHING WORKS | FINAL
+-- UWU HUB HATE WORLD | FINAL WORKING VERSION
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -22,14 +22,17 @@ local function DisableFB() Lighting.Brightness = OrigBright; Lighting.ClockTime 
 
 -- ================== COLORS ==================
 local C = {
-    BG = Color3.new(0.08,0.05,0.06), BG2 = Color3.new(0.12,0.07,0.09),
-    ACCENT = Color3.new(1,0.55,0.71), ACCENT2 = Color3.new(0.78,0.27,0.47),
-    PINK = Color3.new(1,0.67,0.76), WHITE = Color3.new(0.96,0.92,0.94),
-    GRAY = Color3.new(0.63,0.55,0.59), ON = Color3.new(1,0.47,0.63),
-    OFF = Color3.new(0.22,0.12,0.18), RED = Color3.new(1,0.16,0.24),
-    PINK_ESP = Color3.new(1,0.59,0.71), YELLOW = Color3.new(1,0.78,0.39),
-    GREEN = Color3.new(0.39,1,0.39), CYAN = Color3.new(0.39,0.78,1),
-    PURPLE = Color3.new(0.7,0.3,1)
+    BG = Color3.fromRGB(20,12,15),
+    BG2 = Color3.fromRGB(30,18,23),
+    PINK = Color3.fromRGB(255,170,195),
+    WHITE = Color3.fromRGB(245,235,240),
+    GRAY = Color3.fromRGB(160,140,150),
+    ON = Color3.fromRGB(255,120,160),
+    OFF = Color3.fromRGB(55,30,40),
+    RED = Color3.fromRGB(255,40,60),
+    PINK_ESP = Color3.fromRGB(255,150,180),
+    YELLOW = Color3.fromRGB(255,200,100),
+    PURPLE = Color3.fromRGB(180,75,255)
 }
 
 -- ================== SETTINGS ==================
@@ -44,405 +47,356 @@ local Settings = {
     Scanner = false,
     AutoCopy = false
 }
-local MasterOn = false
+local MasterOn = true
 
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "UwUHub"
 Gui.Parent = PLAYERGUI
 
-local Main
-local MinimizeIcon
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 300, 0, 250)
+Main.Position = UDim2.new(0.5, -150, 0.5, -125)
+Main.BackgroundColor3 = C.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Gui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
 
--- Minimize icon
-local function CreateMinimizedIcon()
-    MinimizeIcon = Instance.new("TextButton")
-    MinimizeIcon.Size = UDim2.new(0, 36, 0, 36)
-    MinimizeIcon.Position = UDim2.new(0.5, -18, 0.5, -18)
-    MinimizeIcon.Text = "uwu"
-    MinimizeIcon.BackgroundColor3 = C.BG2
-    MinimizeIcon.TextColor3 = C.PINK
-    MinimizeIcon.Font = Enum.Font.GothamBold
-    MinimizeIcon.TextSize = 10
-    MinimizeIcon.BorderSizePixel = 0
-    MinimizeIcon.Active = true
-    MinimizeIcon.Draggable = true
-    MinimizeIcon.Parent = Gui
-    Instance.new("UICorner", MinimizeIcon).CornerRadius = UDim.new(1, 0)
+-- HEADER
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 28)
+Header.BackgroundColor3 = C.BG2
+Header.BorderSizePixel = 0
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 16)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 150, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "=^^= UWU HUB"
+Title.TextColor3 = C.PINK
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 11
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Close btn
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 22, 0, 22)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -11)
+CloseBtn.Text = "_"
+CloseBtn.BackgroundColor3 = C.OFF
+CloseBtn.TextColor3 = C.PINK
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
+CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
+
+-- Master toggle
+local MTog = Instance.new("TextButton")
+MTog.Size = UDim2.new(0, 40, 0, 22)
+MTog.Position = UDim2.new(1, -70, 0.5, -11)
+MTog.Text = "ON"
+MTog.BackgroundColor3 = C.ON
+MTog.TextColor3 = C.WHITE
+MTog.Font = Enum.Font.GothamBold
+MTog.TextSize = 10
+MTog.BorderSizePixel = 0
+MTog.Parent = Header
+Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
+
+MTog.MouseButton1Click:Connect(function()
+    MasterOn = not MasterOn
+    if MasterOn then
+        MTog.Text = "ON"
+        MTog.BackgroundColor3 = C.ON
+    else
+        MTog.Text = "OFF"
+        MTog.BackgroundColor3 = C.OFF
+    end
+end)
+
+-- ================== TABS ==================
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1, 0, 0, 22)
+TabBar.Position = UDim2.new(0, 0, 0, 28)
+TabBar.BackgroundColor3 = C.BG
+TabBar.BorderSizePixel = 0
+TabBar.Parent = Main
+
+local tabs = {"Main", "ESP", "Detect", "Log"}
+local tabBtns = {}
+local tabFrames = {}
+
+for i, name in ipairs(tabs) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.25, -2, 1, -2)
+    btn.Position = UDim2.new((i-1)*0.25, 1, 0, 1)
+    btn.Text = name
+    btn.BackgroundColor3 = C.BG2
+    btn.TextColor3 = C.GRAY
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 9
+    btn.BorderSizePixel = 0
+    btn.Parent = TabBar
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     
-    local faces = {"uwu", "owo", ">.<", "^-^"}
-    local idx = 1
-    spawn(function()
-        while MinimizeIcon and MinimizeIcon.Parent do
-            idx = idx % #faces + 1
-            MinimizeIcon.Text = faces[idx]
-            wait(0.6)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -12, 1, -56)
+    frame.Position = UDim2.new(0, 6, 0, 54)
+    frame.BackgroundTransparency = 1
+    frame.Visible = false
+    frame.Parent = Main
+    
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 3)
+    layout.Parent = frame
+    
+    tabBtns[name] = btn
+    tabFrames[name] = frame
+    
+    btn.MouseButton1Click:Connect(function()
+        for n, b in pairs(tabBtns) do
+            if n == name then
+                b.BackgroundColor3 = C.PINK
+                b.TextColor3 = C.WHITE
+                tabFrames[n].Visible = true
+            else
+                b.BackgroundColor3 = C.BG2
+                b.TextColor3 = C.GRAY
+                tabFrames[n].Visible = false
+            end
         end
-    end)
-    
-    MinimizeIcon.MouseButton1Click:Connect(function()
-        MinimizeIcon:Destroy()
-        MinimizeIcon = nil
-        CreateMainGUI()
     end)
 end
 
--- Main GUI
-function CreateMainGUI()
-    if Main then Main:Destroy() end
-    if MinimizeIcon then MinimizeIcon:Destroy(); MinimizeIcon = nil end
+tabBtns["Main"].BackgroundColor3 = C.PINK
+tabBtns["Main"].TextColor3 = C.WHITE
+tabFrames["Main"].Visible = true
+
+-- ================== TOGGLE FUNCTION ==================
+local function CreateToggle(parent, label, default, callback)
+    local enabled = default
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 30)
+    row.BackgroundColor3 = C.BG2
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
     
-    Main = Instance.new("Frame")
-    Main.Size = UDim2.new(0, 300, 0, 240)
-    Main.Position = UDim2.new(0.5, -150, 0.5, -120)
-    Main.BackgroundColor3 = C.BG
-    Main.BorderSizePixel = 0
-    Main.Active = true
-    Main.Draggable = true
-    Main.Parent = Gui
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 20)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0.55, 0, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
+    lbl.Text = label
+    lbl.TextColor3 = C.GRAY
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 10
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = row
     
-    -- Header
-    local Header = Instance.new("Frame")
-    Header.Size = UDim2.new(1, 0, 0, 26)
-    Header.BackgroundColor3 = C.BG2
-    Header.BorderSizePixel = 0
-    Header.Parent = Main
-    Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 20)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 50, 0, 24)
+    btn.Position = UDim2.new(1, -56, 0.5, -12)
+    btn.Text = default and "=^^= ON" or "=;= OFF"
+    btn.BackgroundColor3 = default and C.ON or C.OFF
+    btn.TextColor3 = C.WHITE
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 8
+    btn.BorderSizePixel = 0
+    btn.Parent = row
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
     
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(0, 100, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.Text = "UWU HUB"
-    Title.TextColor3 = C.PINK
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 10
-    Title.BackgroundTransparency = 1
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Header
-    
-    local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
-    CloseBtn.Position = UDim2.new(1, -40, 0.5, -10)
-    CloseBtn.Text = "-"
-    CloseBtn.BackgroundColor3 = C.OFF
-    CloseBtn.TextColor3 = C.PINK
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.TextSize = 12
-    CloseBtn.BorderSizePixel = 0
-    CloseBtn.Parent = Header
-    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
-    CloseBtn.MouseButton1Click:Connect(function()
-        Main:Destroy()
-        Main = nil
-        CreateMinimizedIcon()
-    end)
-    
-    -- Master toggle
-    local MTog = Instance.new("Frame")
-    MTog.Size = UDim2.new(0, 32, 0, 16)
-    MTog.Position = UDim2.new(1, -36, 0.5, -8)
-    MTog.BackgroundColor3 = C.OFF
-    MTog.BorderSizePixel = 0
-    MTog.Parent = Header
-    Instance.new("UICorner", MTog).CornerRadius = UDim.new(1, 0)
-    
-    local MKnob = Instance.new("Frame")
-    MKnob.Size = UDim2.new(0, 12, 0, 12)
-    MKnob.Position = UDim2.new(0, 2, 0.5, -6)
-    MKnob.BackgroundColor3 = C.WHITE
-    MKnob.BorderSizePixel = 0
-    MKnob.Parent = MTog
-    Instance.new("UICorner", MKnob).CornerRadius = UDim.new(1, 0)
-    
-    local MFace = Instance.new("TextLabel")
-    MFace.Size = UDim2.new(1, 0, 1, 0)
-    MFace.Text = "=;="
-    MFace.TextColor3 = C.GRAY
-    MFace.Font = Enum.Font.GothamBold
-    MFace.TextSize = 7
-    MFace.BackgroundTransparency = 1
-    MFace.Parent = MKnob
-    
-    local function UpdateMaster(s)
-        MasterOn = s
-        if s then
-            TweenService:Create(MTog, TweenInfo.new(0.2), {BackgroundColor3 = C.ON}):Play()
-            TweenService:Create(MKnob, TweenInfo.new(0.2), {Position = UDim2.new(1, -14, 0.5, -6)}):Play()
-            MFace.Text = "=^^="; MFace.TextColor3 = C.ON
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            btn.Text = "=^^= ON"
+            btn.BackgroundColor3 = C.ON
+            lbl.TextColor3 = C.WHITE
         else
-            TweenService:Create(MTog, TweenInfo.new(0.2), {BackgroundColor3 = C.OFF}):Play()
-            TweenService:Create(MKnob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -6)}):Play()
-            MFace.Text = "=;="; MFace.TextColor3 = C.GRAY
+            btn.Text = "=;= OFF"
+            btn.BackgroundColor3 = C.OFF
+            lbl.TextColor3 = C.GRAY
         end
-    end
-    MTog.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            UpdateMaster(not MasterOn)
-        end
+        callback(enabled)
     end)
     
-    -- Tabs
-    local TabBar = Instance.new("Frame")
-    TabBar.Size = UDim2.new(1, 0, 0, 20)
-    TabBar.Position = UDim2.new(0, 0, 0, 26)
-    TabBar.BackgroundColor3 = C.BG
-    TabBar.BorderSizePixel = 0
-    TabBar.Parent = Main
-    
-    local tabs = {"Main", "ESP", "Detect", "Log"}
-    local tabBtns = {}
-    local tabFrames = {}
-    
-    for i, name in ipairs(tabs) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0.25, -1, 1, -1)
-        btn.Position = UDim2.new((i-1)*0.25, 0, 0, 0)
-        btn.Text = name
-        btn.BackgroundColor3 = C.BG2
-        btn.TextColor3 = C.GRAY
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 9
-        btn.BorderSizePixel = 0
-        btn.Parent = TabBar
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-        
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1, -10, 1, -52)
-        frame.Position = UDim2.new(0, 5, 0, 50)
-        frame.BackgroundTransparency = 1
-        frame.Visible = false
-        frame.Parent = Main
-        
-        local layout = Instance.new("UIListLayout")
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Padding = UDim.new(0, 3)
-        layout.Parent = frame
-        
-        tabBtns[name] = btn
-        tabFrames[name] = frame
-        
-        btn.MouseButton1Click:Connect(function()
-            for n, b in pairs(tabBtns) do
-                if n == name then
-                    b.BackgroundColor3 = C.ACCENT2
-                    b.TextColor3 = C.WHITE
-                    tabFrames[n].Visible = true
-                else
-                    b.BackgroundColor3 = C.BG2
-                    b.TextColor3 = C.GRAY
-                    tabFrames[n].Visible = false
-                end
-            end
-        end)
-    end
-    
-    tabBtns["Main"].BackgroundColor3 = C.ACCENT2
-    tabBtns["Main"].TextColor3 = C.WHITE
-    tabFrames["Main"].Visible = true
-    
-    -- ================== PAW TOGGLE FUNCTION ==================
-    local function MakePawToggle(parent, label, default, callback)
-        local enabled = default
-        local row = Instance.new("Frame")
-        row.Size = UDim2.new(1, 0, 0, 32)
-        row.BackgroundColor3 = C.BG2
-        row.BorderSizePixel = 0
-        row.Parent = parent
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 12)
-        
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0.5, 0, 1, 0)
-        lbl.Position = UDim2.new(0, 8, 0, 0)
-        lbl.Text = label
-        lbl.TextColor3 = C.GRAY
-        lbl.Font = Enum.Font.Gotham
-        lbl.TextSize = 10
-        lbl.BackgroundTransparency = 1
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = row
-        
-        local pawBtn = Instance.new("TextButton")
-        pawBtn.Size = UDim2.new(0, 40, 0, 40)
-        pawBtn.Position = UDim2.new(1, -46, 0.5, -20)
-        pawBtn.Text = "=;="
-        pawBtn.BackgroundColor3 = C.OFF
-        pawBtn.TextColor3 = C.GRAY
-        pawBtn.Font = Enum.Font.GothamBold
-        pawBtn.TextSize = 10
-        pawBtn.BorderSizePixel = 0
-        pawBtn.Parent = row
-        Instance.new("UICorner", pawBtn).CornerRadius = UDim.new(1, 0)
-        
-        local function SetState(state)
-            enabled = state
-            if state then
-                pawBtn.Text = "=^^="
-                TweenService:Create(pawBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.ON, TextColor3 = C.WHITE}):Play()
-                lbl.TextColor3 = C.WHITE
-            else
-                pawBtn.Text = "=;="
-                TweenService:Create(pawBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.OFF, TextColor3 = C.GRAY}):Play()
-                lbl.TextColor3 = C.GRAY
-            end
-        end
-        
-        pawBtn.MouseButton1Click:Connect(function()
-            SetState(not enabled)
-            callback(not enabled)
-        end)
-        
-        SetState(default)
-        return row
-    end
-    
-    -- ================== MAIN TAB ==================
-    local mainFrame = tabFrames["Main"]
-    
-    local info = Instance.new("Frame")
-    info.Size = UDim2.new(1, 0, 0, 50)
-    info.BackgroundColor3 = C.BG2
-    info.BorderSizePixel = 0
-    info.Parent = mainFrame
-    Instance.new("UICorner", info).CornerRadius = UDim.new(0, 12)
-    
-    local infoText = Instance.new("TextLabel")
-    infoText.Size = UDim2.new(1, -10, 1, -10)
-    infoText.Position = UDim2.new(0, 5, 0, 5)
-    infoText.Text = "Game: Anomaly Watch\nPlayer: " .. Player.Name .. "\nUWU HUB HATE WORLD"
-    infoText.TextColor3 = C.WHITE
-    infoText.Font = Enum.Font.Gotham
-    infoText.TextSize = 10
-    infoText.BackgroundTransparency = 1
-    infoText.TextXAlignment = Enum.TextXAlignment.Left
-    infoText.TextYAlignment = Enum.TextYAlignment.Top
-    infoText.Parent = info
-    
-    local catBox = Instance.new("Frame")
-    catBox.Size = UDim2.new(1, 0, 0, 80)
-    catBox.BackgroundColor3 = C.BG2
-    catBox.BorderSizePixel = 0
-    catBox.Parent = mainFrame
-    Instance.new("UICorner", catBox).CornerRadius = UDim.new(0, 12)
-    
-    local catArt = Instance.new("TextLabel")
-    catArt.Size = UDim2.new(1, -6, 1, -6)
-    catArt.Position = UDim2.new(0, 3, 0, 3)
-    catArt.Text = [[  ╱|、
+    return row
+end
+
+-- ================== MAIN TAB ==================
+local mainFrame = tabFrames["Main"]
+
+local infoBox = Instance.new("Frame")
+infoBox.Size = UDim2.new(1, 0, 0, 45)
+infoBox.BackgroundColor3 = C.BG2
+infoBox.BorderSizePixel = 0
+infoBox.Parent = mainFrame
+Instance.new("UICorner", infoBox).CornerRadius = UDim.new(0, 10)
+
+local infoText = Instance.new("TextLabel")
+infoText.Size = UDim2.new(1, -10, 1, -10)
+infoText.Position = UDim2.new(0, 5, 0, 5)
+infoText.Text = "Anomaly Watch\n" .. Player.Name .. "\nUWU HUB HATE WORLD"
+infoText.TextColor3 = C.WHITE
+infoText.Font = Enum.Font.Gotham
+infoText.TextSize = 9
+infoText.BackgroundTransparency = 1
+infoText.TextXAlignment = Enum.TextXAlignment.Left
+infoText.TextYAlignment = Enum.TextYAlignment.Top
+infoText.Parent = infoBox
+
+-- Status
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, 0, 0, 14)
+StatusText.Text = "=^^= Ready"
+StatusText.TextColor3 = C.PINK
+StatusText.Font = Enum.Font.GothamBold
+StatusText.TextSize = 9
+StatusText.BackgroundTransparency = 1
+StatusText.TextXAlignment = Enum.TextXAlignment.Center
+StatusText.Parent = mainFrame
+
+-- Cat
+local catBox = Instance.new("Frame")
+catBox.Size = UDim2.new(1, 0, 0, 90)
+catBox.BackgroundColor3 = C.BG2
+catBox.BorderSizePixel = 0
+catBox.Parent = mainFrame
+Instance.new("UICorner", catBox).CornerRadius = UDim.new(0, 10)
+
+local catArt = Instance.new("TextLabel")
+catArt.Size = UDim2.new(1, -6, 1, -6)
+catArt.Position = UDim2.new(0, 3, 0, 3)
+catArt.Text = [[  ╱|、
 (˚ˎ 。7  
  |、˜〵          
 じしˍ,)ノ
    zzz]]
-    catArt.TextColor3 = C.PINK
-    catArt.Font = Enum.Font.Gotham
-    catArt.TextSize = 9
-    catArt.BackgroundTransparency = 1
-    catArt.TextXAlignment = Enum.TextXAlignment.Center
-    catArt.TextYAlignment = Enum.TextYAlignment.Center
-    catArt.Parent = catBox
-    
-    local catFrames = {
-        [[  ╱|、
+catArt.TextColor3 = C.PINK
+catArt.Font = Enum.Font.Gotham
+catArt.TextSize = 9
+catArt.BackgroundTransparency = 1
+catArt.TextXAlignment = Enum.TextXAlignment.Center
+catArt.TextYAlignment = Enum.TextYAlignment.Center
+catArt.Parent = catBox
+
+local catFrames = {
+    [[  ╱|、
 (˚ˎ 。7  
  |、˜〵          
 じしˍ,)ノ
    zzz]],
-        [[  ╱|、
+    [[  ╱|、
 ( -ˎ -)  
  |、˜〵          
 じしˍ,)ノ
   zzZ]],
-        [[  ╱|、
+    [[  ╱|、
 ( =ˎ =)  
  |、˜〵          
 じしˍ,)ノ
   zZz]],
-        [[  ╱|、
+    [[  ╱|、
 ( ˘ˎ ˘)  
  |、˜〵          
 じしˍ,)ノ
    zzz]]
-    }
-    local catIdx = 1
-    spawn(function()
-        while catArt and catArt.Parent do
-            catIdx = catIdx % #catFrames + 1
-            catArt.Text = catFrames[catIdx]
-            wait(1.2)
-        end
-    end)
-    
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(1, 0, 0, 14)
-    statusLabel.Text = "uwu zzz..."
-    statusLabel.TextColor3 = C.GRAY
-    statusLabel.Font = Enum.Font.Gotham
-    statusLabel.TextSize = 9
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.TextXAlignment = Enum.TextXAlignment.Center
-    statusLabel.Parent = mainFrame
-    
-    -- ================== ESP TAB ==================
-    MakePawToggle(tabFrames["ESP"], "Fullbright", false, function(v) Settings.Fullbright = v; if v then EnableFB() else DisableFB() end end)
-    MakePawToggle(tabFrames["ESP"], "Show Anomaly", false, function(v) Settings.ShowAnomaly = v end)
-    MakePawToggle(tabFrames["ESP"], "Show Object", false, function(v) Settings.ShowObject = v end)
-    MakePawToggle(tabFrames["ESP"], "Show Changes", false, function(v) Settings.ShowChanges = v end)
-    MakePawToggle(tabFrames["ESP"], "Skin Detect", false, function(v) Settings.SkinDetect = v end)
-    MakePawToggle(tabFrames["ESP"], "Size Detect", false, function(v) Settings.SizeDetect = v end)
-    MakePawToggle(tabFrames["ESP"], "Show Notify", false, function(v) Settings.ShowNotify = v end)
-    
-    -- ================== DETECT TAB ==================
-    MakePawToggle(tabFrames["Detect"], "Scanner", false, function(v) Settings.Scanner = v end)
-    MakePawToggle(tabFrames["Detect"], "Auto Copy", false, function(v) Settings.AutoCopy = v end)
-    
-    -- ================== LOG TAB ==================
-    local logScroll = Instance.new("ScrollingFrame")
-    logScroll.Size = UDim2.new(1, 0, 0, 145)
-    logScroll.BackgroundColor3 = C.BG2
-    logScroll.BorderSizePixel = 0
-    logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    logScroll.ScrollBarThickness = 3
-    logScroll.ScrollBarImageColor3 = C.ACCENT
-    logScroll.Parent = tabFrames["Log"]
-    Instance.new("UICorner", logScroll).CornerRadius = UDim.new(0, 10)
-    
-    local logLayout = Instance.new("UIListLayout")
-    logLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    logLayout.Padding = UDim.new(0, 1)
-    logLayout.Parent = logScroll
-    
-    local logCount = 0
-    function _G.UWU_AddLog(msg, color)
-        logCount = logCount + 1
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, -4, 0, 12)
-        lbl.Text = msg
-        lbl.TextColor3 = color or C.WHITE
-        lbl.Font = Enum.Font.Gotham
-        lbl.TextSize = 8
-        lbl.BackgroundTransparency = 1
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = logScroll
-        logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 2)
-        logScroll.CanvasPosition = Vector2.new(0, logScroll.CanvasSize.Y.Offset)
+}
+local catIdx = 1
+spawn(function()
+    while catArt and catArt.Parent do
+        catIdx = catIdx % #catFrames + 1
+        catArt.Text = catFrames[catIdx]
+        wait(1.2)
     end
-    _G.UWU_AddLog("UWU HUB HATE WORLD", C.PURPLE)
-    _G.UWU_AddLog("Ready", C.GRAY)
-    
-    -- ================== UPDATE STATUS ==================
-    spawn(function()
-        while Main and Main.Parent do
-            if MasterOn then
-                statusLabel.Text = "uwu on"
-                statusLabel.TextColor3 = C.PINK
-            else
-                statusLabel.Text = "uwu zzz..."
-                statusLabel.TextColor3 = C.GRAY
-            end
-            wait(1)
-        end
-    end)
+end)
+
+-- ================== ESP TAB ==================
+local espFrame = tabFrames["ESP"]
+
+CreateToggle(espFrame, "Fullbright", Settings.Fullbright, function(v)
+    Settings.Fullbright = v
+    if v then EnableFB() else DisableFB() end
+end)
+
+CreateToggle(espFrame, "Show Anomaly", Settings.ShowAnomaly, function(v)
+    Settings.ShowAnomaly = v
+end)
+
+CreateToggle(espFrame, "Show Object", Settings.ShowObject, function(v)
+    Settings.ShowObject = v
+end)
+
+CreateToggle(espFrame, "Show Changes", Settings.ShowChanges, function(v)
+    Settings.ShowChanges = v
+end)
+
+CreateToggle(espFrame, "Skin Detect", Settings.SkinDetect, function(v)
+    Settings.SkinDetect = v
+end)
+
+CreateToggle(espFrame, "Size Detect", Settings.SizeDetect, function(v)
+    Settings.SizeDetect = v
+end)
+
+CreateToggle(espFrame, "Show Notify", Settings.ShowNotify, function(v)
+    Settings.ShowNotify = v
+end)
+
+-- ================== DETECT TAB ==================
+local detFrame = tabFrames["Detect"]
+
+CreateToggle(detFrame, "Scanner", Settings.Scanner, function(v)
+    Settings.Scanner = v
+end)
+
+CreateToggle(detFrame, "Auto Copy", Settings.AutoCopy, function(v)
+    Settings.AutoCopy = v
+end)
+
+-- ================== LOG TAB ==================
+local logFrame = tabFrames["Log"]
+
+local logScroll = Instance.new("ScrollingFrame")
+logScroll.Size = UDim2.new(1, 0, 0, 150)
+logScroll.BackgroundColor3 = C.BG2
+logScroll.BorderSizePixel = 0
+logScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+logScroll.ScrollBarThickness = 3
+logScroll.ScrollBarImageColor3 = C.PINK
+logScroll.Parent = logFrame
+Instance.new("UICorner", logScroll).CornerRadius = UDim.new(0, 10)
+
+local logLayout = Instance.new("UIListLayout")
+logLayout.SortOrder = Enum.SortOrder.LayoutOrder
+logLayout.Padding = UDim.new(0, 1)
+logLayout.Parent = logScroll
+
+local logCount = 0
+function AddLog(msg, color)
+    logCount = logCount + 1
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -4, 0, 12)
+    lbl.Text = msg
+    lbl.TextColor3 = color or C.WHITE
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 8
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = logScroll
+    logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 2)
+    logScroll.CanvasPosition = Vector2.new(0, logScroll.CanvasSize.Y.Offset)
 end
+
+AddLog("UWU HUB HATE WORLD", C.PURPLE)
+AddLog("All systems ready", C.PINK)
 
 -- ================== ESP SYSTEM ==================
 local ANOMALY_NAMES = {"Alternate","HallwayIntruder","Devil","Mask","Dummy","Mannequin","BloodPart","Pentagram","Eyes","Jumpscares","N"}
@@ -455,8 +409,12 @@ local AnimTime = 0
 
 function GetCircle()
     for _, c in ipairs(Circles) do if not c.Visible then return c end end
-    local c = Drawing.new("Circle"); c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 32
-    table.insert(Circles, c); return c
+    if Drawing then
+        local c = Drawing.new("Circle")
+        c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 32
+        table.insert(Circles, c); return c
+    end
+    return nil
 end
 
 local function InList(name, list)
@@ -479,8 +437,10 @@ RunService.RenderStepped:Connect(function(dt)
                 elseif Settings.ShowObject and InList(obj.Name, OBJECT_NAMES) then ok = true; col = C.PINK_ESP
                 elseif Settings.ShowChanges then
                     local p = obj:IsA("BasePart") and obj or obj:FindFirstChildOfClass("BasePart")
-                    if p and p:IsA("BasePart") and (p.AssemblyLinearVelocity.Magnitude > 0.1 or p.RotVelocity.Magnitude > 0.1) then
-                        ok = true; col = C.YELLOW
+                    if p and p:IsA("BasePart") then
+                        local vel = p.AssemblyLinearVelocity or p.Velocity
+                        if vel and vel.Magnitude > 0.1 then ok = true; col = C.YELLOW end
+                        if p.RotVelocity and p.RotVelocity.Magnitude > 0.1 then ok = true; col = C.YELLOW end
                     end
                 end
                 
@@ -518,7 +478,7 @@ RunService.RenderStepped:Connect(function(dt)
     else
         for _, c in ipairs(Circles) do c.Visible = false end
     end
+    
+    StatusText.Text = MasterOn and "=^^= Active" or "=;= Idle"
+    StatusText.TextColor3 = MasterOn and C.PINK or C.GRAY
 end)
-
--- ================== START ==================
-CreateMainGUI()
