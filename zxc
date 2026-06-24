@@ -1,348 +1,582 @@
+-- UWU HUB | ANOMALY WATCH ECS DETECTOR + CLEAN UI | v29 FINAL
+
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local CollectionService = game:GetService("CollectionService")
+local Lighting = game:GetService("Lighting")
 local PLAYERGUI = Player:WaitForChild("PlayerGui")
 
-local C = {
-    BG = Color3.fromRGB(20,12,15),
-    BG2 = Color3.fromRGB(30,18,23),
-    PINK = Color3.fromRGB(255,170,195),
-    WHITE = Color3.fromRGB(245,235,240),
-    GRAY = Color3.fromRGB(160,140,150),
-    ON = Color3.fromRGB(255,120,160),
-    OFF = Color3.fromRGB(55,30,40),
-    RED = Color3.fromRGB(255,40,60),
+-- ================== THEME ==================
+local Theme = {
+    BG = Color3.fromRGB(14,15,20),
+    PANEL = Color3.fromRGB(22,24,30),
+    CARD = Color3.fromRGB(30,33,40),
+    ACCENT = Color3.fromRGB(255,150,190),
+    ACCENT2 = Color3.fromRGB(180,120,255),
+    TEXT = Color3.fromRGB(245,245,250),
+    MUTED = Color3.fromRGB(150,150,165),
+    RED = Color3.fromRGB(255,80,80),
+    GREEN = Color3.fromRGB(100,255,100),
     YELLOW = Color3.fromRGB(255,200,100),
-    PURPLE = Color3.fromRGB(180,75,255),
-    CYAN = Color3.fromRGB(100,200,255),
-    GREEN = Color3.fromRGB(100,255,100)
+    CYAN = Color3.fromRGB(80,200,255)
 }
 
-local Settings = {
-    Fullbright = false,
-    ShowNPC = false,
-    ShowChanges = false,
-    Speed = false,
-    Fly = false,
-    Noclip = false
-}
-local MasterOn = true
-
--- Simple notification
-function Notify(txt)
-    StarterGui:SetCore("SendNotification", {Title = "UWU HUB", Text = txt, Duration = 2})
+-- ================== EVENT BUS ==================
+local EventBus = {listeners = {}}
+function EventBus:On(event, fn)
+    self.listeners[event] = self.listeners[event] or {}
+    table.insert(self.listeners[event], fn)
+end
+function EventBus:Emit(event, ...)
+    local list = self.listeners[event]
+    if not list then return end
+    for _, fn in ipairs(list) do task.spawn(fn, ...) end
 end
 
--- Create GUI
+-- ================== ECS CORE ==================
+local ECS = {
+    entities = {},
+    components = {
+        Transform = {},
+        Visual = {},
+        Audio = {},
+        Meta = {}
+    }
+}
+setmetatable(ECS.components.Transform, {__mode = "k"})
+setmetatable(ECS.components.Visual, {__mode = "k"})
+setmetatable(ECS.components.Audio, {__mode = "k"})
+setmetatable(ECS.components.Meta, {__mode = "k"})
+
+-- ================== UTILS ==================
+local function getRoot()
+    local char = Player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getPart(obj)
+    if obj:IsA("BasePart") then return obj end
+    if obj:IsA("Model") then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart") end
+    return nil
+end
+
+local function classify(obj)
+    if obj:IsA("Sound") then return "AUDIO" end
+    if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Beam") or obj:IsA("Trail") then return "VISUAL" end
+    if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then return "INTRUDER" end
+    return "OBJECT"
+end
+
+local function getRoom(pos)
+    if not pos then return "?" end
+    if pos.Y < 0 then return "Basement" end
+    if pos.Y > 8 then return "Upstairs" end
+    if pos.X < -30 then return "Study/Garage" end
+    if pos.X > 30 then return "Kitchen/Nursery" end
+    if pos.Z < -30 then return "Hallway" end
+    if pos.Z > 30 then return "Living/Bedroom" end
+    return "?"
+end
+
+-- ================== ENTITY REGISTER ==================
+local function register(obj)
+    if ECS.entities[obj] then return end
+    local part = getPart(obj)
+    if not part then return end
+    
+    ECS.entities[obj] = true
+    ECS.components.Transform[obj] = {pos = part.Position, size = part.Size}
+    ECS.components.Meta[obj] = {type = classify(obj), room = getRoom(part.Position)}
+    
+    if obj:IsA("BasePart") then
+        ECS.components.Visual[obj] = {color = part.Color, material = part.Material}
+        part:GetPropertyChangedSignal("Color"):Connect(function()
+            EventBus:Emit("VisualChanged", obj, "color", part.Color)
+        end)
+    end
+    
+    if obj:IsA("Sound") then
+        ECS.components.Audio[obj] = {id = obj.SoundId, playing = obj.IsPlaying}
+        obj:GetPropertyChangedSignal("SoundId"):Connect(function()
+            EventBus:Emit("AudioChanged", obj, "soundId")
+        end)
+        obj:GetPropertyChangedSignal("IsPlaying"):Connect(function()
+            EventBus:Emit("AudioChanged", obj, obj.IsPlaying and "start" or "stop")
+        end)
+    end
+    
+    EventBus:Emit("EntityAdded", obj, ECS.components.Meta[obj].type)
+end
+
+local function unregister(obj)
+    if not ECS.entities[obj] then return end
+    ECS.entities[obj] = nil
+    ECS.components.Transform[obj] = nil
+    ECS.components.Visual[obj] = nil
+    ECS.components.Audio[obj] = nil
+    ECS.components.Meta[obj] = nil
+    EventBus:Emit("EntityRemoved", obj)
+end
+
+-- ================== WORLD HOOKS ==================
+workspace.DescendantAdded:Connect(function(obj)
+    if not (obj:IsA("BasePart") or obj:IsA("Model") or obj:IsA("Sound")) then return end
+    task.defer(function() register(obj) end)
+end)
+workspace.DescendantRemoving:Connect(function(obj) unregister(obj) end)
+
+-- Initial scan
+task.defer(function()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Model") or obj:IsA("Sound") then register(obj) end
+    end
+end)
+
+-- ================== PLAYER MODS ==================
+local PlayerMods = {
+    Speed = false,
+    Fly = false,
+    Fullbright = false,
+    FOV = false
+}
+local NormalSpeed = 16
+local NormalFOV = 70
+local OrigBrightness = Lighting.Brightness
+local OrigAmbient = Lighting.Ambient
+local OrigOutdoorAmbient = Lighting.OutdoorAmbient
+local OrigClockTime = Lighting.ClockTime
+local OrigFogEnd = Lighting.FogEnd
+
+local function SetSpeed(v)
+    local char = Player.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = v and 25 or NormalSpeed end
+    end
+end
+
+local FlyBody, FlyGyro
+local function SetFly(v)
+    local char = Player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    
+    if v then
+        if hum then hum.PlatformStand = true end
+        FlyBody = Instance.new("BodyVelocity")
+        FlyBody.Velocity = Vector3.zero
+        FlyBody.MaxForce = Vector3.new(1,1,1) * 50000
+        FlyBody.Parent = root
+        FlyGyro = Instance.new("BodyGyro")
+        FlyGyro.MaxTorque = Vector3.new(1,1,1) * 50000
+        FlyGyro.P = 3000
+        FlyGyro.Parent = root
+        
+        spawn(function()
+            while PlayerMods.Fly and char and char.Parent do
+                local vel = Vector3.zero
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then vel += Camera.CFrame.LookVector * 50 end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then vel -= Camera.CFrame.LookVector * 50 end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then vel -= Camera.CFrame.RightVector * 50 end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then vel += Camera.CFrame.RightVector * 50 end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vel += Vector3.new(0,50,0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then vel -= Vector3.new(0,50,0) end
+                if FlyBody then FlyBody.Velocity = vel end
+                if FlyGyro then FlyGyro.CFrame = Camera.CFrame end
+                task.wait()
+            end
+        end)
+    else
+        if FlyBody then FlyBody:Destroy(); FlyBody = nil end
+        if FlyGyro then FlyGyro:Destroy(); FlyGyro = nil end
+        if hum then hum.PlatformStand = false end
+    end
+end
+
+local function SetFullbright(v)
+    if v then
+        Lighting.Brightness = 3
+        Lighting.Ambient = Color3.fromRGB(80,80,80)
+        Lighting.OutdoorAmbient = Color3.fromRGB(60,60,60)
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 99999
+        Lighting.GlobalShadows = false
+    else
+        Lighting.Brightness = OrigBrightness
+        Lighting.Ambient = OrigAmbient
+        Lighting.OutdoorAmbient = OrigOutdoorAmbient
+        Lighting.ClockTime = OrigClockTime
+        Lighting.FogEnd = OrigFogEnd
+        Lighting.GlobalShadows = true
+    end
+end
+
+local function SetFOV(v)
+    Camera.FieldOfView = v and 100 or NormalFOV
+end
+
+-- ================== GUI ==================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "UwUHub"
-Gui.Parent = PLAYERGUI
 Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PLAYERGUI
 
 local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.Size = UDim2.new(0, 300, 0, 250)
-Main.Position = UDim2.new(0.5, -150, 0.5, -125)
-Main.BackgroundColor3 = C.BG
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.Visible = true
+Main.Size = UDim2.fromOffset(0, 0)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Theme.BG
 Main.Parent = Gui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
 
--- Header
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Theme.ACCENT
+Stroke.Transparency = 0.6
+Stroke.Parent = Main
+
+TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Quint), {
+    Size = UDim2.fromOffset(520, 380)
+}):Play()
+
+task.wait(0.05)
+
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = C.BG2
-Header.BorderSizePixel = 0
+Header.Size = UDim2.new(1, 0, 0, 58)
+Header.BackgroundTransparency = 1
 Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 150, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "=^^= UWU HUB"
-Title.TextColor3 = C.PINK
+Title.Size = UDim2.new(1, -80, 1, 0)
+Title.Position = UDim2.fromOffset(24, 0)
+Title.Text = "✦ UWU HUB"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 11
+Title.TextSize = 20
+Title.TextColor3 = Theme.TEXT
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
--- Close button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-CloseBtn.Position = UDim2.new(1, -28, 0.5, -11)
-CloseBtn.Text = "X"
-CloseBtn.BackgroundColor3 = C.OFF
-CloseBtn.TextColor3 = C.WHITE
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 12
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Parent = Header
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    task.wait(0.5)
-    Main.Visible = true
-    Notify("Reopened!")
+local Sub = Instance.new("TextLabel")
+Sub.Size = UDim2.new(1, -80, 0, 18)
+Sub.Position = UDim2.fromOffset(24, 30)
+Sub.Text = "anomaly watch • ecs detector"
+Sub.Font = Enum.Font.Gotham
+Sub.TextSize = 11
+Sub.TextColor3 = Theme.MUTED
+Sub.BackgroundTransparency = 1
+Sub.TextXAlignment = Enum.TextXAlignment.Left
+Sub.Parent = Header
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.fromOffset(34, 34)
+MinBtn.Position = UDim2.new(1, -54, 0.5, -17)
+MinBtn.Text = "—"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Theme.TEXT
+MinBtn.BackgroundColor3 = Theme.CARD
+MinBtn.Parent = Header
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
+MinBtn.MouseButton1Click:Connect(function()
+    Gui.Enabled = not Gui.Enabled
 end)
 
--- Master toggle
-local MasterBtn = Instance.new("TextButton")
-MasterBtn.Size = UDim2.new(0, 50, 0, 22)
-MasterBtn.Position = UDim2.new(1, -78, 0.5, -11)
-MasterBtn.Text = "=^^= ON"
-MasterBtn.BackgroundColor3 = C.ON
-MasterBtn.TextColor3 = C.WHITE
-MasterBtn.Font = Enum.Font.GothamBold
-MasterBtn.TextSize = 8
-MasterBtn.BorderSizePixel = 0
-MasterBtn.Parent = Header
-Instance.new("UICorner", MasterBtn).CornerRadius = UDim.new(0, 10)
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 130, 1, -82)
+Sidebar.Position = UDim2.fromOffset(18, 68)
+Sidebar.BackgroundColor3 = Theme.PANEL
+Sidebar.Parent = Main
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 18)
 
-MasterBtn.MouseButton1Click:Connect(function()
-    MasterOn = not MasterOn
-    if MasterOn then
-        MasterBtn.Text = "=^^= ON"
-        MasterBtn.BackgroundColor3 = C.ON
-    else
-        MasterBtn.Text = "=;= OFF"
-        MasterBtn.BackgroundColor3 = C.OFF
+local SideLayout = Instance.new("UIListLayout")
+SideLayout.Padding = UDim.new(0, 8)
+SideLayout.Parent = Sidebar
+
+-- Content
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -160, 1, -82)
+Content.Position = UDim2.fromOffset(150, 68)
+Content.BackgroundColor3 = Theme.PANEL
+Content.Parent = Main
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 18)
+
+local Tabs = {}
+local Pages = {}
+
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -12, 0, 42)
+    Btn.Position = UDim2.fromOffset(6, 0)
+    Btn.Text = name
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 13
+    Btn.TextColor3 = Theme.MUTED
+    Btn.BackgroundColor3 = Theme.CARD
+    Btn.Parent = Sidebar
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 14)
+    
+    local Page = Instance.new("Frame")
+    Page.Visible = false
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Parent = Content
+    
+    Tabs[name] = Btn
+    Pages[name] = Page
+    
+    Btn.MouseButton1Click:Connect(function()
+        for n, p in pairs(Pages) do
+            p.Visible = false
+            Tabs[n].BackgroundColor3 = Theme.CARD
+            Tabs[n].TextColor3 = Theme.MUTED
+        end
+        Page.Visible = true
+        Btn.BackgroundColor3 = Theme.ACCENT
+        Btn.TextColor3 = Theme.TEXT
+    end)
+    
+    return Page
+end
+
+-- ================== PAGES ==================
+local HomePage = CreateTab("Home")
+local ESPPage = CreateTab("Detector")
+local ModsPage = CreateTab("Player")
+local LogPage = CreateTab("Log")
+
+-- ================== HOME CARDS ==================
+local function MakeCard(parent, title, desc)
+    local Box = Instance.new("Frame")
+    Box.Size = UDim2.new(1, -26, 0, 76)
+    Box.Position = UDim2.fromOffset(13, 0)
+    Box.BackgroundColor3 = Theme.CARD
+    Box.Parent = parent
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 16)
+    
+    local T = Instance.new("TextLabel")
+    T.Size = UDim2.new(1, -30, 0, 22)
+    T.Position = UDim2.fromOffset(16, 14)
+    T.Text = title
+    T.TextSize = 14
+    T.Font = Enum.Font.GothamBold
+    T.TextColor3 = Theme.TEXT
+    T.BackgroundTransparency = 1
+    T.TextXAlignment = Enum.TextXAlignment.Left
+    T.Parent = Box
+    
+    local D = Instance.new("TextLabel")
+    D.Size = UDim2.new(1, -30, 0, 26)
+    D.Position = UDim2.fromOffset(16, 40)
+    D.Text = desc
+    D.TextWrapped = true
+    D.TextColor3 = Theme.MUTED
+    D.Font = Enum.Font.Gotham
+    D.TextSize = 11
+    D.BackgroundTransparency = 1
+    D.TextXAlignment = Enum.TextXAlignment.Left
+    D.Parent = Box
+    
+    return Box
+end
+
+local HomeLayout = Instance.new("UIListLayout")
+HomeLayout.Padding = UDim.new(0, 10)
+HomeLayout.Parent = HomePage
+
+MakeCard(HomePage, "✦ UWU HUB v29", "ECS Event-Driven Detector\nReal-time anomaly tracking")
+MakeCard(HomePage, "🎀 Clean UI", "Modern glass-style interface\nSmooth animations")
+
+-- ================== ESP TOGGLES ==================
+local ESPLayout = Instance.new("UIListLayout")
+ESPLayout.Padding = UDim.new(0, 8)
+ESPLayout.Parent = ESPPage
+
+local ESPToggles = {}
+local function MakeToggle(parent, name, default, callback)
+    local enabled = default
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, -20, 0, 38)
+    Row.Position = UDim2.fromOffset(10, 0)
+    Row.BackgroundColor3 = Theme.CARD
+    Row.Parent = parent
+    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 12)
+    
+    local Lbl = Instance.new("TextLabel")
+    Lbl.Size = UDim2.new(0.6, 0, 1, 0)
+    Lbl.Position = UDim2.fromOffset(12, 0)
+    Lbl.Text = name
+    Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED
+    Lbl.Font = Enum.Font.Gotham
+    Lbl.TextSize = 12
+    Lbl.BackgroundTransparency = 1
+    Lbl.TextXAlignment = Enum.TextXAlignment.Left
+    Lbl.Parent = Row
+    
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.fromOffset(44, 24)
+    Btn.Position = UDim2.new(1, -54, 0.5, -12)
+    Btn.Text = enabled and "ON" or "OFF"
+    Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD
+    Btn.TextColor3 = Theme.TEXT
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 10
+    Btn.Parent = Row
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
+    
+    Btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        Btn.Text = enabled and "ON" or "OFF"
+        Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD
+        Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED
+        callback(enabled)
+    end)
+    
+    return Row
+end
+
+MakeToggle(ESPPage, "Show Intruders", true, function(v) end)
+MakeToggle(ESPPage, "Show Visual Changes", true, function(v) end)
+MakeToggle(ESPPage, "Show Sounds", true, function(v) end)
+
+-- ================== PLAYER MODS ==================
+local ModsLayout = Instance.new("UIListLayout")
+ModsLayout.Padding = UDim.new(0, 8)
+ModsLayout.Parent = ModsPage
+
+MakeToggle(ModsPage, "Speed (25)", false, function(v) PlayerMods.Speed = v; SetSpeed(v) end)
+MakeToggle(ModsPage, "Fly", false, function(v) PlayerMods.Fly = v; SetFly(v) end)
+MakeToggle(ModsPage, "Fullbright", false, function(v) PlayerMods.Fullbright = v; SetFullbright(v) end)
+MakeToggle(ModsPage, "FOV (100)", false, function(v) PlayerMods.FOV = v; SetFOV(v) end)
+
+-- ================== LOG ==================
+local LogScroll = Instance.new("ScrollingFrame")
+LogScroll.Size = UDim2.new(1, -16, 1, -16)
+LogScroll.Position = UDim2.fromOffset(8, 8)
+LogScroll.BackgroundTransparency = 1
+LogScroll.BorderSizePixel = 0
+LogScroll.ScrollBarThickness = 3
+LogScroll.ScrollBarImageColor3 = Theme.ACCENT
+LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+LogScroll.Parent = LogPage
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.Padding = UDim.new(0, 2)
+LogLayout.Parent = LogScroll
+
+local function AddLog(msg, color)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -4, 0, 16)
+    l.Text = msg
+    l.TextColor3 = color or Theme.TEXT
+    l.Font = Enum.Font.Gotham
+    l.TextSize = 10
+    l.BackgroundTransparency = 1
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Parent = LogScroll
+    LogScroll.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 4)
+    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+end
+
+-- ================== EVENT → LOG ==================
+EventBus:On("EntityAdded", function(obj, t)
+    if t == "INTRUDER" then
+        AddLog("👹 " .. obj.Name, Theme.RED)
+    elseif t == "AUDIO" then
+        AddLog("🔊 " .. obj.Name, Theme.CYAN)
+    elseif t == "VISUAL" then
+        AddLog("🎨 " .. obj.Name, Theme.YELLOW)
     end
-    Notify("Master: " .. (MasterOn and "ON" or "OFF"))
 end)
 
--- Tabs
-local TabBar = Instance.new("Frame")
-TabBar.Size = UDim2.new(1, 0, 0, 22)
-TabBar.Position = UDim2.new(0, 0, 0, 30)
-TabBar.BackgroundColor3 = C.BG
-TabBar.BorderSizePixel = 0
-TabBar.Parent = Main
+EventBus:On("EntityRemoved", function(obj)
+    AddLog("❌ " .. obj.Name, Theme.RED)
+end)
 
-local tabs = {"Main", "ESP", "Player", "Log"}
-local tabBtns = {}
-local tabFrames = {}
+EventBus:On("VisualChanged", function(obj, prop)
+    AddLog("🎨 " .. obj.Name .. ": " .. prop .. " changed", Theme.YELLOW)
+end)
 
-for i, name in ipairs(tabs) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.25, -2, 1, -2)
-    btn.Position = UDim2.new((i-1)*0.25, 1, 0, 1)
-    btn.Text = name
-    btn.BackgroundColor3 = C.BG2
-    btn.TextColor3 = C.GRAY
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 9
-    btn.BorderSizePixel = 0
-    btn.Parent = TabBar
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+EventBus:On("AudioChanged", function(obj, event)
+    AddLog("🔊 " .. obj.Name .. ": " .. event, Theme.CYAN)
+end)
+
+-- ================== ESP RENDER ==================
+if Drawing then
+    local Circles = {}
+    local Texts = {}
     
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 1, -56)
-    frame.Position = UDim2.new(0, 6, 0, 54)
-    frame.BackgroundTransparency = 1
-    frame.Visible = false
-    frame.Parent = Main
+    function GetCircle()
+        for _, c in ipairs(Circles) do if not c.Visible then return c end end
+        local c = Drawing.new("Circle")
+        c.Thickness = 2
+        c.Filled = false
+        c.Transparency = 1
+        c.NumSides = 40
+        table.insert(Circles, c)
+        return c
+    end
     
-    tabBtns[name] = btn
-    tabFrames[name] = frame
+    function GetText()
+        for _, t in ipairs(Texts) do if not t.Visible then return t end end
+        local t = Drawing.new("Text")
+        t.Size = 12
+        t.Center = true
+        t.Outline = true
+        t.OutlineColor = Color3.new()
+        table.insert(Texts, t)
+        return t
+    end
     
-    btn.MouseButton1Click:Connect(function()
-        for n, b in pairs(tabBtns) do
-            b.BackgroundColor3 = (n == name) and C.PINK or C.BG2
-            b.TextColor3 = (n == name) and C.WHITE or C.GRAY
-            tabFrames[n].Visible = (n == name)
+    RunService.RenderStepped:Connect(function()
+        for _, c in ipairs(Circles) do c.Visible = false end
+        for _, t in ipairs(Texts) do t.Visible = false end
+        
+        local root = getRoot()
+        if not root then return end
+        
+        for obj, meta in pairs(ECS.components.Meta) do
+            if not obj.Parent then continue end
+            if meta.type ~= "INTRUDER" and meta.type ~= "VISUAL" then continue end
+            
+            local part = getPart(obj)
+            if not part then continue end
+            
+            local dist = (part.Position - root.Position).Magnitude
+            if dist > 200 then continue end
+            
+            local pos, on = Camera:WorldToViewportPoint(part.Position)
+            if not on then continue end
+            
+            local cr = GetCircle()
+            local txt = GetText()
+            if cr and txt then
+                local r = math.clamp(math.max(part.Size.X, part.Size.Y, part.Size.Z) * 0.8, 5, 30)
+                local col = meta.type == "INTRUDER" and Theme.RED or Theme.YELLOW
+                cr.Position = Vector2.new(pos.X, pos.Y)
+                cr.Radius = r
+                cr.Color = col
+                cr.Visible = true
+                txt.Position = Vector2.new(pos.X, pos.Y - r - 14)
+                txt.Text = meta.type .. ": " .. obj.Name .. "\n" .. math.floor(dist) .. "m"
+                txt.Color = Theme.TEXT
+                txt.Visible = true
+            end
         end
     end)
 end
 
-tabBtns["Main"].BackgroundColor3 = C.PINK
-tabBtns["Main"].TextColor3 = C.WHITE
-tabFrames["Main"].Visible = true
+-- ================== INIT ==================
+Pages.Home.Visible = true
+Tabs.Home.BackgroundColor3 = Theme.ACCENT
+Tabs.Home.TextColor3 = Theme.TEXT
 
--- MAIN TAB
-local mainFrame = tabFrames["Main"]
-
-local infoFrame = Instance.new("Frame")
-infoFrame.Size = UDim2.new(1, 0, 0, 50)
-infoFrame.BackgroundColor3 = C.BG2
-infoFrame.BorderSizePixel = 0
-infoFrame.Parent = mainFrame
-Instance.new("UICorner", infoFrame).CornerRadius = UDim.new(0, 10)
-
-local infoText = Instance.new("TextLabel")
-infoText.Size = UDim2.new(1, -10, 1, -10)
-infoText.Position = UDim2.new(0, 5, 0, 5)
-infoText.Text = "Anomaly Watch\n" .. Player.Name .. "\nUWU HUB HATE WORLD"
-infoText.TextColor3 = C.WHITE
-infoText.Font = Enum.Font.Gotham
-infoText.TextSize = 10
-infoText.BackgroundTransparency = 1
-infoText.TextXAlignment = Enum.TextXAlignment.Left
-infoText.TextYAlignment = Enum.TextYAlignment.Top
-infoText.Parent = infoFrame
-
--- Cat
-local catFrame = Instance.new("Frame")
-catFrame.Size = UDim2.new(1, 0, 0, 110)
-catFrame.BackgroundColor3 = C.BG2
-catFrame.BorderSizePixel = 0
-catFrame.Parent = mainFrame
-Instance.new("UICorner", catFrame).CornerRadius = UDim.new(0, 10)
-
-local catArt = Instance.new("TextLabel")
-catArt.Size = UDim2.new(1, -6, 1, -6)
-catArt.Position = UDim2.new(0, 3, 0, 3)
-catArt.Text = [[   ╱|、
-  ( -  -)  zZz
-   |  ~ |
-   じしˍ,)ノ
-  =========]]
-catArt.TextColor3 = C.PINK
-catArt.Font = Enum.Font.Gotham
-catArt.TextSize = 8
-catArt.BackgroundTransparency = 1
-catArt.TextXAlignment = Enum.TextXAlignment.Center
-catArt.TextYAlignment = Enum.TextYAlignment.Center
-catArt.Parent = catFrame
-
-local catFrames = {
-    [[   ╱|、
-  ( -  -)  zZz
-   |  ~ |
-   じしˍ,)ノ
-  =========]],
-    [[   ╱|、
-  ( -  -)  zzZ
-   |  ~ |
-   じしˍ,)ノ
-  =========]],
-    [[   ╱|、
-  ( =  =)  Zzz
-   |  ~ |
-   じしˍ,)ノ
-  =========]],
-    [[   ╱|、
-  ( ˘  ˘)  zZz
-   |  ~ |
-   じしˍ,)ノ
-  =========]]
-}
-local catIdx = 1
-spawn(function()
-    while catArt and catArt.Parent do
-        catIdx = catIdx % #catFrames + 1
-        catArt.Text = catFrames[catIdx]
-        wait(1.5)
-    end
-end)
-
--- Status
-local StatusText = Instance.new("TextLabel")
-StatusText.Size = UDim2.new(1, 0, 0, 16)
-StatusText.Text = "=^^= Ready"
-StatusText.TextColor3 = C.PINK
-StatusText.Font = Enum.Font.GothamBold
-StatusText.TextSize = 10
-StatusText.BackgroundTransparency = 1
-StatusText.TextXAlignment = Enum.TextXAlignment.Center
-StatusText.Parent = mainFrame
-
--- TOGGLE FUNCTION
-local function Toggle(parent, name, key, default)
-    local enabled = Settings[key] or default
-    
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 28)
-    row.BackgroundColor3 = C.BG2
-    row.BorderSizePixel = 0
-    row.Parent = parent
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
-    
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0.5, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 8, 0, 0)
-    lbl.Text = name
-    lbl.TextColor3 = enabled and C.WHITE or C.GRAY
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 10
-    lbl.BackgroundTransparency = 1
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = row
-    
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 48, 0, 24)
-    btn.Position = UDim2.new(1, -54, 0.5, -12)
-    btn.Text = enabled and "=^^= ON" or "=;= OFF"
-    btn.BackgroundColor3 = enabled and C.ON or C.OFF
-    btn.TextColor3 = C.WHITE
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 8
-    btn.BorderSizePixel = 0
-    btn.Parent = row
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-    
-    btn.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        Settings[key] = enabled
-        btn.Text = enabled and "=^^= ON" or "=;= OFF"
-        btn.BackgroundColor3 = enabled and C.ON or C.OFF
-        lbl.TextColor3 = enabled and C.WHITE or C.GRAY
-        Notify(name .. ": " .. (enabled and "ON" or "OFF"))
-    end)
-    
-    return row
-end
-
--- ESP TAB
-local espFrame = tabFrames["ESP"]
-Toggle(espFrame, "Fullbright", "Fullbright", false)
-Toggle(espFrame, "Show NPCs", "ShowNPC", false)
-Toggle(espFrame, "Show Changes", "ShowChanges", false)
-
--- PLAYER TAB
-local playerFrame = tabFrames["Player"]
-Toggle(playerFrame, "Speed", "Speed", false)
-Toggle(playerFrame, "Fly", "Fly", false)
-Toggle(playerFrame, "Noclip", "Noclip", false)
-
--- LOG TAB
-local logFrame = tabFrames["Log"]
-local logBox = Instance.new("ScrollingFrame")
-logBox.Size = UDim2.new(1, 0, 0, 170)
-logBox.BackgroundColor3 = C.BG2
-logBox.BorderSizePixel = 0
-logBox.CanvasSize = UDim2.new(0, 0, 0, 0)
-logBox.ScrollBarThickness = 3
-logBox.ScrollBarImageColor3 = C.PINK
-logBox.Parent = logFrame
-Instance.new("UICorner", logBox).CornerRadius = UDim.new(0, 10)
-
-local logLayout = Instance.new("UIListLayout")
-logLayout.SortOrder = Enum.SortOrder.LayoutOrder
-logLayout.Padding = UDim.new(0, 1)
-logLayout.Parent = logBox
-
-function AddLog(msg, color)
-    local l = Instance.new("TextLabel")
-    l.Size = UDim2.new(1, -4, 0, 13)
-    l.Text = msg
-    l.TextColor3 = color or C.WHITE
-    l.Font = Enum.Font.Gotham
-    l.TextSize = 8
-    l.BackgroundTransparency = 1
-    l.TextXAlignment = Enum.TextXAlignment.Left
-    l.Parent = logBox
-    logBox.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 10)
-    logBox.CanvasPosition = Vector2.new(0, logBox.CanvasSize.Y.Offset)
-end
-
-AddLog("UWU HUB HATE WORLD", C.PURPLE)
-AddLog("GUI Test - Working!", C.GREEN)
-AddLog("Tabs: Main | ESP | Player | Log", C.CYAN)
-
-Notify("GUI Loaded Successfully!")
+AddLog("✦ UWU HUB v29 started", Theme.ACCENT)
+AddLog("ECS Event-Driven + ESP", Theme.MUTED)
