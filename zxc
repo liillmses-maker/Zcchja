@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v57 | ANIMATED CAT OPEN BTN + FULL FIX
+-- UWU HUB | ANOMALY WATCH v58 | MENU FIRST + OPEN BTN AFTER CLOSE
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -181,7 +181,7 @@ Player.CharacterAdded:Connect(function() if PV.Hat then task.wait(0.5); CreateHa
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui") Gui.Name = "UwUHub"; Gui.ResetOnSpawn = false; Gui.IgnoreGuiInset = true; Gui.Parent = PLAYERGUI
 
--- ================== ANIMATED CAT OPEN BUTTON ==================
+-- ================== OPEN BUTTON (HIDDEN AT START) ==================
 local CatFrames = {
     "=^^= OPEN MENU =^^=",
     "=°°= OPEN MENU =°°=",
@@ -197,7 +197,7 @@ local OpenBtn = Instance.new("TextButton")
 OpenBtn.Size = UDim2.fromOffset(200, 40)
 OpenBtn.Position = UDim2.new(0.5, -100, 0, 8)
 OpenBtn.Text = CatFrames[1]
-OpenBtn.Visible = true
+OpenBtn.Visible = false -- HIDDEN AT START
 OpenBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 35)
 OpenBtn.TextColor3 = Color3.fromRGB(255, 190, 210)
 OpenBtn.Font = Enum.Font.GothamBold
@@ -207,7 +207,6 @@ OpenBtn.ZIndex = 100
 OpenBtn.Parent = Gui
 Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
 
--- Glow
 local OpenGlow = Instance.new("Frame")
 OpenGlow.Size = UDim2.new(1, 6, 1, 6)
 OpenGlow.Position = UDim2.fromOffset(-3, -3)
@@ -246,7 +245,6 @@ spawn(function()
     end
 end)
 
--- Hover
 OpenBtn.MouseEnter:Connect(function()
     TweenService:Create(OpenBtn, TweenInfo.new(0.2), {
         Size = UDim2.fromOffset(210, 42),
@@ -273,16 +271,16 @@ OpenBtn.MouseButton1Click:Connect(function()
     }):Play()
 end)
 
--- ================== MAIN GUI ==================
+-- ================== MAIN GUI (VISIBLE AT START) ==================
 local Main = Instance.new("Frame")
-Main.Size = UDim2.fromOffset(0, 0)
+Main.Size = UDim2.fromOffset(520, 420)
 Main.Position = UDim2.fromScale(0.5, 0.5)
 Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.BackgroundColor3 = Theme.BG
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Main.Visible = false
+Main.Visible = true -- VISIBLE AT START
 Main.Parent = Gui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
 
@@ -290,8 +288,8 @@ local Stroke = Instance.new("UIStroke")
 Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
 
 local Header = Instance.new("Frame") Header.Size = UDim2.new(1,0,0,58); Header.BackgroundTransparency = 1; Header.Parent = Main
-local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v57"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
-local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "=^^= animated cat button =^^="; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
+local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v58"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
+local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "menu first • close = cat button"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
 
 local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34,34); MinBtn.Position = UDim2.new(1,-54,0.5,-17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
 MinBtn.MouseButton1Click:Connect(function()
@@ -324,7 +322,7 @@ local function MakeCard(parent, title, desc)
 end
 
 local HomeLayout = Instance.new("UIListLayout") HomeLayout.Padding = UDim.new(0,10); HomeLayout.Parent = HomePage
-MakeCard(HomePage, "✦ UWU HUB v57", "=^^= Animated Cat Button =^^=\nFP Hat • Mobile Fly • ESP")
+MakeCard(HomePage, "✦ UWU HUB v58", "Menu opens FIRST\nClose = animated cat button")
 
 -- AD CARD
 local AdCard = Instance.new("Frame") AdCard.Size = UDim2.new(1,-26,0,55); AdCard.Position = UDim2.fromOffset(13,0); AdCard.BackgroundColor3 = Color3.fromRGB(40, 20, 35); AdCard.Parent = HomePage; Instance.new("UICorner", AdCard).CornerRadius = UDim.new(0, 16)
