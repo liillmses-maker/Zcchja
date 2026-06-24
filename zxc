@@ -101,7 +101,6 @@ Player.CharacterAdded:Connect(function()if PV.Hat then task.wait(0.5);CH()end en
 -- ================== UTILS ==================
 local function getPart(obj)if obj:IsA("BasePart")then return obj end;if obj:IsA("Model")then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")end;return nil end
 
--- ФУНКЦИЯ ДЛЯ ПРОВЕРКИ PINK TRAIL
 local function IsTrailPart(obj)
     if obj:IsA("BasePart") and obj.Name == "TrailPart" then return true end
     if obj:IsA("BasePart") and obj.Color == Color3.fromRGB(255,150,200) and obj.Material == Enum.Material.Neon and obj.Size == Vector3.new(0.25,0.25,0.25) then return true end
@@ -155,6 +154,17 @@ local AnomalyConfig={
 local Cooldowns={};local COOLDOWN_TIME=2
 local function CanAlert(obj,alertType)local key=obj;if not Cooldowns[key]then Cooldowns[key]={}end;local last=Cooldowns[key][alertType];local now=tick();if last and(now-last)<COOLDOWN_TIME then return false end;Cooldowns[key][alertType]=now;return true end
 
+local function IsNearPlayer(obj)
+    local char = Player.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    local part = getPart(obj)
+    if not part then return false end
+    local dist = (part.Position - root.Position).Magnitude
+    return dist < 2
+end
+
 local function AnomHighlight(obj,color)
     local part=getPart(obj)if not part then return end
     for _,c in ipairs(part:GetChildren())do if c:IsA("BoxHandleAdornment")and c.Name=="AnomalyHL"then c:Destroy()end end
@@ -168,7 +178,12 @@ local function AnomLabel(obj,text,color)
 end
 
 local BaseLine={}
-local function ProcessAnomaly(obj,anomalyType)if not CanAlert(obj,anomalyType)then return end;local config=AnomalyConfig[anomalyType];if not config then return end;AnomHighlight(obj,config.color);AnomLabel(obj,config.label,config.color)end
+local function ProcessAnomaly(obj,anomalyType)
+    if not CanAlert(obj,anomalyType)then return end
+    if IsNearPlayer(obj) then return end
+    local config=AnomalyConfig[anomalyType];if not config then return end
+    AnomHighlight(obj,config.color);AnomLabel(obj,config.label,config.color)
+end
 
 local function TakeSnapshot(obj)
     local part=getPart(obj)if not part then return end
@@ -212,7 +227,6 @@ end
 local function IsVisual(obj)
     if Player.Character and obj:IsDescendantOf(Player.Character)then return true end
     if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"or obj.Name=="ChineseHat"then return true end
-    if IsTrailPart(obj)then return true end
     return false
 end
 
@@ -222,10 +236,18 @@ workspace.DescendantAdded:Connect(function(obj)
     if IsVisual(obj)then return end
     if IsMonster(obj)then return end
     if not S.ESP_Anomaly then return end
-    task.delay(1.5,function()if not obj.Parent then return end;if not BaseLine[obj]then TakeSnapshot(obj);ProcessAnomaly(obj,"NEW");HookObject(obj)end end)
+    task.delay(1.5,function()
+        if not obj.Parent then return end
+        if IsNearPlayer(obj) then return end
+        if not BaseLine[obj]then 
+            TakeSnapshot(obj)
+            ProcessAnomaly(obj,"NEW")
+            HookObject(obj)
+        end
+    end)
 end)
 workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING");BaseLine[obj]=nil end end)
-task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
+task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not IsNearPlayer(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
 task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
 
 -- ================== ESP RENDER (ALL INDEPENDENT) ==================
