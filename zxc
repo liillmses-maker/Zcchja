@@ -149,7 +149,6 @@ local WorldESP_Highlights = {}
 local function AddWorldESP(part)
     if WorldESP_Highlights[part] then return end
     
-    -- Голубая обводка
     local highlight = Instance.new("Highlight")
     highlight.Name = "WorldESP_Highlight"
     highlight.FillColor = Color3.fromRGB(80, 200, 255)
@@ -160,7 +159,6 @@ local function AddWorldESP(part)
     highlight.Parent = part
     WorldESP_Highlights[part] = highlight
     
-    -- Название объекта
     local bill = Instance.new("BillboardGui")
     bill.Name = "WorldESP_Label"
     bill.Size = UDim2.new(0, 200, 0, 30)
@@ -236,21 +234,174 @@ workspace.DescendantRemoving:Connect(function(obj)
     end
 end)
 
--- ================== MONSTER ESP (INDEPENDENT) ==================
-local Monsters={}
-local IgnoredMonsterNames = {Rig=true, Rig2=true, Dummy=true, Devil=true, Alternate=true, Hallwaylntruder=true}
-local function IsMonster(obj)
-    if obj:IsA("Model") and obj ~= Player.Character then
-        if IgnoredMonsterNames[obj.Name] then return false end
-        local hum = obj:FindFirstChildOfClass("Humanoid")
-        if hum and hum.Health > 0 then return true end
-        if obj:FindFirstChild("HumanoidRootPart") then return true end
+-- ================== MONSTER ESP (FULL REWORK) ==================
+local MonsterData = {}
+local MonsterHighlights = {}
+local MonsterLabels = {}
+
+-- Проверка является ли модель опасным монстром
+local function IsDangerousMonster(model)
+    if not model:IsA("Model") then return false end
+    if model == Player.Character then return false end
+    
+    -- Ищем Humanoid
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    
+    -- Проверяем что здоровье больше 0 (живой)
+    if hum.Health <= 0 then return false end
+    
+    -- Игнорируем Rig, Dummy и другие неопасные модели
+    local ignoreNames = {Rig=true, Rig2=true, Dummy=true}
+    if ignoreNames[model.Name] then return false end
+    
+    -- Игнорируем если нет возможности двигаться (мирные NPC)
+    -- Опасные монстры обычно имеют WalkSpeed > 0
+    if hum.WalkSpeed <= 0 then return false end
+    
+    -- Дополнительная проверка: ищем скрипты AI или атаки
+    local hasAI = false
+    for _, child in ipairs(model:GetDescendants()) do
+        if child:IsA("Script") or child:IsA("LocalScript") then
+            local scriptName = child.Name:lower()
+            if scriptName:find("ai") or scriptName:find("attack") or scriptName:find("hunt") or 
+               scriptName:find("chase") or scriptName:find("kill") or scriptName:find("monster") or
+               scriptName:find("enemy") then
+                hasAI = true
+                break
+            end
+        end
     end
-    return false
+    
+    return hasAI or hum.WalkSpeed > 16 -- Если скорость выше стандартной или есть AI
 end
-workspace.DescendantAdded:Connect(function(obj)if IsMonster(obj)then Monsters[obj]=true end end)
-workspace.DescendantRemoving:Connect(function(obj)Monsters[obj]=nil end)
-task.defer(function()task.wait(1)for _,obj in ipairs(workspace:GetDescendants())do if IsMonster(obj)then Monsters[obj]=true end end end)
+
+local function AddMonsterESP(model)
+    if MonsterHighlights[model] then return end
+    
+    local rootPart = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso") or model.PrimaryPart
+    if not rootPart then return end
+    
+    -- Красная обводка для монстров
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "MonsterESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.FillTransparency = 0.6
+    highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = model
+    highlight.Parent = model
+    MonsterHighlights[model] = highlight
+    
+    -- Название монстра
+    local bill = Instance.new("BillboardGui")
+    bill.Name = "MonsterESP_Label"
+    bill.Size = UDim2.new(0, 200, 0, 30)
+    bill.StudsOffset = Vector3.new(0, 3, 0)
+    bill.AlwaysOnTop = true
+    bill.Parent = model
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "👹 " .. model.Name
+    label.TextColor3 = Color3.fromRGB(255, 0, 0)
+    label.TextStrokeTransparency = 0
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.TextScaled = true
+    label.Parent = bill
+    
+    MonsterLabels[model] = bill
+    MonsterData[model] = {addedAt=tick()}
+end
+
+local function RemoveMonsterESP(model)
+    if MonsterHighlights[model] then
+        MonsterHighlights[model]:Destroy()
+        MonsterHighlights[model] = nil
+    end
+    if MonsterLabels[model] then
+        MonsterLabels[model]:Destroy()
+        MonsterLabels[model] = nil
+    end
+    MonsterData[model] = nil
+end
+
+local function ClearAllMonsterESP()
+    for model, _ in pairs(MonsterData) do
+        RemoveMonsterESP(model)
+    end
+    MonsterData = {}
+end
+
+-- Сканирование всех существующих монстров
+local function ScanForMonsters()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if IsDangerousMonster(obj) then
+            if not MonsterData[obj] then
+                AddMonsterESP(obj)
+            end
+        end
+    end
+end
+
+-- Постоянное обновление Monster ESP
+local function SetMonsterESP(v)
+    if v then
+        ScanForMonsters()
+    else
+        ClearAllMonsterESP()
+    end
+end
+
+-- Отслеживание новых монстров
+workspace.DescendantAdded:Connect(function(obj)
+    if not S.ESP_Monsters then return end
+    if obj:IsA("Model") then
+        -- Ждём полной загрузки модели
+        task.wait(0.5)
+        if IsDangerousMonster(obj) and not MonsterData[obj] then
+            AddMonsterESP(obj)
+        end
+    end
+    -- Проверяем добавление Humanoid в существующую модель
+    if obj:IsA("Humanoid") and obj.Parent and obj.Parent:IsA("Model") then
+        task.wait(0.5)
+        local model = obj.Parent
+        if IsDangerousMonster(model) and not MonsterData[model] then
+            AddMonsterESP(model)
+        end
+    end
+end)
+
+workspace.DescendantRemoving:Connect(function(obj)
+    if MonsterData[obj] then
+        RemoveMonsterESP(obj)
+    end
+end)
+
+-- Периодическое обновление для отслеживания изменений
+task.spawn(function()
+    while true do
+        task.wait(2)
+        if S.ESP_Monsters then
+            -- Удаляем мёртвых или исчезнувших монстров
+            for model, data in pairs(MonsterData) do
+                if not model.Parent then
+                    RemoveMonsterESP(model)
+                else
+                    local hum = model:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health <= 0 then
+                        RemoveMonsterESP(model)
+                    end
+                end
+            end
+            -- Сканируем новых
+            ScanForMonsters()
+        end
+    end
+end)
 
 -- ================== ITEM ESP (INDEPENDENT) ==================
 local ItemESP={}
@@ -259,7 +410,7 @@ workspace.DescendantAdded:Connect(function(obj)
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
     if Player.Character and obj:IsDescendantOf(Player.Character)then return end
     if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"then return end
-    if IsMonster(obj)then return end
+    if IsDangerousMonster(obj)then return end
     if IsTrailPart(obj)then return end
     if IgnoredNames[obj.Name] then return end
     ItemESP[obj]={time=tick(),pos=getPart(obj)and getPart(obj).Position or Vector3.zero,name=obj.Name}
@@ -302,6 +453,24 @@ local AnomalyConfig={
     CHILD_COUNT={label="Состав",color=Color3.fromRGB(200,255,200)}
 }
 
+local TrackedObjects = {
+    CheckerboardPoster=true,
+    Soap=true,
+    Sink=true,
+    Monitor=true,
+    MeshPart=true,
+    Machine=true,
+    Rockingmachine=true,
+    Board=true,
+    Image=true,
+    MonaLisa=true,
+    Mold=true,
+    Bucket=true,
+    DoorR=true,
+    DoorL=true,
+    Counter=true
+}
+
 local Cooldowns={};local COOLDOWN_TIME=2
 local function CanAlert(obj,alertType)local key=obj;if not Cooldowns[key]then Cooldowns[key]={}end;local last=Cooldowns[key][alertType];local now=tick();if last and(now-last)<COOLDOWN_TIME then return false end;Cooldowns[key][alertType]=now;return true end
 
@@ -314,6 +483,12 @@ local function IsNearPlayer(obj)
     if not part then return false end
     local dist = (part.Position - root.Position).Magnitude
     return dist < 2
+end
+
+local function IsTrackedObject(obj)
+    if TrackedObjects[obj.Name] then return true end
+    if obj.Parent and TrackedObjects[obj.Parent.Name] then return true end
+    return false
 end
 
 local function AnomHighlight(obj,color)
@@ -386,10 +561,11 @@ workspace.DescendantAdded:Connect(function(obj)
     if not(obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light"))then return end
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
     if IsVisual(obj)then return end
-    if IsMonster(obj)then return end
+    if IsDangerousMonster(obj)then return end
     if IgnoredNames[obj.Name] then return end
+    if not IsTrackedObject(obj) then return end
     if not S.ESP_Anomaly then return end
-    task.delay(1.5,function()
+    task.delay(0.5,function()
         if not obj.Parent then return end
         if IsNearPlayer(obj) then return end
         if not BaseLine[obj]then 
@@ -400,7 +576,7 @@ workspace.DescendantAdded:Connect(function(obj)
     end)
 end)
 workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING");BaseLine[obj]=nil end end)
-task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not IsNearPlayer(obj)and not IgnoredNames[obj.Name]and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
+task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsDangerousMonster(obj)and not IsNearPlayer(obj)and not IgnoredNames[obj.Name]and IsTrackedObject(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
 task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
 
 -- ================== ESP RENDER (ALL INDEPENDENT) ==================
@@ -443,23 +619,6 @@ if Drawing then
             end
         end
         
-        -- MONSTER ESP (RED)
-        if S.ESP_Monsters then
-            for obj in pairs(Monsters)do
-                if not obj.Parent then Monsters[obj]=nil;continue end
-                local part=getPart(obj);if not part then continue end
-                local dist=(part.Position-root.Position).Magnitude;if dist>500 then continue end
-                local pos,on=Camera:WorldToViewportPoint(part.Position);if not on then continue end
-                local cr=GC();local txt=GT()
-                if cr then local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.8,5,35)
-                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Theme.RED;cr.Visible=true
-                    txt.Position=Vector2.new(pos.X,pos.Y-r-14)
-                    txt.Text="👹 "..obj.Name.."\n"..math.floor(dist).."m"
-                    txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
-                end
-            end
-        end
-        
         -- ITEM ESP (ORANGE + TRACERS)
         if S.ESP_Items then
             for obj,data in pairs(ItemESP)do
@@ -469,7 +628,6 @@ if Drawing then
                 local dist=(data.pos-root.Position).Magnitude;if dist>300 then continue end
                 local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
                 
-                -- Tracer line
                 if S.ESP_Tracers then
                     local rootPos,_=Camera:WorldToViewportPoint(root.Position)
                     local line=GL()
@@ -552,8 +710,8 @@ local function MakeToggle(parent,name,default,callback)local enabled=default;loc
 -- ESP TAB
 local ESPLayout=Instance.new("UIListLayout")ESPLayout.Padding=UDim.new(0,8);ESPLayout.Parent=ESPPage
 MakeToggle(ESPPage,"World ESP",false,function(v)S.ESP_World=v;SetWorldESP(v)end)
+MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v;SetMonsterESP(v)end)
 MakeToggle(ESPPage,"All Objects ESP",false,function(v)S.ESP_AllObjects=v end)
-MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v end)
 MakeToggle(ESPPage,"Item ESP",false,function(v)S.ESP_Items=v end)
 MakeToggle(ESPPage,"Item Tracers",false,function(v)S.ESP_Tracers=v end)
 MakeToggle(ESPPage,"Anomaly ESP",false,function(v)S.ESP_Anomaly=v end)
