@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v67 | v40 GUI + AUTOWIN + TRACERS + MOBILE FLY + ALL OFF
+-- UWU HUB | ANOMALY WATCH v70 | ESP FULLY INDEPENDENT
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -21,13 +21,17 @@ local Theme = {
 
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
--- SETTINGS ALL OFF
+-- ================== SETTINGS ==================
 local S = {
-    ESP_Items = false, ESP_Monsters = false, ESP_Tracers = false,
-    Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false, Autowin = false
+    ESP_Monsters = false,
+    ESP_Items = false,
+    ESP_Tracers = false,
+    ESP_Anomaly = false,
+    Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
+    Hat = false, Trail = false
 }
 
--- FULLBRIGHT
+-- ================== FULLBRIGHT ==================
 local OrigBrightness = Lighting.Brightness; local OrigAmbient = Lighting.Ambient
 local OrigOutdoorAmbient = Lighting.OutdoorAmbient; local OrigClockTime = Lighting.ClockTime; local OrigFogEnd = Lighting.FogEnd
 local function SetFullbright(v)
@@ -35,128 +39,254 @@ local function SetFullbright(v)
     else Lighting.Brightness=OrigBrightness;Lighting.Ambient=OrigAmbient;Lighting.OutdoorAmbient=OrigOutdoorAmbient;Lighting.ClockTime=OrigClockTime;Lighting.FogEnd=OrigFogEnd;Lighting.GlobalShadows=true end
 end
 
--- AUTOWIN
-local AutowinActive = false; local SavedPosition = nil
-local function SetAutowin(v)
-    AutowinActive = v; local char = Player.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
-    if v then SavedPosition = root.CFrame; root.CFrame = CFrame.new(root.Position + Vector3.new(0, 500, 0))
-        for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
-    else if SavedPosition then root.CFrame = SavedPosition; SavedPosition = nil end
-        if not S.Noclip then for _, p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end end
-    end
-end
+-- ================== PLAYER MODS ==================
+local function SetSpeed(v) local c=Player.Character;if c then local h=c:FindFirstChildOfClass("Humanoid");if h then h.WalkSpeed=v and 25 or 16 end end end
 
--- FLY
-local FlyBody, FlyGyro, FlyConnection; local FLY_SPEED = 2
+local FlyBody,FlyGyro,FlyConnection;local FLY_SPEED=2
 local function SetFly(v)
-    local char = Player.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end; local hum = char:FindFirstChildOfClass("Humanoid")
-    if v then if hum then hum.PlatformStand = true; hum.AutoRotate = false end
-        FlyBody = Instance.new("BodyVelocity") FlyBody.Velocity = Vector3.zero; FlyBody.MaxForce = Vector3.new(400000,400000,400000); FlyBody.P = 5000; FlyBody.Parent = root
-        FlyGyro = Instance.new("BodyGyro") FlyGyro.MaxTorque = Vector3.new(400000,400000,400000); FlyGyro.P = 3000; FlyGyro.D = 100; FlyGyro.Parent = root
-        FlyConnection = RunService.RenderStepped:Connect(function()
-            if not S.Fly then return end; if not char or not char.Parent then return end
-            local md = Vector3.zero
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then md += Camera.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then md -= Camera.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then md -= Camera.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then md += Camera.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then md += Vector3.new(0, 1, 0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then md -= Vector3.new(0, 1, 0) end
-            if IsMobile and hum and hum.MoveDirection.Magnitude > 0 then md = hum.MoveDirection end
-            if md.Magnitude > 0 then md = md.Unit end
-            local s = 50 * FLY_SPEED; if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then s = s * 2 end
-            if FlyBody then FlyBody.Velocity = md * s end; if FlyGyro then FlyGyro.CFrame = Camera.CFrame end
+    local char=Player.Character;if not char then return end;local root=char:FindFirstChild("HumanoidRootPart");if not root then return end;local hum=char:FindFirstChildOfClass("Humanoid")
+    if v then if hum then hum.PlatformStand=true;hum.AutoRotate=false end
+        FlyBody=Instance.new("BodyVelocity")FlyBody.Velocity=Vector3.zero;FlyBody.MaxForce=Vector3.new(400000,400000,400000);FlyBody.P=5000;FlyBody.Parent=root
+        FlyGyro=Instance.new("BodyGyro")FlyGyro.MaxTorque=Vector3.new(400000,400000,400000);FlyGyro.P=3000;FlyGyro.D=100;FlyGyro.Parent=root
+        FlyConnection=RunService.RenderStepped:Connect(function()
+            if not S.Fly then return end;if not char or not char.Parent then return end
+            local md=Vector3.zero
+            if UserInputService:IsKeyDown(Enum.KeyCode.W)then md+=Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S)then md-=Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A)then md-=Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D)then md+=Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space)then md+=Vector3.new(0,1,0)end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)then md-=Vector3.new(0,1,0)end
+            if IsMobile and hum and hum.MoveDirection.Magnitude>0 then md=hum.MoveDirection end
+            if md.Magnitude>0 then md=md.Unit end
+            local s=50*FLY_SPEED;if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)then s=s*2 end
+            if FlyBody then FlyBody.Velocity=md*s end;if FlyGyro then FlyGyro.CFrame=Camera.CFrame end
         end)
-    else if FlyBody then FlyBody:Destroy(); FlyBody = nil end; if FlyGyro then FlyGyro:Destroy(); FlyGyro = nil end; if FlyConnection then FlyConnection:Disconnect(); FlyConnection = nil end; if hum then hum.PlatformStand = false; hum.AutoRotate = true end
+    else if FlyBody then FlyBody:Destroy();FlyBody=nil end;if FlyGyro then FlyGyro:Destroy();FlyGyro=nil end;if FlyConnection then FlyConnection:Disconnect();FlyConnection=nil end;if hum then hum.PlatformStand=false;hum.AutoRotate=true end
     end
 end
 
--- NOCLIP
 local NC
 local function SetNoclip(v)
-    if v then NC = RunService.Stepped:Connect(function() if Player.Character then for _, p in ipairs(Player.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end end)
-    else if NC then NC:Disconnect(); NC = nil end; if Player.Character and not AutowinActive then for _, p in ipairs(Player.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end end end
+    if v then NC=RunService.Stepped:Connect(function()if Player.Character then for _,p in ipairs(Player.Character:GetDescendants())do if p:IsA("BasePart")then p.CanCollide=false end end end end)
+    else if NC then NC:Disconnect();NC=nil end;if Player.Character then for _,p in ipairs(Player.Character:GetDescendants())do if p:IsA("BasePart")then p.CanCollide=true end end end end
 end
-local function SetSpeed(v) local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed = v and 25 or 16 end end end
-local function SetFOV(v) Camera.FieldOfView = v and 100 or 70 end
+local function SetFOV(v)Camera.FieldOfView=v and 100 or 70 end
 
--- ESP
-local getPart = function(obj) if obj:IsA("BasePart") then return obj end; if obj:IsA("Model") then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart") end; return nil end
-local ItemESP = {}
+-- ================== VISUALS ==================
+local PV={Hat=false,Trail=false};local HM
+local function CH()
+    if HM then HM:Destroy()end;local c=Player.Character;if not c then return end;local hd=c:FindFirstChild("Head");if not hd then return end
+    HM=Instance.new("Model")HM.Name="Hat";HM.Parent=c
+    local co=Instance.new("Part")co.Shape=Enum.PartType.Cone;co.Size=Vector3.new(3,2.2,3);co.Color=Color3.fromRGB(255,150,200);co.Transparency=0.35;co.Material=Enum.Material.Glass;co.Anchored=false;co.CanCollide=false;co.Parent=HM
+    local ba=Instance.new("Part")ba.Shape=Enum.PartType.Ball;ba.Size=Vector3.new(0.7,0.7,0.7);ba.Color=Color3.fromRGB(255,100,150);ba.Transparency=0.15;ba.Material=Enum.Material.Neon;ba.Anchored=false;ba.CanCollide=false;ba.Parent=HM
+    local br=Instance.new("Part")br.Shape=Enum.PartType.Cylinder;br.Size=Vector3.new(4,0.2,4);br.Color=Color3.fromRGB(255,180,220);br.Transparency=0.45;br.Material=Enum.Material.Glass;br.Anchored=false;br.CanCollide=false;br.Parent=HM
+    Instance.new("Weld"){Part0=hd,Part1=co,C0=CFrame.new(0,2.5,0),Parent=co}
+    Instance.new("Weld"){Part0=co,Part1=ba,C0=CFrame.new(0,1.3,0),Parent=ba}
+    Instance.new("Weld"){Part0=co,Part1=br,C0=CFrame.new(0,-1.1,0),Parent=br}
+end
+local function RH()if HM then HM:Destroy();HM=nil end end
+local TP={};local MT=15
+local function ST()
+    local c=Player.Character;if not c then return end;local r=c:FindFirstChild("HumanoidRootPart");if not r then return end
+    local p=Instance.new("Part")p.Size=Vector3.new(0.25,0.25,0.25);p.Shape=Enum.PartType.Ball;p.Position=r.Position-Vector3.new(0,2.5,0);p.Color=Color3.fromRGB(255,150,200);p.Transparency=0.5;p.Material=Enum.Material.Neon;p.Anchored=true;p.CanCollide=false;p.Parent=workspace
+    table.insert(TP,p);if#TP>MT then local o=table.remove(TP,1);if o then o:Destroy()end end
+    task.delay(1.5,function()for i=1,8 do if not p.Parent then break end;p.Transparency+=0.06;task.wait(0.04)end;if p then p:Destroy()end end)
+end
+local function SH(v)PV.Hat=v;if v then CH()else RH()end end
+local function SS(v)PV.Trail=v end
+task.spawn(function()while true do task.wait(0.15)if PV.Trail then local c=Player.Character;if c then local h=c:FindFirstChildOfClass("Humanoid");if h and h.MoveDirection.Magnitude>0 then ST()end end end end end)
+Player.CharacterAdded:Connect(function()if PV.Hat then task.wait(0.5);CH()end end)
+
+-- ================== UTILS ==================
+local function getPart(obj)if obj:IsA("BasePart")then return obj end;if obj:IsA("Model")then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")end;return nil end
+
+-- ================== MONSTER ESP (INDEPENDENT) ==================
+local Monsters={}
+local function IsMonster(obj)if obj:IsA("Model")and obj~=Player.Character then if obj:FindFirstChildOfClass("Humanoid")then return true end;if obj:FindFirstChild("HumanoidRootPart")then return true end end;return false end
+workspace.DescendantAdded:Connect(function(obj)if IsMonster(obj)then Monsters[obj]=true end end)
+workspace.DescendantRemoving:Connect(function(obj)Monsters[obj]=nil end)
+task.defer(function()task.wait(1)for _,obj in ipairs(workspace:GetDescendants())do if IsMonster(obj)then Monsters[obj]=true end end end)
+
+-- ================== ITEM ESP (INDEPENDENT) ==================
+local ItemESP={}
 workspace.DescendantAdded:Connect(function(obj)
-    if not (obj:IsA("BasePart") or obj:IsA("Model")) then return end
-    if obj:IsA("BasePart") and obj.Transparency > 0.95 then return end
-    if Player.Character and obj:IsDescendantOf(Player.Character) then return end
-    if obj.Name == "HatCone" or obj.Name == "HatBall" or obj.Name == "HatBrim" or obj.Name == "TrailPart" then return end
-    if obj:IsA("Model") and (obj:FindFirstChildOfClass("Humanoid") or obj:FindFirstChild("HumanoidRootPart")) then return end
-    ItemESP[obj] = {time = tick(), pos = getPart(obj) and getPart(obj).Position or Vector3.zero, name = obj.Name}
+    if not(obj:IsA("BasePart")or obj:IsA("Model"))then return end
+    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    if Player.Character and obj:IsDescendantOf(Player.Character)then return end
+    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"then return end
+    if IsMonster(obj)then return end
+    ItemESP[obj]={time=tick(),pos=getPart(obj)and getPart(obj).Position or Vector3.zero,name=obj.Name}
 end)
-workspace.DescendantRemoving:Connect(function(obj) ItemESP[obj] = nil end)
+workspace.DescendantRemoving:Connect(function(obj)ItemESP[obj]=nil end)
 
-local Monsters = {}
-workspace.DescendantAdded:Connect(function(obj) if obj:IsA("Model") and obj ~= Player.Character and (obj:FindFirstChildOfClass("Humanoid") or obj:FindFirstChild("HumanoidRootPart")) then Monsters[obj] = true end end)
-workspace.DescendantRemoving:Connect(function(obj) Monsters[obj] = nil end)
-task.defer(function() task.wait(1) for _, obj in ipairs(workspace:GetDescendants()) do if obj:IsA("Model") and obj ~= Player.Character and (obj:FindFirstChildOfClass("Humanoid") or obj:FindFirstChild("HumanoidRootPart")) then Monsters[obj] = true end end end)
+-- ================== ANOMALY ESP v40 (INDEPENDENT) ==================
+local REPL_DELAY=0.25
+local State={};State.__index=State
+function State.new(obj)return setmetatable({obj=obj,last=nil,dirty=false,lastUpdate=tick(),lastFix=0},State)end
+function State:Snapshot(data)self.last=data;self.lastUpdate=tick();self.dirty=false end
+function State:MarkDirty()self.dirty=true end
+function State:Repair()if tick()-self.lastFix<1 then return end;local part=self.obj:IsA("BasePart")and self.obj or self.obj:FindFirstChildWhichIsA("BasePart");if part and self.last then self.last.pos=part.Position;self.last.size=part.Size;self.lastFix=tick()end end
 
+local AnomalyConfig={
+    MOVED={label="Перемещён",color=Color3.fromRGB(255,0,0)},
+    SIZE={label="Размер",color=Color3.fromRGB(255,100,0)},
+    COLOR={label="Цвет",color=Color3.fromRGB(255,255,0)},
+    MATERIAL={label="Материал",color=Color3.fromRGB(200,200,0)},
+    LIGHT={label="Свет",color=Color3.fromRGB(0,255,255)},
+    IMAGE={label="Картина",color=Color3.fromRGB(255,0,255)},
+    TV={label="Телевизор",color=Color3.fromRGB(0,255,0)},
+    NEW={label="Новый",color=Color3.fromRGB(255,128,0)},
+    MISSING={label="Исчез",color=Color3.fromRGB(255,0,0)},
+    TRANSPARENCY={label="Прозрачность",color=Color3.fromRGB(200,200,255)},
+    ANCHORED={label="Физика",color=Color3.fromRGB(255,200,100)},
+    PARENT_CHANGED={label="Папка",color=Color3.fromRGB(255,150,150)},
+    CHILD_COUNT={label="Состав",color=Color3.fromRGB(200,255,200)}
+}
+
+local Cooldowns={};local COOLDOWN_TIME=2
+local function CanAlert(obj,alertType)local key=obj;if not Cooldowns[key]then Cooldowns[key]={}end;local last=Cooldowns[key][alertType];local now=tick();if last and(now-last)<COOLDOWN_TIME then return false end;Cooldowns[key][alertType]=now;return true end
+
+local function AnomHighlight(obj,color)
+    local part=getPart(obj)if not part then return end
+    for _,c in ipairs(part:GetChildren())do if c:IsA("BoxHandleAdornment")and c.Name=="AnomalyHL"then c:Destroy()end end
+    local box=Instance.new("BoxHandleAdornment")box.Name="AnomalyHL";box.Adornee=part;box.Size=part.Size+Vector3.new(0.3,0.3,0.3);box.Color3=color;box.AlwaysOnTop=true;box.ZIndex=5;box.Parent=part;task.delay(8,function()if box then box:Destroy()end end)
+end
+local function AnomLabel(obj,text,color)
+    local part=getPart(obj)if not part then return end
+    for _,c in ipairs(part:GetChildren())do if c:IsA("BillboardGui")and c.Name=="AnomalyLbl"then c:Destroy()end end
+    local bill=Instance.new("BillboardGui")bill.Name="AnomalyLbl";bill.Size=UDim2.new(0,200,0,50);bill.StudsOffset=Vector3.new(0,2.5,0);bill.AlwaysOnTop=true;bill.Parent=part
+    local label=Instance.new("TextLabel")label.Size=UDim2.new(1,0,1,0);label.BackgroundTransparency=1;label.Text=text;label.TextColor3=color or Color3.fromRGB(255,255,0);label.TextStrokeTransparency=0;label.Font=Enum.Font.SourceSansBold;label.TextScaled=true;label.Parent=bill;task.delay(8,function()if bill then bill:Destroy()end end)
+end
+
+local BaseLine={}
+local function ProcessAnomaly(obj,anomalyType)if not CanAlert(obj,anomalyType)then return end;local config=AnomalyConfig[anomalyType];if not config then return end;AnomHighlight(obj,config.color);AnomLabel(obj,config.label,config.color)end
+
+local function TakeSnapshot(obj)
+    local part=getPart(obj)if not part then return end
+    if not BaseLine[obj]then BaseLine[obj]=State.new(obj)end
+    BaseLine[obj]:Snapshot({pos=part.Position,size=part.Size,color=part:IsA("BasePart")and part.Color or nil,material=part:IsA("BasePart")and part.Material or nil,transparency=part:IsA("BasePart")and part.Transparency or nil,anchored=part:IsA("BasePart")and part.Anchored or nil,texture=obj:IsA("Decal")and obj.Texture or obj:IsA("Texture")and obj.Texture or nil,brightness=obj:IsA("Light")and obj.Brightness or nil,soundId=obj:IsA("Sound")and obj.SoundId or nil,childCount=obj:IsA("Model")and#obj:GetChildren()or nil,parent=obj.Parent})
+end
+
+local function DetectChanges(obj)
+    local state=BaseLine[obj]if not state or not state.last then return end;if not obj.Parent then BaseLine[obj]=nil;return end
+    local part=getPart(obj)if not part then return end;local base=state.last
+    if(part.Position-base.pos).Magnitude>1 then ProcessAnomaly(obj,"MOVED")base.pos=part.Position end
+    if base.size and(part.Size-base.size).Magnitude>0.3 then ProcessAnomaly(obj,"SIZE")base.size=part.Size end
+    if base.color and part:IsA("BasePart")and part.Color~=base.color then ProcessAnomaly(obj,"COLOR")base.color=part.Color end
+    if base.material and part:IsA("BasePart")and part.Material~=base.material then ProcessAnomaly(obj,"MATERIAL")base.material=part.Material end
+    if base.transparency and part:IsA("BasePart")and math.abs(part.Transparency-base.transparency)>0.05 then ProcessAnomaly(obj,"TRANSPARENCY")base.transparency=part.Transparency end
+    if base.anchored~=nil and part:IsA("BasePart")and part.Anchored~=base.anchored then ProcessAnomaly(obj,"ANCHORED")base.anchored=part.Anchored end
+    if base.brightness and obj:IsA("Light")and math.abs(obj.Brightness-base.brightness)>0.2 then ProcessAnomaly(obj,"LIGHT")base.brightness=obj.Brightness end
+    local tex=nil;if obj:IsA("Decal")then tex=obj.Texture elseif obj:IsA("Texture")then tex=obj.Texture end
+    if tex and base.texture and tex~=base.texture then ProcessAnomaly(obj,"IMAGE")base.texture=tex end
+    if obj:IsA("BasePart")then local gui=obj:FindFirstChildWhichIsA("SurfaceGui")if gui then local img=gui:FindFirstChildWhichIsA("ImageLabel")if img and base.texture and img.Image~=base.texture then ProcessAnomaly(obj,"TV")base.texture=img.Image end end end
+    if base.parent and obj.Parent~=base.parent then ProcessAnomaly(obj,"PARENT_CHANGED")base.parent=obj.Parent end
+    if base.childCount and obj:IsA("Model")then local count=#obj:GetChildren()if count~=base.childCount then ProcessAnomaly(obj,"CHILD_COUNT")base.childCount=count end end
+end
+
+local function HookObject(obj)
+    if obj:IsA("BasePart")then
+        obj:GetPropertyChangedSignal("Position"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Color"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Material"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Transparency"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Anchored"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Size"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+    end
+    if obj:IsA("Light")then obj:GetPropertyChangedSignal("Brightness"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    if obj:IsA("Decal")or obj:IsA("Texture")then obj:GetPropertyChangedSignal("Texture"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    if obj:IsA("Sound")then obj:GetPropertyChangedSignal("SoundId"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    obj.AncestryChanged:Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+    obj.Destroying:Connect(function()if BaseLine[obj]then ProcessAnomaly(obj,"MISSING")BaseLine[obj]=nil end end)
+end
+
+local function IsVisual(obj)
+    if Player.Character and obj:IsDescendantOf(Player.Character)then return true end
+    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"or obj.Name=="ChineseHat"then return true end
+    return false
+end
+
+workspace.DescendantAdded:Connect(function(obj)
+    if not(obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light"))then return end
+    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    if IsVisual(obj)then return end
+    if IsMonster(obj)then return end
+    if not S.ESP_Anomaly then return end
+    task.delay(1.5,function()if not obj.Parent then return end;if not BaseLine[obj]then TakeSnapshot(obj);ProcessAnomaly(obj,"NEW");HookObject(obj)end end)
+end)
+workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING");BaseLine[obj]=nil end end)
+task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
+task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
+
+-- ================== ESP RENDER (ALL INDEPENDENT) ==================
 if Drawing then
-    local Circles = {}; local Texts = {}; local Lines = {}
-    function GC() for _, c in ipairs(Circles) do if not c.Visible then return c end end; local c = Drawing.new("Circle") c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 40; table.insert(Circles, c); return c end
-    function GT() for _, t in ipairs(Texts) do if not t.Visible then return t end end; local t = Drawing.new("Text") t.Size = 13; t.Center = true; t.Outline = true; t.OutlineColor = Color3.new(); table.insert(Texts, t); return t end
-    function GL() for _, l in ipairs(Lines) do if not l.Visible then return l end end; local l = Drawing.new("Line") l.Thickness = 1; l.Transparency = 1; table.insert(Lines, l); return l end
+    local Circles={};local Texts={};local Lines={}
+    function GC()for _,c in ipairs(Circles)do if not c.Visible then return c end end;local c=Drawing.new("Circle")c.Thickness=2;c.Filled=false;c.Transparency=1;c.NumSides=40;table.insert(Circles,c);return c end
+    function GT()for _,t in ipairs(Texts)do if not t.Visible then return t end end;local t=Drawing.new("Text")t.Size=13;t.Center=true;t.Outline=true;t.OutlineColor=Color3.new();table.insert(Texts,t);return t end
+    function GL()for _,l in ipairs(Lines)do if not l.Visible then return l end end;local l=Drawing.new("Line")l.Thickness=1;l.Transparency=1;table.insert(Lines,l);return l end
+    
     RunService.RenderStepped:Connect(function()
-        for _, c in ipairs(Circles) do c.Visible = false end; for _, t in ipairs(Texts) do t.Visible = false end; for _, l in ipairs(Lines) do l.Visible = false end
-        local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart"); if not root then return end; local now = tick()
-        if S.ESP_Monsters then for obj in pairs(Monsters) do if not obj.Parent then Monsters[obj] = nil; continue end; local part = getPart(obj); if not part then continue end; local dist = (part.Position - root.Position).Magnitude; if dist > 500 then continue end; local pos, on = Camera:WorldToViewportPoint(part.Position); if not on then continue end; local cr = GC(); local txt = GT()
-            if cr then local r = math.clamp(math.max(part.Size.X, part.Size.Y, part.Size.Z) * 0.8, 5, 35); cr.Position = Vector2.new(pos.X, pos.Y); cr.Radius = r; cr.Color = Theme.RED; cr.Visible = true; txt.Position = Vector2.new(pos.X, pos.Y - r - 14); txt.Text = "👹 " .. obj.Name .. "\n" .. math.floor(dist) .. "m"; txt.Color = Color3.fromRGB(255, 255, 255); txt.Visible = true end
-        end end
-        if S.ESP_Items then for obj, data in pairs(ItemESP) do if not obj.Parent then ItemESP[obj] = nil; continue end; if now - data.time > 6 then ItemESP[obj] = nil; continue end; local part = getPart(obj); if part then data.pos = part.Position end; local dist = (data.pos - root.Position).Magnitude; if dist > 300 then continue end; local pos, on = Camera:WorldToViewportPoint(data.pos); if not on then continue end
-            if S.ESP_Tracers then local rootPos, _ = Camera:WorldToViewportPoint(root.Position); local line = GL(); if line then line.From = Vector2.new(rootPos.X, rootPos.Y); line.To = Vector2.new(pos.X, pos.Y); line.Color = Color3.fromRGB(255, 150, 0); line.Visible = true end end
-            local cr = GC(); local txt = GT(); if cr then local r = math.clamp(math.max(part and part.Size.X or 2, part and part.Size.Y or 2, part and part.Size.Z or 2) * 0.8, 3, 25); cr.Position = Vector2.new(pos.X, pos.Y); cr.Radius = r; cr.Color = Color3.fromRGB(255, 150, 0); cr.Visible = true; txt.Position = Vector2.new(pos.X, pos.Y - r - 14); txt.Text = "📦 NEW\n" .. data.name; txt.Color = Color3.fromRGB(255, 255, 255); txt.Visible = true end
-        end end
+        for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(Texts)do t.Visible=false end;for _,l in ipairs(Lines)do l.Visible=false end
+        local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart");if not root then return end;local now=tick()
+        
+        -- MONSTER ESP (RED)
+        if S.ESP_Monsters then
+            for obj in pairs(Monsters)do
+                if not obj.Parent then Monsters[obj]=nil;continue end
+                local part=getPart(obj);if not part then continue end
+                local dist=(part.Position-root.Position).Magnitude;if dist>500 then continue end
+                local pos,on=Camera:WorldToViewportPoint(part.Position);if not on then continue end
+                local cr=GC();local txt=GT()
+                if cr then local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.8,5,35)
+                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Theme.RED;cr.Visible=true
+                    txt.Position=Vector2.new(pos.X,pos.Y-r-14)
+                    txt.Text="👹 "..obj.Name.."\n"..math.floor(dist).."m"
+                    txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
+                end
+            end
+        end
+        
+        -- ITEM ESP (ORANGE + TRACERS)
+        if S.ESP_Items then
+            for obj,data in pairs(ItemESP)do
+                if not obj.Parent then ItemESP[obj]=nil;continue end
+                if now-data.time>6 then ItemESP[obj]=nil;continue end
+                local part=getPart(obj);if part then data.pos=part.Position end
+                local dist=(data.pos-root.Position).Magnitude;if dist>300 then continue end
+                local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
+                
+                -- Tracer line
+                if S.ESP_Tracers then
+                    local rootPos,_=Camera:WorldToViewportPoint(root.Position)
+                    local line=GL()
+                    if line then line.From=Vector2.new(rootPos.X,rootPos.Y);line.To=Vector2.new(pos.X,pos.Y);line.Color=Color3.fromRGB(255,150,0);line.Visible=true end
+                end
+                
+                local cr=GC();local txt=GT()
+                if cr then local r=math.clamp(math.max(part and part.Size.X or 2,part and part.Size.Y or 2,part and part.Size.Z or 2)*0.8,3,25)
+                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Color3.fromRGB(255,150,0);cr.Visible=true
+                    txt.Position=Vector2.new(pos.X,pos.Y-r-14)
+                    txt.Text="📦 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
+                end
+            end
+        end
     end)
 end
 
--- CHINESE HAT
-local PV = {Hat = false, Trail = false}; local HM
-local function CH()
-    if HM then HM:Destroy() end; local c = Player.Character; if not c then return end; local hd = c:FindFirstChild("Head"); if not hd then return end
-    HM = Instance.new("Model") HM.Name = "Hat"; HM.Parent = c
-    local co = Instance.new("Part") co.Shape = Enum.PartType.Cone; co.Size = Vector3.new(3, 2.2, 3); co.Color = Color3.fromRGB(255,150,200); co.Transparency = 0.35; co.Material = Enum.Material.Glass; co.Anchored = false; co.CanCollide = false; co.Parent = HM
-    local ba = Instance.new("Part") ba.Shape = Enum.PartType.Ball; ba.Size = Vector3.new(0.7, 0.7, 0.7); ba.Color = Color3.fromRGB(255,100,150); ba.Transparency = 0.15; ba.Material = Enum.Material.Neon; ba.Anchored = false; ba.CanCollide = false; ba.Parent = HM
-    local br = Instance.new("Part") br.Shape = Enum.PartType.Cylinder; br.Size = Vector3.new(4, 0.2, 4); br.Color = Color3.fromRGB(255,180,220); br.Transparency = 0.45; br.Material = Enum.Material.Glass; br.Anchored = false; br.CanCollide = false; br.Parent = HM
-    Instance.new("Weld") {Part0 = hd, Part1 = co, C0 = CFrame.new(0, 2.5, 0), Parent = co}
-    Instance.new("Weld") {Part0 = co, Part1 = ba, C0 = CFrame.new(0, 1.3, 0), Parent = ba}
-    Instance.new("Weld") {Part0 = co, Part1 = br, C0 = CFrame.new(0, -1.1, 0), Parent = br}
-end
-local function RH() if HM then HM:Destroy(); HM = nil end end
-local TP = {}; local MT = 15
-local function ST()
-    local c = Player.Character; if not c then return end; local r = c:FindFirstChild("HumanoidRootPart"); if not r then return end
-    local p = Instance.new("Part") p.Size = Vector3.new(0.25,0.25,0.25); p.Shape = Enum.PartType.Ball; p.Position = r.Position - Vector3.new(0,2.5,0); p.Color = Color3.fromRGB(255,150,200); p.Transparency = 0.5; p.Material = Enum.Material.Neon; p.Anchored = true; p.CanCollide = false; p.Parent = workspace
-    table.insert(TP, p); if #TP > MT then local o = table.remove(TP, 1); if o then o:Destroy() end end
-    task.delay(1.5, function() for i = 1, 8 do if not p.Parent then break end; p.Transparency += 0.06; task.wait(0.04) end; if p then p:Destroy() end end)
-end
-local function SH(v) PV.Hat = v; if v then CH() else RH() end end
-local function SS(v) PV.Trail = v end
-task.spawn(function() while true do task.wait(0.15) if PV.Trail then local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h and h.MoveDirection.Magnitude > 0 then ST() end end end end end)
-Player.CharacterAdded:Connect(function() if PV.Hat then task.wait(0.5); CH() end end)
-
 -- ================== GUI v40 STYLE ==================
-local Gui = Instance.new("ScreenGui") Gui.Name = "UwUHub"; Gui.ResetOnSpawn = false; Gui.IgnoreGuiInset = true; Gui.Parent = PLAYERGUI
+local Gui=Instance.new("ScreenGui")Gui.Name="UwUHub";Gui.ResetOnSpawn=false;Gui.IgnoreGuiInset=true;Gui.Parent=PLAYERGUI
+local Main=Instance.new("Frame")Main.Size=UDim2.fromOffset(520,420);Main.Position=UDim2.fromScale(0.5,0.5);Main.AnchorPoint=Vector2.new(0.5,0.5)
+Main.BackgroundColor3=Theme.BG;Main.BorderSizePixel=0;Main.Active=true;Main.Draggable=true;Main.Visible=true;Main.Parent=Gui;Instance.new("UICorner",Main).CornerRadius=UDim.new(0,22)
+local Stroke=Instance.new("UIStroke")Stroke.Color=Theme.ACCENT;Stroke.Transparency=0.6;Stroke.Parent=Main
 
-local Main = Instance.new("Frame") Main.Size = UDim2.fromOffset(0, 0); Main.Position = UDim2.fromScale(0.5, 0.5); Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.BackgroundColor3 = Theme.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Visible = true; Main.Parent = Gui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
-local Stroke = Instance.new("UIStroke") Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
-TweenService:Create(Main, TweenInfo.new(0.4), {Size = UDim2.fromOffset(520, 420)}):Play()
+local Header=Instance.new("Frame")Header.Size=UDim2.new(1,0,0,58);Header.BackgroundTransparency=1;Header.Parent=Main
+local Title=Instance.new("TextLabel")Title.Size=UDim2.new(1,-80,1,0);Title.Position=UDim2.fromOffset(24,0);Title.Text="✦ UWU HUB v70";Title.Font=Enum.Font.GothamBold;Title.TextSize=20;Title.TextColor3=Theme.TEXT;Title.BackgroundTransparency=1;Title.TextXAlignment=Enum.TextXAlignment.Left;Title.Parent=Header
+local Sub=Instance.new("TextLabel")Sub.Size=UDim2.new(1,-80,0,18);Sub.Position=UDim2.fromOffset(24,30);Sub.Text="esp independent • all separate";Sub.Font=Enum.Font.Gotham;Sub.TextSize=11;Sub.TextColor3=Theme.MUTED;Sub.BackgroundTransparency=1;Sub.TextXAlignment=Enum.TextXAlignment.Left;Sub.Parent=Header
 
-local Header = Instance.new("Frame") Header.Size = UDim2.new(1,0,0,58); Header.BackgroundTransparency = 1; Header.Parent = Main
-local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v67"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
-local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "v40 gui • autowin • tracers • all off"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
-
--- MINIMIZE ICON
+-- MINIMIZE
 local MinIcon
-local MonsterFrames = {[[  ╱|、
+local MonsterFrames={[[  ╱|、
  ( °  °)  
   |  ~ |   
   じしˍ,)ノ]],[[  ╱|、
@@ -170,77 +300,60 @@ local MonsterFrames = {[[  ╱|、
   |  ~ |   
   じしˍ,)ノ]]}
 local function CreateMinIcon()
-    if MinIcon then MinIcon:Destroy() end
-    MinIcon = Instance.new("TextButton") MinIcon.Size = UDim2.fromOffset(40, 40); MinIcon.Position = UDim2.new(0.5, -20, 0.02, 0)
-    MinIcon.BackgroundColor3 = Theme.CARD; MinIcon.Text = MonsterFrames[1]; MinIcon.TextColor3 = Theme.RED; MinIcon.Font = Enum.Font.GothamBold
-    MinIcon.TextSize = 7; MinIcon.BorderSizePixel = 0; MinIcon.Active = true; MinIcon.Draggable = true; MinIcon.Parent = Gui
-    Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(1, 0)
-    local Glow = Instance.new("Frame") Glow.Size = UDim2.new(1, 6, 1, 6); Glow.Position = UDim2.fromOffset(-3, -3)
-    Glow.BackgroundColor3 = Theme.RED; Glow.BackgroundTransparency = 0.6; Glow.BorderSizePixel = 0; Glow.ZIndex = 0; Glow.Parent = MinIcon; Instance.new("UICorner", Glow).CornerRadius = UDim.new(1, 0)
-    local FrameIdx = 1; spawn(function() while MinIcon and MinIcon.Parent do FrameIdx = FrameIdx % #MonsterFrames + 1; MinIcon.Text = MonsterFrames[FrameIdx]; wait(0.8) end end)
-    MinIcon.MouseButton1Click:Connect(function() MinIcon:Destroy(); MinIcon = nil; Main.Visible = true; TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.fromOffset(520, 420)}):Play() end)
+    if MinIcon then MinIcon:Destroy()end
+    MinIcon=Instance.new("TextButton")MinIcon.Size=UDim2.fromOffset(40,40);MinIcon.Position=UDim2.new(0.5,-20,0.02,0)
+    MinIcon.BackgroundColor3=Theme.CARD;MinIcon.Text=MonsterFrames[1];MinIcon.TextColor3=Theme.RED;MinIcon.Font=Enum.Font.GothamBold
+    MinIcon.TextSize=7;MinIcon.BorderSizePixel=0;MinIcon.Active=true;MinIcon.Draggable=true;MinIcon.Parent=Gui
+    Instance.new("UICorner",MinIcon).CornerRadius=UDim.new(1,0)
+    local Glow=Instance.new("Frame")Glow.Size=UDim2.new(1,6,1,6);Glow.Position=UDim2.fromOffset(-3,-3)
+    Glow.BackgroundColor3=Theme.RED;Glow.BackgroundTransparency=0.6;Glow.BorderSizePixel=0;Glow.ZIndex=0;Glow.Parent=MinIcon;Instance.new("UICorner",Glow).CornerRadius=UDim.new(1,0)
+    local FrameIdx=1;spawn(function()while MinIcon and MinIcon.Parent do FrameIdx=FrameIdx%#MonsterFrames+1;MinIcon.Text=MonsterFrames[FrameIdx];wait(0.8)end end)
+    MinIcon.MouseButton1Click:Connect(function()MinIcon:Destroy();MinIcon=nil;Main.Visible=true end)
 end
 
-local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34, 34); MinBtn.Position = UDim2.new(1, -54, 0.5, -17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
-MinBtn.MouseButton1Click:Connect(function() TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.fromOffset(0, 0)}):Play(); task.wait(0.25); Main.Visible = false; CreateMinIcon() end)
+local MinBtn=Instance.new("TextButton")MinBtn.Size=UDim2.fromOffset(34,34);MinBtn.Position=UDim2.new(1,-54,0.5,-17);MinBtn.Text="—";MinBtn.Font=Enum.Font.GothamBold;MinBtn.TextColor3=Theme.TEXT;MinBtn.BackgroundColor3=Theme.CARD;MinBtn.Parent=Header;Instance.new("UICorner",MinBtn).CornerRadius=UDim.new(1,0)
+MinBtn.MouseButton1Click:Connect(function()Main.Visible=false;CreateMinIcon()end)
 
-local Sidebar = Instance.new("Frame") Sidebar.Size = UDim2.new(0, 130, 1, -82); Sidebar.Position = UDim2.fromOffset(18, 68); Sidebar.BackgroundColor3 = Theme.PANEL; Sidebar.Parent = Main; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 18)
-local SideLayout = Instance.new("UIListLayout") SideLayout.Padding = UDim.new(0, 8); SideLayout.Parent = Sidebar
-local Content = Instance.new("Frame") Content.Size = UDim2.new(1, -160, 1, -82); Content.Position = UDim2.fromOffset(150, 68); Content.BackgroundColor3 = Theme.PANEL; Content.Parent = Main; Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 18)
+local Sidebar=Instance.new("Frame")Sidebar.Size=UDim2.new(0,130,1,-82);Sidebar.Position=UDim2.fromOffset(18,68);Sidebar.BackgroundColor3=Theme.PANEL;Sidebar.Parent=Main;Instance.new("UICorner",Sidebar).CornerRadius=UDim.new(0,18)
+local SideLayout=Instance.new("UIListLayout")SideLayout.Padding=UDim.new(0,8);SideLayout.Parent=Sidebar
+local Content=Instance.new("Frame")Content.Size=UDim2.new(1,-160,1,-82);Content.Position=UDim2.fromOffset(150,68);Content.BackgroundColor3=Theme.PANEL;Content.Parent=Main;Instance.new("UICorner",Content).CornerRadius=UDim.new(0,18)
 
-local Tabs = {}; local Pages = {}
-local function CreateTab(name)
-    local Btn = Instance.new("TextButton") Btn.Size = UDim2.new(1, -12, 0, 42); Btn.Position = UDim2.fromOffset(6, 0); Btn.Text = name; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 13; Btn.TextColor3 = Theme.MUTED; Btn.BackgroundColor3 = Theme.CARD; Btn.Parent = Sidebar; Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 14)
-    local Page = Instance.new("Frame") Page.Visible = false; Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Parent = Content
-    Tabs[name] = Btn; Pages[name] = Page
-    Btn.MouseButton1Click:Connect(function() for n, p in pairs(Pages) do p.Visible = false; Tabs[n].BackgroundColor3 = Theme.CARD; Tabs[n].TextColor3 = Theme.MUTED end; Page.Visible = true; TweenService:Create(Btn, TweenInfo.new(0.18), {BackgroundColor3 = Theme.ACCENT}):Play(); Btn.TextColor3 = Theme.TEXT end)
-    return Page
-end
+local Tabs={};local Pages={}
+local function CreateTab(name)local Btn=Instance.new("TextButton")Btn.Size=UDim2.new(1,-12,0,42);Btn.Position=UDim2.fromOffset(6,0);Btn.Text=name;Btn.Font=Enum.Font.GothamBold;Btn.TextSize=13;Btn.TextColor3=Theme.MUTED;Btn.BackgroundColor3=Theme.CARD;Btn.Parent=Sidebar;Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,14);local Page=Instance.new("Frame")Page.Visible=false;Page.Size=UDim2.new(1,0,1,0);Page.BackgroundTransparency=1;Page.Parent=Content;Tabs[name]=Btn;Pages[name]=Page;Btn.MouseButton1Click:Connect(function()for n,p in pairs(Pages)do p.Visible=false;Tabs[n].BackgroundColor3=Theme.CARD;Tabs[n].TextColor3=Theme.MUTED end;Page.Visible=true;TweenService:Create(Btn,TweenInfo.new(0.18),{BackgroundColor3=Theme.ACCENT}):Play();Btn.TextColor3=Theme.TEXT end)return Page end
 
-local HomePage = CreateTab("Home")
-local ESPPage = CreateTab("ESP")
-local PlayerPage = CreateTab("Player")
-local VisualPage = CreateTab("Visual")
+local HomePage=CreateTab("Home");local ESPPage=CreateTab("ESP");local PlayerPage=CreateTab("Player");local VisualPage=CreateTab("Visual")
 
-local function MakeCard(parent, title, desc)
-    local Box = Instance.new("Frame") Box.Size = UDim2.new(1, -26, 0, 72); Box.Position = UDim2.fromOffset(13, 0); Box.BackgroundColor3 = Theme.CARD; Box.Parent = parent; Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 16)
-    local T = Instance.new("TextLabel") T.Size = UDim2.new(1, -30, 0, 22); T.Position = UDim2.fromOffset(16, 14); T.Text = title; T.TextSize = 14; T.Font = Enum.Font.GothamBold; T.TextColor3 = Theme.TEXT; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left; T.Parent = Box
-    local D = Instance.new("TextLabel") D.Size = UDim2.new(1, -30, 0, 24); D.Position = UDim2.fromOffset(16, 38); D.Text = desc; D.TextWrapped = true; D.TextColor3 = Theme.MUTED; D.Font = Enum.Font.Gotham; D.TextSize = 11; D.BackgroundTransparency = 1; D.TextXAlignment = Enum.TextXAlignment.Left; D.Parent = Box
-    return Box
-end
+local function MakeCard(parent,title,desc)local Box=Instance.new("Frame")Box.Size=UDim2.new(1,-26,0,72);Box.Position=UDim2.fromOffset(13,0);Box.BackgroundColor3=Theme.CARD;Box.Parent=parent;Instance.new("UICorner",Box).CornerRadius=UDim.new(0,16);local T=Instance.new("TextLabel")T.Size=UDim2.new(1,-30,0,22);T.Position=UDim2.fromOffset(16,14);T.Text=title;T.TextSize=14;T.Font=Enum.Font.GothamBold;T.TextColor3=Theme.TEXT;T.BackgroundTransparency=1;T.TextXAlignment=Enum.TextXAlignment.Left;T.Parent=Box;local D=Instance.new("TextLabel")D.Size=UDim2.new(1,-30,0,24);D.Position=UDim2.fromOffset(16,38);D.Text=desc;D.TextWrapped=true;D.TextColor3=Theme.MUTED;D.Font=Enum.Font.Gotham;D.TextSize=11;D.BackgroundTransparency=1;D.TextXAlignment=Enum.TextXAlignment.Left;D.Parent=Box;return Box end
 
-local HomeLayout = Instance.new("UIListLayout") HomeLayout.Padding = UDim.new(0, 10); HomeLayout.Parent = HomePage
-MakeCard(HomePage, "✦ UWU HUB v67", "v40 GUI + Autowin + Tracers\nMobile Fly • All OFF by default")
+local HomeLayout=Instance.new("UIListLayout")HomeLayout.Padding=UDim.new(0,10);HomeLayout.Parent=HomePage
+MakeCard(HomePage,"✦ UWU HUB v70","ESP Fully Independent\nAll systems separate")
 
 -- AD
-local AdCard = Instance.new("Frame") AdCard.Size = UDim2.new(1, -26, 0, 55); AdCard.Position = UDim2.fromOffset(13, 0); AdCard.BackgroundColor3 = Color3.fromRGB(40, 20, 35); AdCard.Parent = HomePage; Instance.new("UICorner", AdCard).CornerRadius = UDim.new(0, 16)
-local AdTitle = Instance.new("TextLabel") AdTitle.Size = UDim2.new(1, -20, 0, 18); AdTitle.Position = UDim2.fromOffset(10, 8); AdTitle.Text = "🔗 guns.lol/sqworexo"; AdTitle.TextColor3 = Color3.fromRGB(255, 200, 255); AdTitle.Font = Enum.Font.GothamBold; AdTitle.TextSize = 11; AdTitle.BackgroundTransparency = 1; AdTitle.TextXAlignment = Enum.TextXAlignment.Center; AdTitle.Parent = AdCard
-local AdCopyBtn = Instance.new("TextButton") AdCopyBtn.Size = UDim2.new(1, -20, 0, 22); AdCopyBtn.Position = UDim2.fromOffset(10, 28); AdCopyBtn.Text = "📋 CLICK TO COPY"; AdCopyBtn.BackgroundColor3 = Color3.fromRGB(180, 75, 255); AdCopyBtn.TextColor3 = Color3.fromRGB(255, 255, 255); AdCopyBtn.Font = Enum.Font.GothamBold; AdCopyBtn.TextSize = 10; AdCopyBtn.BorderSizePixel = 0; AdCopyBtn.Parent = AdCard; Instance.new("UICorner", AdCopyBtn).CornerRadius = UDim.new(0, 8)
-AdCopyBtn.MouseButton1Click:Connect(function() if setclipboard then setclipboard("https://guns.lol/sqworexo") end; StarterGui:SetCore("SendNotification", {Title = "UWU HUB", Text = "Copied!", Duration = 2}); AdCopyBtn.Text = "✅ COPIED!"; AdCopyBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100); task.delay(1, function() AdCopyBtn.Text = "📋 CLICK TO COPY"; AdCopyBtn.BackgroundColor3 = Color3.fromRGB(180, 75, 255) end) end)
+local AdCard=Instance.new("Frame")AdCard.Size=UDim2.new(1,-26,0,55);AdCard.Position=UDim2.fromOffset(13,0);AdCard.BackgroundColor3=Color3.fromRGB(40,20,35);AdCard.Parent=HomePage;Instance.new("UICorner",AdCard).CornerRadius=UDim.new(0,16)
+local AdTitle=Instance.new("TextLabel")AdTitle.Size=UDim2.new(1,-20,0,18);AdTitle.Position=UDim2.fromOffset(10,8);AdTitle.Text="🔗 guns.lol/sqworexo";AdTitle.TextColor3=Color3.fromRGB(255,200,255);AdTitle.Font=Enum.Font.GothamBold;AdTitle.TextSize=11;AdTitle.BackgroundTransparency=1;AdTitle.TextXAlignment=Enum.TextXAlignment.Center;AdTitle.Parent=AdCard
+local AdCopyBtn=Instance.new("TextButton")AdCopyBtn.Size=UDim2.new(1,-20,0,22);AdCopyBtn.Position=UDim2.fromOffset(10,28);AdCopyBtn.Text="📋 CLICK TO COPY";AdCopyBtn.BackgroundColor3=Color3.fromRGB(180,75,255);AdCopyBtn.TextColor3=Color3.fromRGB(255,255,255);AdCopyBtn.Font=Enum.Font.GothamBold;AdCopyBtn.TextSize=10;AdCopyBtn.BorderSizePixel=0;AdCopyBtn.Parent=AdCard;Instance.new("UICorner",AdCopyBtn).CornerRadius=UDim.new(0,8)
+AdCopyBtn.MouseButton1Click:Connect(function()if setclipboard then setclipboard("https://guns.lol/sqworexo")end;StarterGui:SetCore("SendNotification",{Title="UWU HUB",Text="Copied!",Duration=2});AdCopyBtn.Text="✅ COPIED!";AdCopyBtn.BackgroundColor3=Color3.fromRGB(100,255,100);task.delay(1,function()AdCopyBtn.Text="📋 CLICK TO COPY";AdCopyBtn.BackgroundColor3=Color3.fromRGB(180,75,255)end)end)
 
-local function MakeToggle(parent, name, default, callback)
-    local enabled = default
-    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 38); Row.Position = UDim2.fromOffset(10, 0); Row.BackgroundColor3 = Theme.CARD; Row.Parent = parent; Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 12)
-    local Lbl = Instance.new("TextLabel") Lbl.Size = UDim2.new(0.6, 0, 1, 0); Lbl.Position = UDim2.fromOffset(12, 0); Lbl.Text = name; Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED; Lbl.Font = Enum.Font.Gotham; Lbl.TextSize = 12; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left; Lbl.Parent = Row
-    local Btn = Instance.new("TextButton") Btn.Size = UDim2.fromOffset(44, 24); Btn.Position = UDim2.new(1, -54, 0.5, -12); Btn.Text = enabled and "ON" or "OFF"; Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD; Btn.TextColor3 = Theme.TEXT; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 10; Btn.Parent = Row; Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
-    Btn.MouseButton1Click:Connect(function() enabled = not enabled; Btn.Text = enabled and "ON" or "OFF"; Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD; Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED; callback(enabled) end)
-    return Row
-end
+local function MakeToggle(parent,name,default,callback)local enabled=default;local Row=Instance.new("Frame")Row.Size=UDim2.new(1,-20,0,38);Row.Position=UDim2.fromOffset(10,0);Row.BackgroundColor3=Theme.CARD;Row.Parent=parent;Instance.new("UICorner",Row).CornerRadius=UDim.new(0,12);local Lbl=Instance.new("TextLabel")Lbl.Size=UDim2.new(0.6,0,1,0);Lbl.Position=UDim2.fromOffset(12,0);Lbl.Text=name;Lbl.TextColor3=enabled and Theme.TEXT or Theme.MUTED;Lbl.Font=Enum.Font.Gotham;Lbl.TextSize=12;Lbl.BackgroundTransparency=1;Lbl.TextXAlignment=Enum.TextXAlignment.Left;Lbl.Parent=Row;local Btn=Instance.new("TextButton")Btn.Size=UDim2.fromOffset(44,24);Btn.Position=UDim2.new(1,-54,0.5,-12);Btn.Text=enabled and"ON"or"OFF";Btn.BackgroundColor3=enabled and Theme.ACCENT or Theme.CARD;Btn.TextColor3=Theme.TEXT;Btn.Font=Enum.Font.GothamBold;Btn.TextSize=10;Btn.Parent=Row;Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,10);Btn.MouseButton1Click:Connect(function()enabled=not enabled;Btn.Text=enabled and"ON"or"OFF";Btn.BackgroundColor3=enabled and Theme.ACCENT or Theme.CARD;Lbl.TextColor3=enabled and Theme.TEXT or Theme.MUTED;callback(enabled)end)return Row end
 
-local ESPLayout = Instance.new("UIListLayout") ESPLayout.Padding = UDim.new(0, 8); ESPLayout.Parent = ESPPage
-MakeToggle(ESPPage, "Item ESP + Tracers", false, function(v) S.ESP_Items = v; S.ESP_Tracers = v end)
-MakeToggle(ESPPage, "Monster ESP", false, function(v) S.ESP_Monsters = v end)
+-- ESP TAB
+local ESPLayout=Instance.new("UIListLayout")ESPLayout.Padding=UDim.new(0,8);ESPLayout.Parent=ESPPage
+MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v end)
+MakeToggle(ESPPage,"Item ESP",false,function(v)S.ESP_Items=v end)
+MakeToggle(ESPPage,"Item Tracers",false,function(v)S.ESP_Tracers=v end)
+MakeToggle(ESPPage,"Anomaly ESP",false,function(v)S.ESP_Anomaly=v end)
 
-local PlayerLayout = Instance.new("UIListLayout") PlayerLayout.Padding = UDim.new(0, 8); PlayerLayout.Parent = PlayerPage
-MakeToggle(PlayerPage, "Speed (25)", false, function(v) S.Speed = v; SetSpeed(v) end)
-MakeToggle(PlayerPage, "Fly (x2)", false, function(v) S.Fly = v; SetFly(v) end)
-MakeToggle(PlayerPage, "Noclip", false, function(v) S.Noclip = v; SetNoclip(v) end)
-MakeToggle(PlayerPage, "Fullbright", false, function(v) S.Fullbright = v; SetFullbright(v) end)
-MakeToggle(PlayerPage, "FOV (100)", false, function(v) S.FOV = v; SetFOV(v) end)
-MakeToggle(PlayerPage, "Autowin", false, function(v) S.Autowin = v; SetAutowin(v) end)
+-- PLAYER TAB
+local PlayerLayout=Instance.new("UIListLayout")PlayerLayout.Padding=UDim.new(0,8);PlayerLayout.Parent=PlayerPage
+MakeToggle(PlayerPage,"Speed (25)",false,function(v)S.Speed=v;SetSpeed(v)end)
+MakeToggle(PlayerPage,"Fly (x2)",false,function(v)S.Fly=v;SetFly(v)end)
+MakeToggle(PlayerPage,"Noclip",false,function(v)S.Noclip=v;SetNoclip(v)end)
+MakeToggle(PlayerPage,"Fullbright",false,function(v)S.Fullbright=v;SetFullbright(v)end)
+MakeToggle(PlayerPage,"FOV (100)",false,function(v)S.FOV=v;SetFOV(v)end)
 
-local VisualLayout = Instance.new("UIListLayout") VisualLayout.Padding = UDim.new(0, 8); VisualLayout.Parent = VisualPage
-MakeToggle(VisualPage, "Chinese Hat", false, function(v) SH(v) end)
-MakeToggle(VisualPage, "Pink Trail", false, function(v) SS(v) end)
+-- VISUAL TAB
+local VisualLayout=Instance.new("UIListLayout")VisualLayout.Padding=UDim.new(0,8);VisualLayout.Parent=VisualPage
+MakeToggle(VisualPage,"Chinese Hat",false,function(v)SH(v)end)
+MakeToggle(VisualPage,"Pink Trail",false,function(v)SS(v)end)
 
-Pages.Home.Visible = true; Tabs.Home.BackgroundColor3 = Theme.ACCENT; Tabs.Home.TextColor3 = Theme.TEXT
+Pages.Home.Visible=true;Tabs.Home.BackgroundColor3=Theme.ACCENT;Tabs.Home.TextColor3=Theme.TEXT
