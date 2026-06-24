@@ -28,7 +28,7 @@ local S = {
     ESP_Tracers = false,
     ESP_Anomaly = false,
     ESP_AllObjects = false,
-    ESP_World = false, -- НОВЫЙ: World ESP
+    ESP_World = false,
     AutoWin = false,
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
@@ -135,7 +135,7 @@ local function GetFullName(obj)
     local path = obj.Name
     local parent = obj.Parent
     while parent and parent ~= workspace do
-        path = parent.Name .. "/" .. path
+        path = parent.Name .. "." .. path
         parent = parent.Parent
     end
     return path
@@ -143,72 +143,96 @@ end
 
 -- ================== WORLD ESP (INDEPENDENT MODULE) ==================
 local WorldESP_Objects = {}
+local WorldESP_Labels = {}
 local WorldESP_Highlights = {}
 
-local function AddWorldHighlight(part)
+local function AddWorldESP(part)
     if WorldESP_Highlights[part] then return end
+    
+    -- Голубая обводка
     local highlight = Instance.new("Highlight")
     highlight.Name = "WorldESP_Highlight"
     highlight.FillColor = Color3.fromRGB(80, 200, 255)
-    highlight.FillTransparency = 0.7
+    highlight.FillTransparency = 0.8
     highlight.OutlineColor = Color3.fromRGB(80, 200, 255)
-    highlight.OutlineTransparency = 0
+    highlight.OutlineTransparency = 0.3
     highlight.Adornee = part
     highlight.Parent = part
     WorldESP_Highlights[part] = highlight
+    
+    -- Название объекта
+    local bill = Instance.new("BillboardGui")
+    bill.Name = "WorldESP_Label"
+    bill.Size = UDim2.new(0, 200, 0, 30)
+    bill.StudsOffset = Vector3.new(0, 2, 0)
+    bill.AlwaysOnTop = true
+    bill.Parent = part
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = GetFullName(part)
+    label.TextColor3 = Color3.fromRGB(80, 200, 255)
+    label.TextStrokeTransparency = 0.5
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 14
+    label.TextScaled = true
+    label.Parent = bill
+    
+    WorldESP_Labels[part] = bill
 end
 
-local function RemoveWorldHighlight(part)
+local function RemoveWorldESP(part)
     if WorldESP_Highlights[part] then
         WorldESP_Highlights[part]:Destroy()
         WorldESP_Highlights[part] = nil
+    end
+    if WorldESP_Labels[part] then
+        WorldESP_Labels[part]:Destroy()
+        WorldESP_Labels[part] = nil
     end
 end
 
 local function ClearAllWorldESP()
     for obj, _ in pairs(WorldESP_Objects) do
-        RemoveWorldHighlight(obj)
+        RemoveWorldESP(obj)
     end
     WorldESP_Objects = {}
 end
 
 local function SetWorldESP(v)
     if v then
-        -- Включаем World ESP для всех существующих объектов
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") and not obj:IsDescendantOf(Player.Character) then
                 if not IsTrailPart(obj) and obj.Transparency <= 0.95 then
                     if not WorldESP_Objects[obj] then
                         WorldESP_Objects[obj] = true
-                        AddWorldHighlight(obj)
+                        AddWorldESP(obj)
                     end
                 end
             end
         end
     else
-        -- Выключаем World ESP
         ClearAllWorldESP()
     end
 end
 
--- Отслеживание новых объектов
 workspace.DescendantAdded:Connect(function(obj)
     if not S.ESP_World then return end
     if obj:IsA("BasePart") and not obj:IsDescendantOf(Player.Character) then
         if not IsTrailPart(obj) and obj.Transparency <= 0.95 then
             if not WorldESP_Objects[obj] then
                 WorldESP_Objects[obj] = true
-                AddWorldHighlight(obj)
+                AddWorldESP(obj)
             end
         end
     end
 end)
 
--- Отслеживание удаления объектов
 workspace.DescendantRemoving:Connect(function(obj)
     if WorldESP_Objects[obj] then
         WorldESP_Objects[obj] = nil
-        RemoveWorldHighlight(obj)
+        RemoveWorldESP(obj)
     end
 end)
 
