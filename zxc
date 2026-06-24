@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v66 | OLD GUI + ALL OFF + AUTOWIN + TRACERS + MOBILE FLY
+-- UWU HUB | ANOMALY WATCH v67 | v40 GUI + AUTOWIN + TRACERS + MOBILE FLY + ALL OFF
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -21,13 +21,13 @@ local Theme = {
 
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
--- ================== SETTINGS (ALL OFF) ==================
+-- SETTINGS ALL OFF
 local S = {
     ESP_Items = false, ESP_Monsters = false, ESP_Tracers = false,
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false, Autowin = false
 }
 
--- ================== FULLBRIGHT ==================
+-- FULLBRIGHT
 local OrigBrightness = Lighting.Brightness; local OrigAmbient = Lighting.Ambient
 local OrigOutdoorAmbient = Lighting.OutdoorAmbient; local OrigClockTime = Lighting.ClockTime; local OrigFogEnd = Lighting.FogEnd
 local function SetFullbright(v)
@@ -35,7 +35,7 @@ local function SetFullbright(v)
     else Lighting.Brightness=OrigBrightness;Lighting.Ambient=OrigAmbient;Lighting.OutdoorAmbient=OrigOutdoorAmbient;Lighting.ClockTime=OrigClockTime;Lighting.FogEnd=OrigFogEnd;Lighting.GlobalShadows=true end
 end
 
--- ================== AUTOWIN ==================
+-- AUTOWIN
 local AutowinActive = false; local SavedPosition = nil
 local function SetAutowin(v)
     AutowinActive = v; local char = Player.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
@@ -46,7 +46,7 @@ local function SetAutowin(v)
     end
 end
 
--- ================== FLY ==================
+-- FLY
 local FlyBody, FlyGyro, FlyConnection; local FLY_SPEED = 2
 local function SetFly(v)
     local char = Player.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end; local hum = char:FindFirstChildOfClass("Humanoid")
@@ -71,7 +71,7 @@ local function SetFly(v)
     end
 end
 
--- ================== NOCLIP ==================
+-- NOCLIP
 local NC
 local function SetNoclip(v)
     if v then NC = RunService.Stepped:Connect(function() if Player.Character then for _, p in ipairs(Player.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end end)
@@ -80,7 +80,7 @@ end
 local function SetSpeed(v) local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed = v and 25 or 16 end end end
 local function SetFOV(v) Camera.FieldOfView = v and 100 or 70 end
 
--- ================== ESP: ITEMS + TRACERS ==================
+-- ESP
 local getPart = function(obj) if obj:IsA("BasePart") then return obj end; if obj:IsA("Model") then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart") end; return nil end
 local ItemESP = {}
 workspace.DescendantAdded:Connect(function(obj)
@@ -88,7 +88,6 @@ workspace.DescendantAdded:Connect(function(obj)
     if obj:IsA("BasePart") and obj.Transparency > 0.95 then return end
     if Player.Character and obj:IsDescendantOf(Player.Character) then return end
     if obj.Name == "HatCone" or obj.Name == "HatBall" or obj.Name == "HatBrim" or obj.Name == "TrailPart" then return end
-    if obj.Name == "ChineseHat" or obj.Name == "Hat" then return end
     if obj:IsA("Model") and (obj:FindFirstChildOfClass("Humanoid") or obj:FindFirstChild("HumanoidRootPart")) then return end
     ItemESP[obj] = {time = tick(), pos = getPart(obj) and getPart(obj).Position or Vector3.zero, name = obj.Name}
 end)
@@ -117,7 +116,7 @@ if Drawing then
     end)
 end
 
--- ================== CHINESE HAT ==================
+-- CHINESE HAT
 local PV = {Hat = false, Trail = false}; local HM
 local function CH()
     if HM then HM:Destroy() end; local c = Player.Character; if not c then return end; local hd = c:FindFirstChild("Head"); if not hd then return end
@@ -142,30 +141,48 @@ local function SS(v) PV.Trail = v end
 task.spawn(function() while true do task.wait(0.15) if PV.Trail then local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h and h.MoveDirection.Magnitude > 0 then ST() end end end end end)
 Player.CharacterAdded:Connect(function() if PV.Hat then task.wait(0.5); CH() end end)
 
--- ================== GUI (OLD STYLE) ==================
+-- ================== GUI v40 STYLE ==================
 local Gui = Instance.new("ScreenGui") Gui.Name = "UwUHub"; Gui.ResetOnSpawn = false; Gui.IgnoreGuiInset = true; Gui.Parent = PLAYERGUI
 
--- CIRCLE BUTTON
-local CatFaces = {"=^^=", "=°°=", "=ww=", "=··=", "=**=", "=--="}; local CatIdx = 1
-local CircleBtn = Instance.new("TextButton")
-CircleBtn.Size = UDim2.fromOffset(46, 46); CircleBtn.Position = UDim2.new(0.5, -23, 0, 8); CircleBtn.Text = CatFaces[1]; CircleBtn.Visible = false
-CircleBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 35); CircleBtn.TextColor3 = Color3.fromRGB(255, 180, 200); CircleBtn.Font = Enum.Font.GothamBold; CircleBtn.TextSize = 11; CircleBtn.BorderSizePixel = 0; CircleBtn.ZIndex = 200; CircleBtn.Parent = Gui
-Instance.new("UICorner", CircleBtn).CornerRadius = UDim.new(1, 0)
-spawn(function() while CircleBtn and CircleBtn.Parent do if CircleBtn.Visible then CatIdx = CatIdx % #CatFaces + 1; CircleBtn.Text = CatFaces[CatIdx] end; task.wait(0.6) end end)
-CircleBtn.MouseButton1Click:Connect(function() CircleBtn.Visible = false; Main.Visible = true end)
-CircleBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then CircleBtn.Visible = false; Main.Visible = true end end)
-
--- MAIN GUI
-local Main = Instance.new("Frame") Main.Size = UDim2.fromOffset(520, 420); Main.Position = UDim2.fromScale(0.5, 0.5); Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.BackgroundColor3 = Theme.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Visible = true; Main.ZIndex = 100; Main.Parent = Gui
+local Main = Instance.new("Frame") Main.Size = UDim2.fromOffset(0, 0); Main.Position = UDim2.fromScale(0.5, 0.5); Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Theme.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Visible = true; Main.Parent = Gui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
 local Stroke = Instance.new("UIStroke") Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
+TweenService:Create(Main, TweenInfo.new(0.4), {Size = UDim2.fromOffset(520, 420)}):Play()
 
 local Header = Instance.new("Frame") Header.Size = UDim2.new(1,0,0,58); Header.BackgroundTransparency = 1; Header.Parent = Main
-local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v66"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
-local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "old gui • all off • autowin"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
-local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34,34); MinBtn.Position = UDim2.new(1,-54,0.5,-17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
-MinBtn.MouseButton1Click:Connect(function() Main.Visible = false; CircleBtn.Visible = true end)
+local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v67"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
+local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "v40 gui • autowin • tracers • all off"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
+
+-- MINIMIZE ICON
+local MinIcon
+local MonsterFrames = {[[  ╱|、
+ ( °  °)  
+  |  ~ |   
+  じしˍ,)ノ]],[[  ╱|、
+ ( -  -)  
+  |  ~ |   
+  じしˍ,)ノ]],[[  ╱|、
+ ( ◉  ◉)  
+  |  ~ |   
+  じしˍ,)ノ]],[[  ╱|、
+ ( ˘  ˘)  
+  |  ~ |   
+  じしˍ,)ノ]]}
+local function CreateMinIcon()
+    if MinIcon then MinIcon:Destroy() end
+    MinIcon = Instance.new("TextButton") MinIcon.Size = UDim2.fromOffset(40, 40); MinIcon.Position = UDim2.new(0.5, -20, 0.02, 0)
+    MinIcon.BackgroundColor3 = Theme.CARD; MinIcon.Text = MonsterFrames[1]; MinIcon.TextColor3 = Theme.RED; MinIcon.Font = Enum.Font.GothamBold
+    MinIcon.TextSize = 7; MinIcon.BorderSizePixel = 0; MinIcon.Active = true; MinIcon.Draggable = true; MinIcon.Parent = Gui
+    Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(1, 0)
+    local Glow = Instance.new("Frame") Glow.Size = UDim2.new(1, 6, 1, 6); Glow.Position = UDim2.fromOffset(-3, -3)
+    Glow.BackgroundColor3 = Theme.RED; Glow.BackgroundTransparency = 0.6; Glow.BorderSizePixel = 0; Glow.ZIndex = 0; Glow.Parent = MinIcon; Instance.new("UICorner", Glow).CornerRadius = UDim.new(1, 0)
+    local FrameIdx = 1; spawn(function() while MinIcon and MinIcon.Parent do FrameIdx = FrameIdx % #MonsterFrames + 1; MinIcon.Text = MonsterFrames[FrameIdx]; wait(0.8) end end)
+    MinIcon.MouseButton1Click:Connect(function() MinIcon:Destroy(); MinIcon = nil; Main.Visible = true; TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.fromOffset(520, 420)}):Play() end)
+end
+
+local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34, 34); MinBtn.Position = UDim2.new(1, -54, 0.5, -17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
+MinBtn.MouseButton1Click:Connect(function() TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.fromOffset(0, 0)}):Play(); task.wait(0.25); Main.Visible = false; CreateMinIcon() end)
 
 local Sidebar = Instance.new("Frame") Sidebar.Size = UDim2.new(0, 130, 1, -82); Sidebar.Position = UDim2.fromOffset(18, 68); Sidebar.BackgroundColor3 = Theme.PANEL; Sidebar.Parent = Main; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 18)
 local SideLayout = Instance.new("UIListLayout") SideLayout.Padding = UDim.new(0, 8); SideLayout.Parent = Sidebar
@@ -193,7 +210,7 @@ local function MakeCard(parent, title, desc)
 end
 
 local HomeLayout = Instance.new("UIListLayout") HomeLayout.Padding = UDim.new(0, 10); HomeLayout.Parent = HomePage
-MakeCard(HomePage, "✦ UWU HUB v66", "Old GUI Style\nAll functions OFF by default")
+MakeCard(HomePage, "✦ UWU HUB v67", "v40 GUI + Autowin + Tracers\nMobile Fly • All OFF by default")
 
 -- AD
 local AdCard = Instance.new("Frame") AdCard.Size = UDim2.new(1, -26, 0, 55); AdCard.Position = UDim2.fromOffset(13, 0); AdCard.BackgroundColor3 = Color3.fromRGB(40, 20, 35); AdCard.Parent = HomePage; Instance.new("UICorner", AdCard).CornerRadius = UDim.new(0, 16)
