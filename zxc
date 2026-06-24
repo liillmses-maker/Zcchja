@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v70 | ESP FULLY INDEPENDENT
+-- UWU HUB | ANOMALY WATCH v71 | TRAIL FIX + DISTANCE FILTER
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -23,13 +23,20 @@ local IsMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 
 -- ================== SETTINGS ==================
 local S = {
-    ESP_Monsters = false,
-    ESP_Items = false,
-    ESP_Tracers = false,
-    ESP_Anomaly = false,
+    ESP_Monsters = false, ESP_Items = false, ESP_Tracers = false, ESP_Anomaly = false,
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
 }
+
+-- ================== DISTANCE FILTER ==================
+local MIN_DISTANCE = 2  -- ignore objects closer than 2m
+local SHOW_DISTANCE = 3  -- show objects starting from 3m
+
+local function IsTooClose(pos)
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not root or not pos then return false end
+    return (pos - root.Position).Magnitude < MIN_DISTANCE
+end
 
 -- ================== FULLBRIGHT ==================
 local OrigBrightness = Lighting.Brightness; local OrigAmbient = Lighting.Ambient
@@ -89,7 +96,9 @@ local function RH()if HM then HM:Destroy();HM=nil end end
 local TP={};local MT=15
 local function ST()
     local c=Player.Character;if not c then return end;local r=c:FindFirstChild("HumanoidRootPart");if not r then return end
-    local p=Instance.new("Part")p.Size=Vector3.new(0.25,0.25,0.25);p.Shape=Enum.PartType.Ball;p.Position=r.Position-Vector3.new(0,2.5,0);p.Color=Color3.fromRGB(255,150,200);p.Transparency=0.5;p.Material=Enum.Material.Neon;p.Anchored=true;p.CanCollide=false;p.Parent=workspace
+    local p=Instance.new("Part")p.Name="TrailPart";p.Size=Vector3.new(0.25,0.25,0.25);p.Shape=Enum.PartType.Ball
+    p.Position=r.Position-Vector3.new(0,2.5,0);p.Color=Color3.fromRGB(255,150,200);p.Transparency=0.5
+    p.Material=Enum.Material.Neon;p.Anchored=true;p.CanCollide=false;p.Parent=workspace
     table.insert(TP,p);if#TP>MT then local o=table.remove(TP,1);if o then o:Destroy()end end
     task.delay(1.5,function()for i=1,8 do if not p.Parent then break end;p.Transparency+=0.06;task.wait(0.04)end;if p then p:Destroy()end end)
 end
@@ -101,26 +110,35 @@ Player.CharacterAdded:Connect(function()if PV.Hat then task.wait(0.5);CH()end en
 -- ================== UTILS ==================
 local function getPart(obj)if obj:IsA("BasePart")then return obj end;if obj:IsA("Model")then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")end;return nil end
 
--- ================== MONSTER ESP (INDEPENDENT) ==================
+local function IsVisual(obj)
+    if Player.Character and obj:IsDescendantOf(Player.Character)then return true end
+    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="Hat"or obj.Name=="ChineseHat"then return true end
+    if obj.Name=="TrailPart"then return true end
+    return false
+end
+
+-- ================== MONSTER ESP ==================
 local Monsters={}
 local function IsMonster(obj)if obj:IsA("Model")and obj~=Player.Character then if obj:FindFirstChildOfClass("Humanoid")then return true end;if obj:FindFirstChild("HumanoidRootPart")then return true end end;return false end
 workspace.DescendantAdded:Connect(function(obj)if IsMonster(obj)then Monsters[obj]=true end end)
 workspace.DescendantRemoving:Connect(function(obj)Monsters[obj]=nil end)
 task.defer(function()task.wait(1)for _,obj in ipairs(workspace:GetDescendants())do if IsMonster(obj)then Monsters[obj]=true end end end)
 
--- ================== ITEM ESP (INDEPENDENT) ==================
+-- ================== ITEM ESP ==================
 local ItemESP={}
 workspace.DescendantAdded:Connect(function(obj)
     if not(obj:IsA("BasePart")or obj:IsA("Model"))then return end
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
-    if Player.Character and obj:IsDescendantOf(Player.Character)then return end
-    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"then return end
+    if IsVisual(obj)then return end
     if IsMonster(obj)then return end
-    ItemESP[obj]={time=tick(),pos=getPart(obj)and getPart(obj).Position or Vector3.zero,name=obj.Name}
+    local part=getPart(obj)
+    if not part then return end
+    if IsTooClose(part.Position)then return end
+    ItemESP[obj]={time=tick(),pos=part.Position,name=obj.Name}
 end)
 workspace.DescendantRemoving:Connect(function(obj)ItemESP[obj]=nil end)
 
--- ================== ANOMALY ESP v40 (INDEPENDENT) ==================
+-- ================== ANOMALY ESP v40 ==================
 local REPL_DELAY=0.25
 local State={};State.__index=State
 function State.new(obj)return setmetatable({obj=obj,last=nil,dirty=false,lastUpdate=tick(),lastFix=0},State)end
@@ -149,11 +167,13 @@ local function CanAlert(obj,alertType)local key=obj;if not Cooldowns[key]then Co
 
 local function AnomHighlight(obj,color)
     local part=getPart(obj)if not part then return end
+    if IsTooClose(part.Position)then return end
     for _,c in ipairs(part:GetChildren())do if c:IsA("BoxHandleAdornment")and c.Name=="AnomalyHL"then c:Destroy()end end
     local box=Instance.new("BoxHandleAdornment")box.Name="AnomalyHL";box.Adornee=part;box.Size=part.Size+Vector3.new(0.3,0.3,0.3);box.Color3=color;box.AlwaysOnTop=true;box.ZIndex=5;box.Parent=part;task.delay(8,function()if box then box:Destroy()end end)
 end
 local function AnomLabel(obj,text,color)
     local part=getPart(obj)if not part then return end
+    if IsTooClose(part.Position)then return end
     for _,c in ipairs(part:GetChildren())do if c:IsA("BillboardGui")and c.Name=="AnomalyLbl"then c:Destroy()end end
     local bill=Instance.new("BillboardGui")bill.Name="AnomalyLbl";bill.Size=UDim2.new(0,200,0,50);bill.StudsOffset=Vector3.new(0,2.5,0);bill.AlwaysOnTop=true;bill.Parent=part
     local label=Instance.new("TextLabel")label.Size=UDim2.new(1,0,1,0);label.BackgroundTransparency=1;label.Text=text;label.TextColor3=color or Color3.fromRGB(255,255,0);label.TextStrokeTransparency=0;label.Font=Enum.Font.SourceSansBold;label.TextScaled=true;label.Parent=bill;task.delay(8,function()if bill then bill:Destroy()end end)
@@ -164,6 +184,7 @@ local function ProcessAnomaly(obj,anomalyType)if not CanAlert(obj,anomalyType)th
 
 local function TakeSnapshot(obj)
     local part=getPart(obj)if not part then return end
+    if IsTooClose(part.Position)then return end
     if not BaseLine[obj]then BaseLine[obj]=State.new(obj)end
     BaseLine[obj]:Snapshot({pos=part.Position,size=part.Size,color=part:IsA("BasePart")and part.Color or nil,material=part:IsA("BasePart")and part.Material or nil,transparency=part:IsA("BasePart")and part.Transparency or nil,anchored=part:IsA("BasePart")and part.Anchored or nil,texture=obj:IsA("Decal")and obj.Texture or obj:IsA("Texture")and obj.Texture or nil,brightness=obj:IsA("Light")and obj.Brightness or nil,soundId=obj:IsA("Sound")and obj.SoundId or nil,childCount=obj:IsA("Model")and#obj:GetChildren()or nil,parent=obj.Parent})
 end
@@ -171,6 +192,7 @@ end
 local function DetectChanges(obj)
     local state=BaseLine[obj]if not state or not state.last then return end;if not obj.Parent then BaseLine[obj]=nil;return end
     local part=getPart(obj)if not part then return end;local base=state.last
+    if IsTooClose(part.Position)then return end
     if(part.Position-base.pos).Magnitude>1 then ProcessAnomaly(obj,"MOVED")base.pos=part.Position end
     if base.size and(part.Size-base.size).Magnitude>0.3 then ProcessAnomaly(obj,"SIZE")base.size=part.Size end
     if base.color and part:IsA("BasePart")and part.Color~=base.color then ProcessAnomaly(obj,"COLOR")base.color=part.Color end
@@ -201,25 +223,21 @@ local function HookObject(obj)
     obj.Destroying:Connect(function()if BaseLine[obj]then ProcessAnomaly(obj,"MISSING")BaseLine[obj]=nil end end)
 end
 
-local function IsVisual(obj)
-    if Player.Character and obj:IsDescendantOf(Player.Character)then return true end
-    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"or obj.Name=="ChineseHat"then return true end
-    return false
-end
-
 workspace.DescendantAdded:Connect(function(obj)
     if not(obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light"))then return end
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
     if IsVisual(obj)then return end
     if IsMonster(obj)then return end
+    local part=getPart(obj)if not part then return end
+    if IsTooClose(part.Position)then return end
     if not S.ESP_Anomaly then return end
     task.delay(1.5,function()if not obj.Parent then return end;if not BaseLine[obj]then TakeSnapshot(obj);ProcessAnomaly(obj,"NEW");HookObject(obj)end end)
 end)
 workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING");BaseLine[obj]=nil end end)
-task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
+task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then local part=getPart(obj)if part and not IsTooClose(part.Position)and not IsVisual(obj)and not IsMonster(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
 task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
 
--- ================== ESP RENDER (ALL INDEPENDENT) ==================
+-- ================== ESP RENDER ==================
 if Drawing then
     local Circles={};local Texts={};local Lines={}
     function GC()for _,c in ipairs(Circles)do if not c.Visible then return c end end;local c=Drawing.new("Circle")c.Thickness=2;c.Filled=false;c.Transparency=1;c.NumSides=40;table.insert(Circles,c);return c end
@@ -230,47 +248,14 @@ if Drawing then
         for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(Texts)do t.Visible=false end;for _,l in ipairs(Lines)do l.Visible=false end
         local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart");if not root then return end;local now=tick()
         
-        -- MONSTER ESP (RED)
-        if S.ESP_Monsters then
-            for obj in pairs(Monsters)do
-                if not obj.Parent then Monsters[obj]=nil;continue end
-                local part=getPart(obj);if not part then continue end
-                local dist=(part.Position-root.Position).Magnitude;if dist>500 then continue end
-                local pos,on=Camera:WorldToViewportPoint(part.Position);if not on then continue end
-                local cr=GC();local txt=GT()
-                if cr then local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.8,5,35)
-                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Theme.RED;cr.Visible=true
-                    txt.Position=Vector2.new(pos.X,pos.Y-r-14)
-                    txt.Text="👹 "..obj.Name.."\n"..math.floor(dist).."m"
-                    txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
-                end
-            end
-        end
+        if S.ESP_Monsters then for obj in pairs(Monsters)do if not obj.Parent then Monsters[obj]=nil;continue end;local part=getPart(obj);if not part then continue end;local dist=(part.Position-root.Position).Magnitude;if dist>500 or dist<SHOW_DISTANCE then continue end;local pos,on=Camera:WorldToViewportPoint(part.Position);if not on then continue end;local cr=GC();local txt=GT()
+            if cr then local r=math.clamp(math.max(part.Size.X,part.Size.Y,part.Size.Z)*0.8,5,35);cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Theme.RED;cr.Visible=true;txt.Position=Vector2.new(pos.X,pos.Y-r-14);txt.Text="👹 "..obj.Name.."\n"..math.floor(dist).."m";txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true end
+        end end
         
-        -- ITEM ESP (ORANGE + TRACERS)
-        if S.ESP_Items then
-            for obj,data in pairs(ItemESP)do
-                if not obj.Parent then ItemESP[obj]=nil;continue end
-                if now-data.time>6 then ItemESP[obj]=nil;continue end
-                local part=getPart(obj);if part then data.pos=part.Position end
-                local dist=(data.pos-root.Position).Magnitude;if dist>300 then continue end
-                local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
-                
-                -- Tracer line
-                if S.ESP_Tracers then
-                    local rootPos,_=Camera:WorldToViewportPoint(root.Position)
-                    local line=GL()
-                    if line then line.From=Vector2.new(rootPos.X,rootPos.Y);line.To=Vector2.new(pos.X,pos.Y);line.Color=Color3.fromRGB(255,150,0);line.Visible=true end
-                end
-                
-                local cr=GC();local txt=GT()
-                if cr then local r=math.clamp(math.max(part and part.Size.X or 2,part and part.Size.Y or 2,part and part.Size.Z or 2)*0.8,3,25)
-                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Color3.fromRGB(255,150,0);cr.Visible=true
-                    txt.Position=Vector2.new(pos.X,pos.Y-r-14)
-                    txt.Text="📦 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
-                end
-            end
-        end
+        if S.ESP_Items then for obj,data in pairs(ItemESP)do if not obj.Parent then ItemESP[obj]=nil;continue end;if now-data.time>6 then ItemESP[obj]=nil;continue end;local part=getPart(obj);if part then data.pos=part.Position end;local dist=(data.pos-root.Position).Magnitude;if dist>300 or dist<SHOW_DISTANCE then continue end;local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
+            if S.ESP_Tracers then local rootPos,_=Camera:WorldToViewportPoint(root.Position);local line=GL();if line then line.From=Vector2.new(rootPos.X,rootPos.Y);line.To=Vector2.new(pos.X,pos.Y);line.Color=Color3.fromRGB(255,150,0);line.Visible=true end end
+            local cr=GC();local txt=GT();if cr then local r=math.clamp(math.max(part and part.Size.X or 2,part and part.Size.Y or 2,part and part.Size.Z or 2)*0.8,3,25);cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Color3.fromRGB(255,150,0);cr.Visible=true;txt.Position=Vector2.new(pos.X,pos.Y-r-14);txt.Text="📦 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true end
+        end end
     end)
 end
 
@@ -281,8 +266,8 @@ Main.BackgroundColor3=Theme.BG;Main.BorderSizePixel=0;Main.Active=true;Main.Drag
 local Stroke=Instance.new("UIStroke")Stroke.Color=Theme.ACCENT;Stroke.Transparency=0.6;Stroke.Parent=Main
 
 local Header=Instance.new("Frame")Header.Size=UDim2.new(1,0,0,58);Header.BackgroundTransparency=1;Header.Parent=Main
-local Title=Instance.new("TextLabel")Title.Size=UDim2.new(1,-80,1,0);Title.Position=UDim2.fromOffset(24,0);Title.Text="✦ UWU HUB v70";Title.Font=Enum.Font.GothamBold;Title.TextSize=20;Title.TextColor3=Theme.TEXT;Title.BackgroundTransparency=1;Title.TextXAlignment=Enum.TextXAlignment.Left;Title.Parent=Header
-local Sub=Instance.new("TextLabel")Sub.Size=UDim2.new(1,-80,0,18);Sub.Position=UDim2.fromOffset(24,30);Sub.Text="esp independent • all separate";Sub.Font=Enum.Font.Gotham;Sub.TextSize=11;Sub.TextColor3=Theme.MUTED;Sub.BackgroundTransparency=1;Sub.TextXAlignment=Enum.TextXAlignment.Left;Sub.Parent=Header
+local Title=Instance.new("TextLabel")Title.Size=UDim2.new(1,-80,1,0);Title.Position=UDim2.fromOffset(24,0);Title.Text="✦ UWU HUB v71";Title.Font=Enum.Font.GothamBold;Title.TextSize=20;Title.TextColor3=Theme.TEXT;Title.BackgroundTransparency=1;Title.TextXAlignment=Enum.TextXAlignment.Left;Title.Parent=Header
+local Sub=Instance.new("TextLabel")Sub.Size=UDim2.new(1,-80,0,18);Sub.Position=UDim2.fromOffset(24,30);Sub.Text="trail fix • distance filter 2m-3m";Sub.Font=Enum.Font.Gotham;Sub.TextSize=11;Sub.TextColor3=Theme.MUTED;Sub.BackgroundTransparency=1;Sub.TextXAlignment=Enum.TextXAlignment.Left;Sub.Parent=Header
 
 -- MINIMIZE
 local MinIcon
@@ -326,7 +311,7 @@ local HomePage=CreateTab("Home");local ESPPage=CreateTab("ESP");local PlayerPage
 local function MakeCard(parent,title,desc)local Box=Instance.new("Frame")Box.Size=UDim2.new(1,-26,0,72);Box.Position=UDim2.fromOffset(13,0);Box.BackgroundColor3=Theme.CARD;Box.Parent=parent;Instance.new("UICorner",Box).CornerRadius=UDim.new(0,16);local T=Instance.new("TextLabel")T.Size=UDim2.new(1,-30,0,22);T.Position=UDim2.fromOffset(16,14);T.Text=title;T.TextSize=14;T.Font=Enum.Font.GothamBold;T.TextColor3=Theme.TEXT;T.BackgroundTransparency=1;T.TextXAlignment=Enum.TextXAlignment.Left;T.Parent=Box;local D=Instance.new("TextLabel")D.Size=UDim2.new(1,-30,0,24);D.Position=UDim2.fromOffset(16,38);D.Text=desc;D.TextWrapped=true;D.TextColor3=Theme.MUTED;D.Font=Enum.Font.Gotham;D.TextSize=11;D.BackgroundTransparency=1;D.TextXAlignment=Enum.TextXAlignment.Left;D.Parent=Box;return Box end
 
 local HomeLayout=Instance.new("UIListLayout")HomeLayout.Padding=UDim.new(0,10);HomeLayout.Parent=HomePage
-MakeCard(HomePage,"✦ UWU HUB v70","ESP Fully Independent\nAll systems separate")
+MakeCard(HomePage,"✦ UWU HUB v71","Distance Filter 2m-3m\nTrail excluded from ESP")
 
 -- AD
 local AdCard=Instance.new("Frame")AdCard.Size=UDim2.new(1,-26,0,55);AdCard.Position=UDim2.fromOffset(13,0);AdCard.BackgroundColor3=Color3.fromRGB(40,20,35);AdCard.Parent=HomePage;Instance.new("UICorner",AdCard).CornerRadius=UDim.new(0,16)
