@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH ECS DETECTOR + CLEAN UI | v29 FINAL
+-- UWU HUB | ANOMALY WATCH ECS DETECTOR + CLEAN UI + MINIMIZE | v30 FINAL
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -130,7 +130,6 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 workspace.DescendantRemoving:Connect(function(obj) unregister(obj) end)
 
--- Initial scan
 task.defer(function()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") or obj:IsA("Model") or obj:IsA("Sound") then register(obj) end
@@ -138,47 +137,26 @@ task.defer(function()
 end)
 
 -- ================== PLAYER MODS ==================
-local PlayerMods = {
-    Speed = false,
-    Fly = false,
-    Fullbright = false,
-    FOV = false
-}
-local NormalSpeed = 16
-local NormalFOV = 70
-local OrigBrightness = Lighting.Brightness
-local OrigAmbient = Lighting.Ambient
-local OrigOutdoorAmbient = Lighting.OutdoorAmbient
-local OrigClockTime = Lighting.ClockTime
+local PlayerMods = {Speed = false, Fly = false, Fullbright = false, FOV = false}
+local NormalSpeed = 16; local NormalFOV = 70
+local OrigBrightness = Lighting.Brightness; local OrigAmbient = Lighting.Ambient
+local OrigOutdoorAmbient = Lighting.OutdoorAmbient; local OrigClockTime = Lighting.ClockTime
 local OrigFogEnd = Lighting.FogEnd
 
 local function SetSpeed(v)
     local char = Player.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = v and 25 or NormalSpeed end
-    end
+    if char then local hum = char:FindFirstChildOfClass("Humanoid"); if hum then hum.WalkSpeed = v and 25 or NormalSpeed end end
 end
 
 local FlyBody, FlyGyro
 local function SetFly(v)
-    local char = Player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    local char = Player.Character; if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
-    
     if v then
         if hum then hum.PlatformStand = true end
-        FlyBody = Instance.new("BodyVelocity")
-        FlyBody.Velocity = Vector3.zero
-        FlyBody.MaxForce = Vector3.new(1,1,1) * 50000
-        FlyBody.Parent = root
-        FlyGyro = Instance.new("BodyGyro")
-        FlyGyro.MaxTorque = Vector3.new(1,1,1) * 50000
-        FlyGyro.P = 3000
-        FlyGyro.Parent = root
-        
+        FlyBody = Instance.new("BodyVelocity"); FlyBody.Velocity = Vector3.zero; FlyBody.MaxForce = Vector3.new(1,1,1)*50000; FlyBody.Parent = root
+        FlyGyro = Instance.new("BodyGyro"); FlyGyro.MaxTorque = Vector3.new(1,1,1)*50000; FlyGyro.P = 3000; FlyGyro.Parent = root
         spawn(function()
             while PlayerMods.Fly and char and char.Parent do
                 local vel = Vector3.zero
@@ -202,24 +180,83 @@ end
 
 local function SetFullbright(v)
     if v then
-        Lighting.Brightness = 3
-        Lighting.Ambient = Color3.fromRGB(80,80,80)
-        Lighting.OutdoorAmbient = Color3.fromRGB(60,60,60)
-        Lighting.ClockTime = 14
-        Lighting.FogEnd = 99999
-        Lighting.GlobalShadows = false
+        Lighting.Brightness = 3; Lighting.Ambient = Color3.fromRGB(80,80,80)
+        Lighting.OutdoorAmbient = Color3.fromRGB(60,60,60); Lighting.ClockTime = 14
+        Lighting.FogEnd = 99999; Lighting.GlobalShadows = false
     else
-        Lighting.Brightness = OrigBrightness
-        Lighting.Ambient = OrigAmbient
-        Lighting.OutdoorAmbient = OrigOutdoorAmbient
-        Lighting.ClockTime = OrigClockTime
-        Lighting.FogEnd = OrigFogEnd
-        Lighting.GlobalShadows = true
+        Lighting.Brightness = OrigBrightness; Lighting.Ambient = OrigAmbient
+        Lighting.OutdoorAmbient = OrigOutdoorAmbient; Lighting.ClockTime = OrigClockTime
+        Lighting.FogEnd = OrigFogEnd; Lighting.GlobalShadows = true
     end
 end
 
-local function SetFOV(v)
-    Camera.FieldOfView = v and 100 or NormalFOV
+local function SetFOV(v) Camera.FieldOfView = v and 100 or NormalFOV end
+
+-- ================== MINIMIZE ICON ==================
+local MinIcon
+local MonsterFrames = {
+    [[  ╱|、
+ ( °  °)  
+  |  ~ |   
+  じしˍ,)ノ]],
+    [[  ╱|、
+ ( -  -)  
+  |  ~ |   
+  じしˍ,)ノ]],
+    [[  ╱|、
+ ( ◉  ◉)  
+  |  ~ |   
+  じしˍ,)ノ]],
+    [[  ╱|、
+ ( ˘  ˘)  
+  |  ~ |   
+  じしˍ,)ノ]]
+}
+
+local function CreateMinIcon()
+    if MinIcon then MinIcon:Destroy() end
+    MinIcon = Instance.new("TextButton")
+    MinIcon.Size = UDim2.fromOffset(38, 38)
+    MinIcon.Position = UDim2.new(0.5, -19, 0.02, 0)
+    MinIcon.BackgroundColor3 = Theme.CARD
+    MinIcon.Text = MonsterFrames[1]
+    MinIcon.TextColor3 = Theme.RED
+    MinIcon.Font = Enum.Font.GothamBold
+    MinIcon.TextSize = 7
+    MinIcon.BorderSizePixel = 0
+    MinIcon.Active = true
+    MinIcon.Draggable = true
+    MinIcon.Parent = Gui
+    Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(1, 0)
+    
+    -- Glow border
+    local Glow = Instance.new("Frame")
+    Glow.Size = UDim2.new(1, 6, 1, 6)
+    Glow.Position = UDim2.fromOffset(-3, -3)
+    Glow.BackgroundColor3 = Theme.RED
+    Glow.BackgroundTransparency = 0.6
+    Glow.BorderSizePixel = 0
+    Glow.ZIndex = 0
+    Glow.Parent = MinIcon
+    Instance.new("UICorner", Glow).CornerRadius = UDim.new(1, 0)
+    
+    local FrameIdx = 1
+    spawn(function()
+        while MinIcon and MinIcon.Parent do
+            FrameIdx = FrameIdx % #MonsterFrames + 1
+            MinIcon.Text = MonsterFrames[FrameIdx]
+            wait(0.8)
+        end
+    end)
+    
+    MinIcon.MouseButton1Click:Connect(function()
+        MinIcon:Destroy()
+        MinIcon = nil
+        Main.Visible = true
+        TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
+            Size = UDim2.fromOffset(520, 380)
+        }):Play()
+    end)
 end
 
 -- ================== GUI ==================
@@ -242,11 +279,9 @@ Stroke.Color = Theme.ACCENT
 Stroke.Transparency = 0.6
 Stroke.Parent = Main
 
-TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Quint), {
+TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {
     Size = UDim2.fromOffset(520, 380)
 }):Play()
-
-task.wait(0.05)
 
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 58)
@@ -284,8 +319,14 @@ MinBtn.TextColor3 = Theme.TEXT
 MinBtn.BackgroundColor3 = Theme.CARD
 MinBtn.Parent = Header
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
+
 MinBtn.MouseButton1Click:Connect(function()
-    Gui.Enabled = not Gui.Enabled
+    TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {
+        Size = UDim2.fromOffset(0, 0)
+    }):Play()
+    task.wait(0.25)
+    Main.Visible = false
+    CreateMinIcon()
 end)
 
 -- Sidebar
@@ -339,14 +380,15 @@ local function CreateTab(name)
             Tabs[n].TextColor3 = Theme.MUTED
         end
         Page.Visible = true
-        Btn.BackgroundColor3 = Theme.ACCENT
+        TweenService:Create(Btn, TweenInfo.new(0.18), {
+            BackgroundColor3 = Theme.ACCENT
+        }):Play()
         Btn.TextColor3 = Theme.TEXT
     end)
     
     return Page
 end
 
--- ================== PAGES ==================
 local HomePage = CreateTab("Home")
 local ESPPage = CreateTab("Detector")
 local ModsPage = CreateTab("Player")
@@ -391,15 +433,10 @@ local HomeLayout = Instance.new("UIListLayout")
 HomeLayout.Padding = UDim.new(0, 10)
 HomeLayout.Parent = HomePage
 
-MakeCard(HomePage, "✦ UWU HUB v29", "ECS Event-Driven Detector\nReal-time anomaly tracking")
-MakeCard(HomePage, "🎀 Clean UI", "Modern glass-style interface\nSmooth animations")
+MakeCard(HomePage, "✦ UWU HUB v30", "ECS Event-Driven Detector\nReal-time anomaly tracking")
+MakeCard(HomePage, "🎀 Clean UI + Minimize", "Press — to minimize\nMonster icon animation")
 
--- ================== ESP TOGGLES ==================
-local ESPLayout = Instance.new("UIListLayout")
-ESPLayout.Padding = UDim.new(0, 8)
-ESPLayout.Parent = ESPPage
-
-local ESPToggles = {}
+-- ================== TOGGLES ==================
 local function MakeToggle(parent, name, default, callback)
     local enabled = default
     local Row = Instance.new("Frame")
@@ -442,11 +479,14 @@ local function MakeToggle(parent, name, default, callback)
     return Row
 end
 
+local ESPLayout = Instance.new("UIListLayout")
+ESPLayout.Padding = UDim.new(0, 8)
+ESPLayout.Parent = ESPPage
+
 MakeToggle(ESPPage, "Show Intruders", true, function(v) end)
 MakeToggle(ESPPage, "Show Visual Changes", true, function(v) end)
 MakeToggle(ESPPage, "Show Sounds", true, function(v) end)
 
--- ================== PLAYER MODS ==================
 local ModsLayout = Instance.new("UIListLayout")
 ModsLayout.Padding = UDim.new(0, 8)
 ModsLayout.Parent = ModsPage
@@ -487,87 +527,41 @@ end
 
 -- ================== EVENT → LOG ==================
 EventBus:On("EntityAdded", function(obj, t)
-    if t == "INTRUDER" then
-        AddLog("👹 " .. obj.Name, Theme.RED)
-    elseif t == "AUDIO" then
-        AddLog("🔊 " .. obj.Name, Theme.CYAN)
-    elseif t == "VISUAL" then
-        AddLog("🎨 " .. obj.Name, Theme.YELLOW)
-    end
+    if t == "INTRUDER" then AddLog("👹 " .. obj.Name, Theme.RED)
+    elseif t == "AUDIO" then AddLog("🔊 " .. obj.Name, Theme.CYAN)
+    elseif t == "VISUAL" then AddLog("🎨 " .. obj.Name, Theme.YELLOW) end
 end)
 
-EventBus:On("EntityRemoved", function(obj)
-    AddLog("❌ " .. obj.Name, Theme.RED)
-end)
-
-EventBus:On("VisualChanged", function(obj, prop)
-    AddLog("🎨 " .. obj.Name .. ": " .. prop .. " changed", Theme.YELLOW)
-end)
-
-EventBus:On("AudioChanged", function(obj, event)
-    AddLog("🔊 " .. obj.Name .. ": " .. event, Theme.CYAN)
-end)
+EventBus:On("EntityRemoved", function(obj) AddLog("❌ " .. obj.Name, Theme.RED) end)
+EventBus:On("VisualChanged", function(obj, prop) AddLog("🎨 " .. obj.Name .. ": " .. prop, Theme.YELLOW) end)
+EventBus:On("AudioChanged", function(obj, event) AddLog("🔊 " .. obj.Name .. ": " .. event, Theme.CYAN) end)
 
 -- ================== ESP RENDER ==================
 if Drawing then
-    local Circles = {}
-    local Texts = {}
-    
-    function GetCircle()
-        for _, c in ipairs(Circles) do if not c.Visible then return c end end
-        local c = Drawing.new("Circle")
-        c.Thickness = 2
-        c.Filled = false
-        c.Transparency = 1
-        c.NumSides = 40
-        table.insert(Circles, c)
-        return c
-    end
-    
-    function GetText()
-        for _, t in ipairs(Texts) do if not t.Visible then return t end end
-        local t = Drawing.new("Text")
-        t.Size = 12
-        t.Center = true
-        t.Outline = true
-        t.OutlineColor = Color3.new()
-        table.insert(Texts, t)
-        return t
-    end
+    local Circles = {}; local Texts = {}
+    function GC() for _, c in ipairs(Circles) do if not c.Visible then return c end end; local c = Drawing.new("Circle"); c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 40; table.insert(Circles, c); return c end
+    function GT() for _, t in ipairs(Texts) do if not t.Visible then return t end end; local t = Drawing.new("Text"); t.Size = 12; t.Center = true; t.Outline = true; t.OutlineColor = Color3.new(); table.insert(Texts, t); return t end
     
     RunService.RenderStepped:Connect(function()
         for _, c in ipairs(Circles) do c.Visible = false end
         for _, t in ipairs(Texts) do t.Visible = false end
-        
-        local root = getRoot()
-        if not root then return end
+        local root = getRoot(); if not root then return end
         
         for obj, meta in pairs(ECS.components.Meta) do
             if not obj.Parent then continue end
             if meta.type ~= "INTRUDER" and meta.type ~= "VISUAL" then continue end
+            local part = getPart(obj); if not part then continue end
+            local dist = (part.Position - root.Position).Magnitude; if dist > 200 then continue end
+            local pos, on = Camera:WorldToViewportPoint(part.Position); if not on then continue end
             
-            local part = getPart(obj)
-            if not part then continue end
-            
-            local dist = (part.Position - root.Position).Magnitude
-            if dist > 200 then continue end
-            
-            local pos, on = Camera:WorldToViewportPoint(part.Position)
-            if not on then continue end
-            
-            local cr = GetCircle()
-            local txt = GetText()
+            local cr = GC(); local txt = GT()
             if cr and txt then
                 local r = math.clamp(math.max(part.Size.X, part.Size.Y, part.Size.Z) * 0.8, 5, 30)
                 local col = meta.type == "INTRUDER" and Theme.RED or Theme.YELLOW
-                cr.Position = Vector2.new(pos.X, pos.Y)
-                cr.Radius = r
-                cr.Color = col
-                cr.Visible = true
+                cr.Position = Vector2.new(pos.X, pos.Y); cr.Radius = r; cr.Color = col; cr.Visible = true
                 txt.Position = Vector2.new(pos.X, pos.Y - r - 14)
                 txt.Text = meta.type .. ": " .. obj.Name .. "\n" .. math.floor(dist) .. "m"
-                txt.Color = Theme.TEXT
-                txt.Visible = true
+                txt.Color = Theme.TEXT; txt.Visible = true
             end
         end
     end)
@@ -578,5 +572,5 @@ Pages.Home.Visible = true
 Tabs.Home.BackgroundColor3 = Theme.ACCENT
 Tabs.Home.TextColor3 = Theme.TEXT
 
-AddLog("✦ UWU HUB v29 started", Theme.ACCENT)
-AddLog("ECS Event-Driven + ESP", Theme.MUTED)
+AddLog("✦ UWU HUB v30 started", Theme.ACCENT)
+AddLog("Press — to minimize | Monster icon", Theme.MUTED)
