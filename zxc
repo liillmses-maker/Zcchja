@@ -27,7 +27,7 @@ local S = {
     ESP_Items = false,
     ESP_Tracers = false,
     ESP_Anomaly = false,
-    ESP_Tools = false, -- новый режим для отображения Tool
+    ESP_Tools = false,
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
 }
@@ -108,8 +108,7 @@ local function IsTrailPart(obj)
     return false
 end
 
-local IgnoredNames = {Case=true, Screen=true}
-local IgnoredToolNames = {} -- сюда будем добавлять имена тулзов для игнора
+local IgnoredNames = {Case=true, Screen=true, Tablet=true}
 
 -- ================== MONSTER ESP (INDEPENDENT) ==================
 local Monsters={}
@@ -141,19 +140,20 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 workspace.DescendantRemoving:Connect(function(obj)ItemESP[obj]=nil end)
 
--- ================== TOOLS ESP (INDEPENDENT) ==================
+-- ================== TOOLS ESP (FIXED) ==================
 local ToolsESP={}
+local function IsTool(obj)
+    return obj:IsA("Tool")
+end
 workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA("Tool") then
+    if IsTool(obj) then
         if Player.Character and obj:IsDescendantOf(Player.Character) then return end
-        if IgnoredToolNames[obj.Name] then return end
-        local handle = obj:FindFirstChild("Handle")
-        if handle and handle:IsA("BasePart") then
-            ToolsESP[obj] = {time=tick(), pos=handle.Position, name=obj.Name}
-        end
+        ToolsESP[obj] = true
     end
 end)
-workspace.DescendantRemoving:Connect(function(obj)ToolsESP[obj]=nil end)
+workspace.DescendantRemoving:Connect(function(obj)
+    ToolsESP[obj] = nil
+end)
 
 -- ================== ANOMALY ESP v40 (INDEPENDENT) ==================
 local REPL_DELAY=0.25
@@ -308,7 +308,7 @@ if Drawing then
             end
         end
         
-        -- ITEM ESP (ORANGE + TRACERS) - только видимые, без стен
+        -- ITEM ESP (ORANGE + TRACERS)
         if S.ESP_Items then
             for obj,data in pairs(ItemESP)do
                 if not obj.Parent then ItemESP[obj]=nil;continue end
@@ -333,21 +333,20 @@ if Drawing then
             end
         end
         
-        -- TOOLS ESP (BLUE)
+        -- TOOLS ESP (CYAN)
         if S.ESP_Tools then
-            for obj,data in pairs(ToolsESP)do
+            for obj in pairs(ToolsESP)do
                 if not obj.Parent then ToolsESP[obj]=nil;continue end
                 local handle = obj:FindFirstChild("Handle")
-                if handle and handle:IsA("BasePart") then
-                    data.pos = handle.Position
-                end
-                local dist=(data.pos-root.Position).Magnitude;if dist>300 then continue end
-                local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
+                if not handle or not handle:IsA("BasePart") then continue end
+                local pos = handle.Position
+                local dist=(pos-root.Position).Magnitude;if dist>300 then continue end
+                local screenPos,on=Camera:WorldToViewportPoint(pos);if not on then continue end
                 local cr=GC();local txt=GT()
                 if cr then
-                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=8;cr.Color=Theme.CYAN;cr.Visible=true
-                    txt.Position=Vector2.new(pos.X,pos.Y-18)
-                    txt.Text="🔧 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
+                    cr.Position=Vector2.new(screenPos.X,screenPos.Y);cr.Radius=8;cr.Color=Theme.CYAN;cr.Visible=true
+                    txt.Position=Vector2.new(screenPos.X,screenPos.Y-18)
+                    txt.Text="🔧 "..obj.Name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
                 end
             end
         end
