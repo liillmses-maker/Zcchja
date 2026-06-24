@@ -27,7 +27,9 @@ local S = {
     ESP_Items = false,
     ESP_Tracers = false,
     ESP_Anomaly = false,
-    ESP_AllObjects = false, -- показывает ВСЕ объекты с именами
+    ESP_AllObjects = false,
+    ESP_World = false, -- НОВЫЙ: World ESP
+    AutoWin = false,
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
 }
@@ -74,6 +76,25 @@ local function SetNoclip(v)
 end
 local function SetFOV(v)Camera.FieldOfView=v and 100 or 70 end
 
+-- ================== AUTO WIN ==================
+local SavedPosition = nil
+local function SetAutoWin(v)
+    local char = Player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    if v then
+        SavedPosition = root.CFrame
+        root.CFrame = CFrame.new(root.Position.X, 100, root.Position.Z)
+    else
+        if SavedPosition then
+            root.CFrame = SavedPosition
+            SavedPosition = nil
+        end
+    end
+end
+
 -- ================== VISUALS ==================
 local PV={Hat=false,Trail=false};local HM
 local function CH()
@@ -110,7 +131,6 @@ end
 
 local IgnoredNames = {Case=true, Screen=true, Tablet=true}
 
--- Функция для получения полного пути объекта
 local function GetFullName(obj)
     local path = obj.Name
     local parent = obj.Parent
@@ -120,6 +140,77 @@ local function GetFullName(obj)
     end
     return path
 end
+
+-- ================== WORLD ESP (INDEPENDENT MODULE) ==================
+local WorldESP_Objects = {}
+local WorldESP_Highlights = {}
+
+local function AddWorldHighlight(part)
+    if WorldESP_Highlights[part] then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "WorldESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(80, 200, 255)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineColor = Color3.fromRGB(80, 200, 255)
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = part
+    highlight.Parent = part
+    WorldESP_Highlights[part] = highlight
+end
+
+local function RemoveWorldHighlight(part)
+    if WorldESP_Highlights[part] then
+        WorldESP_Highlights[part]:Destroy()
+        WorldESP_Highlights[part] = nil
+    end
+end
+
+local function ClearAllWorldESP()
+    for obj, _ in pairs(WorldESP_Objects) do
+        RemoveWorldHighlight(obj)
+    end
+    WorldESP_Objects = {}
+end
+
+local function SetWorldESP(v)
+    if v then
+        -- Включаем World ESP для всех существующих объектов
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and not obj:IsDescendantOf(Player.Character) then
+                if not IsTrailPart(obj) and obj.Transparency <= 0.95 then
+                    if not WorldESP_Objects[obj] then
+                        WorldESP_Objects[obj] = true
+                        AddWorldHighlight(obj)
+                    end
+                end
+            end
+        end
+    else
+        -- Выключаем World ESP
+        ClearAllWorldESP()
+    end
+end
+
+-- Отслеживание новых объектов
+workspace.DescendantAdded:Connect(function(obj)
+    if not S.ESP_World then return end
+    if obj:IsA("BasePart") and not obj:IsDescendantOf(Player.Character) then
+        if not IsTrailPart(obj) and obj.Transparency <= 0.95 then
+            if not WorldESP_Objects[obj] then
+                WorldESP_Objects[obj] = true
+                AddWorldHighlight(obj)
+            end
+        end
+    end
+end)
+
+-- Отслеживание удаления объектов
+workspace.DescendantRemoving:Connect(function(obj)
+    if WorldESP_Objects[obj] then
+        WorldESP_Objects[obj] = nil
+        RemoveWorldHighlight(obj)
+    end
+end)
 
 -- ================== MONSTER ESP (INDEPENDENT) ==================
 local Monsters={}
@@ -436,6 +527,7 @@ local function MakeToggle(parent,name,default,callback)local enabled=default;loc
 
 -- ESP TAB
 local ESPLayout=Instance.new("UIListLayout")ESPLayout.Padding=UDim.new(0,8);ESPLayout.Parent=ESPPage
+MakeToggle(ESPPage,"World ESP",false,function(v)S.ESP_World=v;SetWorldESP(v)end)
 MakeToggle(ESPPage,"All Objects ESP",false,function(v)S.ESP_AllObjects=v end)
 MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v end)
 MakeToggle(ESPPage,"Item ESP",false,function(v)S.ESP_Items=v end)
@@ -444,6 +536,7 @@ MakeToggle(ESPPage,"Anomaly ESP",false,function(v)S.ESP_Anomaly=v end)
 
 -- PLAYER TAB
 local PlayerLayout=Instance.new("UIListLayout")PlayerLayout.Padding=UDim.new(0,8);PlayerLayout.Parent=PlayerPage
+MakeToggle(PlayerPage,"Auto Win",false,function(v)S.AutoWin=v;SetAutoWin(v)end)
 MakeToggle(PlayerPage,"Speed (25)",false,function(v)S.Speed=v;SetSpeed(v)end)
 MakeToggle(PlayerPage,"Fly (x2)",false,function(v)S.Fly=v;SetFly(v)end)
 MakeToggle(PlayerPage,"Noclip",false,function(v)S.Noclip=v;SetNoclip(v)end)
