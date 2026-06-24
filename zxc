@@ -109,7 +109,15 @@ end
 
 -- ================== MONSTER ESP (INDEPENDENT) ==================
 local Monsters={}
-local function IsMonster(obj)if obj:IsA("Model")and obj~=Player.Character then if obj:FindFirstChildOfClass("Humanoid")then return true end;if obj:FindFirstChild("HumanoidRootPart")then return true end end;return false end
+local IgnoredMonsterNames = {Rig=true, Rig2=true, Dummy=true, Devil=true, Alternate=true, Hallwaylntruder=true}
+local function IsMonster(obj)
+    if obj:IsA("Model") and obj ~= Player.Character then
+        if IgnoredMonsterNames[obj.Name] then return false end
+        if obj:FindFirstChildOfClass("Humanoid") then return true end
+        if obj:FindFirstChild("HumanoidRootPart") then return true end
+    end
+    return false
+end
 workspace.DescendantAdded:Connect(function(obj)if IsMonster(obj)then Monsters[obj]=true end end)
 workspace.DescendantRemoving:Connect(function(obj)Monsters[obj]=nil end)
 task.defer(function()task.wait(1)for _,obj in ipairs(workspace:GetDescendants())do if IsMonster(obj)then Monsters[obj]=true end end end)
@@ -227,6 +235,7 @@ end
 local function IsVisual(obj)
     if Player.Character and obj:IsDescendantOf(Player.Character)then return true end
     if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"or obj.Name=="ChineseHat"then return true end
+    if IsTrailPart(obj)then return true end
     return false
 end
 
