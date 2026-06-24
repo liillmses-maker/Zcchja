@@ -27,6 +27,7 @@ local S = {
     ESP_Items = false,
     ESP_Tracers = false,
     ESP_Anomaly = false,
+    ESP_Tools = false, -- новый режим для отображения Tool
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
 }
@@ -107,13 +108,17 @@ local function IsTrailPart(obj)
     return false
 end
 
+local IgnoredNames = {Case=true, Screen=true}
+local IgnoredToolNames = {} -- сюда будем добавлять имена тулзов для игнора
+
 -- ================== MONSTER ESP (INDEPENDENT) ==================
 local Monsters={}
 local IgnoredMonsterNames = {Rig=true, Rig2=true, Dummy=true, Devil=true, Alternate=true, Hallwaylntruder=true}
 local function IsMonster(obj)
     if obj:IsA("Model") and obj ~= Player.Character then
         if IgnoredMonsterNames[obj.Name] then return false end
-        if obj:FindFirstChildOfClass("Humanoid") then return true end
+        local hum = obj:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Health > 0 then return true end
         if obj:FindFirstChild("HumanoidRootPart") then return true end
     end
     return false
@@ -131,9 +136,24 @@ workspace.DescendantAdded:Connect(function(obj)
     if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"then return end
     if IsMonster(obj)then return end
     if IsTrailPart(obj)then return end
+    if IgnoredNames[obj.Name] then return end
     ItemESP[obj]={time=tick(),pos=getPart(obj)and getPart(obj).Position or Vector3.zero,name=obj.Name}
 end)
 workspace.DescendantRemoving:Connect(function(obj)ItemESP[obj]=nil end)
+
+-- ================== TOOLS ESP (INDEPENDENT) ==================
+local ToolsESP={}
+workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("Tool") then
+        if Player.Character and obj:IsDescendantOf(Player.Character) then return end
+        if IgnoredToolNames[obj.Name] then return end
+        local handle = obj:FindFirstChild("Handle")
+        if handle and handle:IsA("BasePart") then
+            ToolsESP[obj] = {time=tick(), pos=handle.Position, name=obj.Name}
+        end
+    end
+end)
+workspace.DescendantRemoving:Connect(function(obj)ToolsESP[obj]=nil end)
 
 -- ================== ANOMALY ESP v40 (INDEPENDENT) ==================
 local REPL_DELAY=0.25
@@ -244,6 +264,7 @@ workspace.DescendantAdded:Connect(function(obj)
     if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
     if IsVisual(obj)then return end
     if IsMonster(obj)then return end
+    if IgnoredNames[obj.Name] then return end
     if not S.ESP_Anomaly then return end
     task.delay(1.5,function()
         if not obj.Parent then return end
@@ -256,7 +277,7 @@ workspace.DescendantAdded:Connect(function(obj)
     end)
 end)
 workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING");BaseLine[obj]=nil end end)
-task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not IsNearPlayer(obj)and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
+task.defer(function()task.wait(2)if S.ESP_Anomaly then for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not IsVisual(obj)and not IsMonster(obj)and not IsNearPlayer(obj)and not IgnoredNames[obj.Name]and not BaseLine[obj]then TakeSnapshot(obj);HookObject(obj)end end end end end)
 task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
 
 -- ================== ESP RENDER (ALL INDEPENDENT) ==================
@@ -287,7 +308,7 @@ if Drawing then
             end
         end
         
-        -- ITEM ESP (ORANGE + TRACERS)
+        -- ITEM ESP (ORANGE + TRACERS) - только видимые, без стен
         if S.ESP_Items then
             for obj,data in pairs(ItemESP)do
                 if not obj.Parent then ItemESP[obj]=nil;continue end
@@ -308,6 +329,25 @@ if Drawing then
                     cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Color3.fromRGB(255,150,0);cr.Visible=true
                     txt.Position=Vector2.new(pos.X,pos.Y-r-14)
                     txt.Text="📦 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
+                end
+            end
+        end
+        
+        -- TOOLS ESP (BLUE)
+        if S.ESP_Tools then
+            for obj,data in pairs(ToolsESP)do
+                if not obj.Parent then ToolsESP[obj]=nil;continue end
+                local handle = obj:FindFirstChild("Handle")
+                if handle and handle:IsA("BasePart") then
+                    data.pos = handle.Position
+                end
+                local dist=(data.pos-root.Position).Magnitude;if dist>300 then continue end
+                local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
+                local cr=GC();local txt=GT()
+                if cr then
+                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=8;cr.Color=Theme.CYAN;cr.Visible=true
+                    txt.Position=Vector2.new(pos.X,pos.Y-18)
+                    txt.Text="🔧 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
                 end
             end
         end
@@ -382,6 +422,7 @@ MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v end)
 MakeToggle(ESPPage,"Item ESP",false,function(v)S.ESP_Items=v end)
 MakeToggle(ESPPage,"Item Tracers",false,function(v)S.ESP_Tracers=v end)
 MakeToggle(ESPPage,"Anomaly ESP",false,function(v)S.ESP_Anomaly=v end)
+MakeToggle(ESPPage,"Tools ESP",false,function(v)S.ESP_Tools=v end)
 
 -- PLAYER TAB
 local PlayerLayout=Instance.new("UIListLayout")PlayerLayout.Padding=UDim.new(0,8);PlayerLayout.Parent=PlayerPage
