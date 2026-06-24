@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v55 | MOBILE FLY + ESP + AD
+-- UWU HUB | ANOMALY WATCH v57 | ANIMATED CAT OPEN BTN + FULL FIX
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -74,7 +74,7 @@ local NS = 16; local NF = 70
 
 local function SetSpeed(v) local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed = v and 25 or NS end end end
 
--- ================== FLY (MOBILE + PC) ==================
+-- ================== FLY ==================
 local FlyBody, FlyGyro, FlyConnection; local FLY_SPEED = 2
 local MobileFlyState = {forward = false, backward = false, left = false, right = false, up = false, down = false, sprint = false}
 local MobileGui
@@ -87,7 +87,6 @@ local function CreateMobileFlyButtons()
             local b = Instance.new("TextButton") b.Size = bs; b.Position = p; b.Text = t; b.BackgroundColor3 = bc; b.BackgroundTransparency = bt; b.TextColor3 = Color3.fromRGB(255,255,255); b.Font = Enum.Font.GothamBold; b.TextSize = 20; b.BorderSizePixel = 0; b.Name = n; b.Parent = MobileGui; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 12)
             b.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then MobileFlyState[k] = true end end)
             b.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then MobileFlyState[k] = false end end)
-            return b
         end
         local cx, cy, o = 0.5, 0.6, 60
         CB("Fwd", UDim2.new(cx, -25, cy, -25 - o), "▲", "forward")
@@ -152,52 +151,158 @@ end
 
 local function SetFOV(v) Camera.FieldOfView = v and 100 or NF end
 
--- ================== VISUALS ==================
+-- ================== CHINESE HAT (FP VISIBLE) ==================
 local PV = {Hat = false, Trail = false}; local HM
-local function CH()
-    if HM then HM:Destroy() end; local c = Player.Character; if not c then return end; local hd = c:FindFirstChild("Head"); if not hd then return end
-    HM = Instance.new("Model") HM.Name = "ChineseHat"; HM.Parent = c
-    local co = Instance.new("Part") co.Shape = Enum.PartType.Cone; co.Size = Vector3.new(2.5,1.8,2.5); co.Color = Color3.fromRGB(255,150,200); co.Transparency = 0.4; co.Material = Enum.Material.Glass; co.Anchored = false; co.CanCollide = false; co.Parent = HM
-    local ba = Instance.new("Part") ba.Shape = Enum.PartType.Ball; ba.Size = Vector3.new(0.5,0.5,0.5); ba.Color = Color3.fromRGB(255,100,150); ba.Transparency = 0.2; ba.Material = Enum.Material.Neon; ba.Anchored = false; ba.CanCollide = false; ba.Parent = HM
-    local br = Instance.new("Part") br.Shape = Enum.PartType.Cylinder; br.Size = Vector3.new(3.5,0.15,3.5); br.Color = Color3.fromRGB(255,180,220); br.Transparency = 0.5; br.Material = Enum.Material.Glass; br.Anchored = false; br.CanCollide = false; br.Parent = HM
-    Instance.new("Weld") {Part0 = hd, Part1 = co, C0 = CFrame.new(0,1.8,0), Parent = co}
-    Instance.new("Weld") {Part0 = co, Part1 = ba, C0 = CFrame.new(0,1.1,0), Parent = ba}
-    Instance.new("Weld") {Part0 = co, Part1 = br, C0 = CFrame.new(0,-0.9,0), Parent = br}
+local function CreateHat()
+    if HM then HM:Destroy() end
+    local char = Player.Character; if not char then return end
+    local head = char:FindFirstChild("Head"); if not head then return end
+    HM = Instance.new("Model") HM.Name = "ChineseHat"; HM.Parent = char
+    local cone = Instance.new("Part") cone.Shape = Enum.PartType.Cone; cone.Size = Vector3.new(3, 2.2, 3); cone.Color = Color3.fromRGB(255, 150, 200); cone.Transparency = 0.35; cone.Material = Enum.Material.Glass; cone.Anchored = false; cone.CanCollide = false; cone.Parent = HM
+    local ball = Instance.new("Part") ball.Shape = Enum.PartType.Ball; ball.Size = Vector3.new(0.7, 0.7, 0.7); ball.Color = Color3.fromRGB(255, 100, 150); ball.Transparency = 0.15; ball.Material = Enum.Material.Neon; ball.Anchored = false; ball.CanCollide = false; ball.Parent = HM
+    local brim = Instance.new("Part") brim.Shape = Enum.PartType.Cylinder; brim.Size = Vector3.new(4, 0.2, 4); brim.Color = Color3.fromRGB(255, 180, 220); brim.Transparency = 0.45; brim.Material = Enum.Material.Glass; brim.Anchored = false; brim.CanCollide = false; brim.Parent = HM
+    Instance.new("Weld") {Part0 = head, Part1 = cone, C0 = CFrame.new(0, 2.5, 0), Parent = cone}
+    Instance.new("Weld") {Part0 = cone, Part1 = ball, C0 = CFrame.new(0, 1.3, 0), Parent = ball}
+    Instance.new("Weld") {Part0 = cone, Part1 = brim, C0 = CFrame.new(0, -1.1, 0), Parent = brim}
 end
-local function RH() if HM then HM:Destroy(); HM = nil end end
+local function RemoveHat() if HM then HM:Destroy(); HM = nil end end
 local TP = {}; local MT = 15
-local function SP()
+local function SpawnTrail()
     local c = Player.Character; if not c then return end; local r = c:FindFirstChild("HumanoidRootPart"); if not r then return end
     local p = Instance.new("Part") p.Size = Vector3.new(0.25,0.25,0.25); p.Shape = Enum.PartType.Ball; p.Position = r.Position - Vector3.new(0,2.5,0); p.Color = Color3.fromRGB(255,150,200); p.Transparency = 0.5; p.Material = Enum.Material.Neon; p.Anchored = true; p.CanCollide = false; p.Parent = workspace
     table.insert(TP, p); if #TP > MT then local o = table.remove(TP, 1); if o then o:Destroy() end end
     task.delay(1.5, function() for i = 1, 8 do if not p.Parent then break end; p.Transparency += 0.06; task.wait(0.04) end; if p then p:Destroy() end end)
 end
-local function SH(v) PV.Hat = v; if v then CH() else RH() end end
-local function ST(v) PV.Trail = v end
-task.spawn(function() while true do task.wait(0.15) if PV.Trail then local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h and h.MoveDirection.Magnitude > 0 then SP() end end end end end)
+local function SetHat(v) PV.Hat = v; if v then CreateHat() else RemoveHat() end end
+local function SetTrail(v) PV.Trail = v end
+task.spawn(function() while true do task.wait(0.15) if PV.Trail then local c = Player.Character; if c then local h = c:FindFirstChildOfClass("Humanoid"); if h and h.MoveDirection.Magnitude > 0 then SpawnTrail() end end end end end)
+Player.CharacterAdded:Connect(function() if PV.Hat then task.wait(0.5); CreateHat() end end)
 
 -- ================== GUI ==================
 local Gui = Instance.new("ScreenGui") Gui.Name = "UwUHub"; Gui.ResetOnSpawn = false; Gui.IgnoreGuiInset = true; Gui.Parent = PLAYERGUI
 
--- OPEN BUTTON
-local OpenBtn = Instance.new("TextButton") OpenBtn.Size = UDim2.fromOffset(160, 34); OpenBtn.Position = UDim2.new(0.5, -80, 0, 10); OpenBtn.Text = "✦ OPEN MENU ✦"; OpenBtn.Visible = false; OpenBtn.BackgroundColor3 = Color3.fromRGB(35,20,30); OpenBtn.TextColor3 = Color3.fromRGB(255,180,200); OpenBtn.Font = Enum.Font.GothamBold; OpenBtn.TextSize = 12; OpenBtn.BorderSizePixel = 0; OpenBtn.Parent = Gui; Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1,0)
-OpenBtn.MouseButton1Click:Connect(function() Main.Visible = true; OpenBtn.Visible = false; TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.fromOffset(520, 420)}):Play() end)
+-- ================== ANIMATED CAT OPEN BUTTON ==================
+local CatFrames = {
+    "=^^= OPEN MENU =^^=",
+    "=°°= OPEN MENU =°°=",
+    "=ww= OPEN MENU =ww=",
+    "=··= OPEN MENU =··=",
+    "=^^= OPEN MENU =^^=",
+    "=**= OPEN MENU =**=",
+    "=--= OPEN MENU =--=",
+    "=··= OPEN MENU =··="
+}
 
--- MAIN
-local Main = Instance.new("Frame") Main.Size = UDim2.fromOffset(0,0); Main.Position = UDim2.fromScale(0.5,0.5); Main.AnchorPoint = Vector2.new(0.5,0.5); Main.BackgroundColor3 = Theme.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Parent = Gui; Instance.new("UICorner", Main).CornerRadius = UDim.new(0,22)
-local Stroke = Instance.new("UIStroke") Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
-TweenService:Create(Main, TweenInfo.new(0.4), {Size = UDim2.fromOffset(520, 420)}):Play()
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.fromOffset(200, 40)
+OpenBtn.Position = UDim2.new(0.5, -100, 0, 8)
+OpenBtn.Text = CatFrames[1]
+OpenBtn.Visible = true
+OpenBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 35)
+OpenBtn.TextColor3 = Color3.fromRGB(255, 190, 210)
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 12
+OpenBtn.BorderSizePixel = 0
+OpenBtn.ZIndex = 100
+OpenBtn.Parent = Gui
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
+
+-- Glow
+local OpenGlow = Instance.new("Frame")
+OpenGlow.Size = UDim2.new(1, 6, 1, 6)
+OpenGlow.Position = UDim2.fromOffset(-3, -3)
+OpenGlow.BackgroundColor3 = Theme.ACCENT
+OpenGlow.BackgroundTransparency = 0.5
+OpenGlow.BorderSizePixel = 0
+OpenGlow.ZIndex = 99
+OpenGlow.Parent = OpenBtn
+Instance.new("UICorner", OpenGlow).CornerRadius = UDim.new(1, 0)
+
+-- Cat animation
+local CatFrameIdx = 1
+spawn(function()
+    while OpenBtn and OpenBtn.Parent do
+        if OpenBtn.Visible then
+            CatFrameIdx = CatFrameIdx % #CatFrames + 1
+            OpenBtn.Text = CatFrames[CatFrameIdx]
+            task.wait(0.5)
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+-- Glow pulse
+spawn(function()
+    while OpenGlow and OpenGlow.Parent do
+        if OpenBtn.Visible then
+            TweenService:Create(OpenGlow, TweenInfo.new(0.6), {BackgroundTransparency = 0.3}):Play()
+            task.wait(0.6)
+            TweenService:Create(OpenGlow, TweenInfo.new(0.6), {BackgroundTransparency = 0.5}):Play()
+            task.wait(0.6)
+        else
+            task.wait(0.6)
+        end
+    end
+end)
+
+-- Hover
+OpenBtn.MouseEnter:Connect(function()
+    TweenService:Create(OpenBtn, TweenInfo.new(0.2), {
+        Size = UDim2.fromOffset(210, 42),
+        Position = UDim2.new(0.5, -105, 0, 7),
+        BackgroundColor3 = Color3.fromRGB(55, 30, 45),
+        TextColor3 = Color3.fromRGB(255, 210, 230)
+    }):Play()
+end)
+
+OpenBtn.MouseLeave:Connect(function()
+    TweenService:Create(OpenBtn, TweenInfo.new(0.2), {
+        Size = UDim2.fromOffset(200, 40),
+        Position = UDim2.new(0.5, -100, 0, 8),
+        BackgroundColor3 = Color3.fromRGB(40, 25, 35),
+        TextColor3 = Color3.fromRGB(255, 190, 210)
+    }):Play()
+end)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    OpenBtn.Visible = false
+    Main.Visible = true
+    TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.fromOffset(520, 420)
+    }):Play()
+end)
+
+-- ================== MAIN GUI ==================
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(0, 0)
+Main.Position = UDim2.fromScale(0.5, 0.5)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Theme.BG
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Visible = false
+Main.Parent = Gui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
 
 local Header = Instance.new("Frame") Header.Size = UDim2.new(1,0,0,58); Header.BackgroundTransparency = 1; Header.Parent = Main
-local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v55"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
-local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "mobile fly • esp • ad"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
+local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1,-80,1,0); Title.Position = UDim2.fromOffset(24,0); Title.Text = "✦ UWU HUB v57"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
+local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1,-80,0,18); Sub.Position = UDim2.fromOffset(24,30); Sub.Text = "=^^= animated cat button =^^="; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
 
 local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34,34); MinBtn.Position = UDim2.new(1,-54,0.5,-17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
-MinBtn.MouseButton1Click:Connect(function() TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.fromOffset(0,0)}):Play(); task.wait(0.25); Main.Visible = false; OpenBtn.Visible = true end)
+MinBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromOffset(0, 0)}):Play()
+    task.wait(0.25)
+    Main.Visible = false
+    OpenBtn.Visible = true
+end)
 
 local Sidebar = Instance.new("Frame") Sidebar.Size = UDim2.new(0,130,1,-82); Sidebar.Position = UDim2.fromOffset(18,68); Sidebar.BackgroundColor3 = Theme.PANEL; Sidebar.Parent = Main; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0,18)
 local SideLayout = Instance.new("UIListLayout") SideLayout.Padding = UDim.new(0,8); SideLayout.Parent = Sidebar
-
 local Content = Instance.new("Frame") Content.Size = UDim2.new(1,-160,1,-82); Content.Position = UDim2.fromOffset(150,68); Content.BackgroundColor3 = Theme.PANEL; Content.Parent = Main; Instance.new("UICorner", Content).CornerRadius = UDim.new(0,18)
 
 local Tabs = {}; local Pages = {}
@@ -219,35 +324,15 @@ local function MakeCard(parent, title, desc)
 end
 
 local HomeLayout = Instance.new("UIListLayout") HomeLayout.Padding = UDim.new(0,10); HomeLayout.Parent = HomePage
-MakeCard(HomePage, "✦ UWU HUB v55", "MOBILE + PC FLY\nESP • Noclip • Fullbright")
-MakeCard(HomePage, "📱 Mobile Fly", "▲▼◄► D-Pad • ⇧⇩ Up/Down\nSPRINT button for boost")
+MakeCard(HomePage, "✦ UWU HUB v57", "=^^= Animated Cat Button =^^=\nFP Hat • Mobile Fly • ESP")
 
--- ================== AD CARD (CLICK TO COPY) ==================
+-- AD CARD
 local AdCard = Instance.new("Frame") AdCard.Size = UDim2.new(1,-26,0,55); AdCard.Position = UDim2.fromOffset(13,0); AdCard.BackgroundColor3 = Color3.fromRGB(40, 20, 35); AdCard.Parent = HomePage; Instance.new("UICorner", AdCard).CornerRadius = UDim.new(0, 16)
 local AdGlow = Instance.new("Frame") AdGlow.Size = UDim2.new(1,4,1,4); AdGlow.Position = UDim2.fromOffset(-2,-2); AdGlow.BackgroundColor3 = Theme.PURPLE; AdGlow.BackgroundTransparency = 0.6; AdGlow.BorderSizePixel = 0; AdGlow.ZIndex = 0; AdGlow.Parent = AdCard; Instance.new("UICorner", AdGlow).CornerRadius = UDim.new(0, 16)
-
 local AdTitle = Instance.new("TextLabel") AdTitle.Size = UDim2.new(1,-20,0,18); AdTitle.Position = UDim2.fromOffset(10,8); AdTitle.Text = "🔗 guns.lol/sqworexo"; AdTitle.TextColor3 = Color3.fromRGB(255,200,255); AdTitle.Font = Enum.Font.GothamBold; AdTitle.TextSize = 11; AdTitle.BackgroundTransparency = 1; AdTitle.TextXAlignment = Enum.TextXAlignment.Center; AdTitle.Parent = AdCard
-
 local AdCopyBtn = Instance.new("TextButton") AdCopyBtn.Size = UDim2.new(1,-20,0,22); AdCopyBtn.Position = UDim2.fromOffset(10,28); AdCopyBtn.Text = "📋 CLICK TO COPY"; AdCopyBtn.BackgroundColor3 = Theme.PURPLE; AdCopyBtn.TextColor3 = Color3.fromRGB(255,255,255); AdCopyBtn.Font = Enum.Font.GothamBold; AdCopyBtn.TextSize = 10; AdCopyBtn.BorderSizePixel = 0; AdCopyBtn.Parent = AdCard; Instance.new("UICorner", AdCopyBtn).CornerRadius = UDim.new(0, 8)
-
-AdCopyBtn.MouseButton1Click:Connect(function()
-    if setclipboard then setclipboard("https://guns.lol/sqworexo") end
-    StarterGui:SetCore("SendNotification", {Title = "UWU HUB", Text = "Copied: guns.lol/sqworexo", Duration = 2})
-    -- Visual feedback
-    AdCopyBtn.Text = "✅ COPIED!"
-    AdCopyBtn.BackgroundColor3 = Theme.GREEN
-    task.delay(1, function() AdCopyBtn.Text = "📋 CLICK TO COPY"; AdCopyBtn.BackgroundColor3 = Theme.PURPLE end)
-end)
-
--- Ad pulse animation
-spawn(function()
-    while AdGlow and AdGlow.Parent do
-        TweenService:Create(AdGlow, TweenInfo.new(1), {BackgroundTransparency = 0.4}):Play()
-        task.wait(1)
-        TweenService:Create(AdGlow, TweenInfo.new(1), {BackgroundTransparency = 0.6}):Play()
-        task.wait(1)
-    end
-end)
+AdCopyBtn.MouseButton1Click:Connect(function() if setclipboard then setclipboard("https://guns.lol/sqworexo") end; StarterGui:SetCore("SendNotification", {Title = "UWU HUB", Text = "Copied!", Duration = 2}); AdCopyBtn.Text = "✅ COPIED!"; AdCopyBtn.BackgroundColor3 = Theme.GREEN; task.delay(1, function() AdCopyBtn.Text = "📋 CLICK TO COPY"; AdCopyBtn.BackgroundColor3 = Theme.PURPLE end) end)
+spawn(function() while AdGlow and AdGlow.Parent do TweenService:Create(AdGlow, TweenInfo.new(1), {BackgroundTransparency = 0.4}):Play(); task.wait(1); TweenService:Create(AdGlow, TweenInfo.new(1), {BackgroundTransparency = 0.6}):Play(); task.wait(1) end end)
 
 local function MakeToggle(parent, name, default, callback)
     local enabled = default
@@ -267,7 +352,7 @@ MakeToggle(ModsPage, "Fullbright", false, function(v) PM.Fullbright = v; SetFull
 MakeToggle(ModsPage, "FOV (100)", false, function(v) PM.FOV = v; SetFOV(v) end)
 
 local VisualLayout = Instance.new("UIListLayout") VisualLayout.Padding = UDim.new(0,8); VisualLayout.Parent = VisualPage
-MakeToggle(VisualPage, "Chinese Hat", false, function(v) SH(v) end)
-MakeToggle(VisualPage, "Pink Trail", false, function(v) ST(v) end)
+MakeToggle(VisualPage, "Chinese Hat", false, function(v) SetHat(v) end)
+MakeToggle(VisualPage, "Pink Trail", false, function(v) SetTrail(v) end)
 
 Pages.Home.Visible = true; Tabs.Home.BackgroundColor3 = Theme.ACCENT; Tabs.Home.TextColor3 = Theme.TEXT
