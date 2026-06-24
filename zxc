@@ -27,7 +27,7 @@ local S = {
     ESP_Items = false,
     ESP_Tracers = false,
     ESP_Anomaly = false,
-    ESP_Tools = false,
+    ESP_AllObjects = false, -- показывает ВСЕ объекты с именами
     Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false,
     Hat = false, Trail = false
 }
@@ -110,6 +110,17 @@ end
 
 local IgnoredNames = {Case=true, Screen=true, Tablet=true}
 
+-- Функция для получения полного пути объекта
+local function GetFullName(obj)
+    local path = obj.Name
+    local parent = obj.Parent
+    while parent and parent ~= workspace do
+        path = parent.Name .. "/" .. path
+        parent = parent.Parent
+    end
+    return path
+end
+
 -- ================== MONSTER ESP (INDEPENDENT) ==================
 local Monsters={}
 local IgnoredMonsterNames = {Rig=true, Rig2=true, Dummy=true, Devil=true, Alternate=true, Hallwaylntruder=true}
@@ -140,20 +151,17 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 workspace.DescendantRemoving:Connect(function(obj)ItemESP[obj]=nil end)
 
--- ================== TOOLS ESP (FIXED) ==================
-local ToolsESP={}
-local function IsTool(obj)
-    return obj:IsA("Tool")
-end
+-- ================== ALL OBJECTS ESP ==================
+local AllObjectsESP={}
 workspace.DescendantAdded:Connect(function(obj)
-    if IsTool(obj) then
-        if Player.Character and obj:IsDescendantOf(Player.Character) then return end
-        ToolsESP[obj] = true
-    end
+    if not(obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Tool"))then return end
+    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    if Player.Character and obj:IsDescendantOf(Player.Character)then return end
+    if obj.Name=="HatCone"or obj.Name=="HatBall"or obj.Name=="HatBrim"or obj.Name=="TrailPart"or obj.Name=="Hat"then return end
+    if IsTrailPart(obj)then return end
+    AllObjectsESP[obj]={time=tick(),pos=getPart(obj)and getPart(obj).Position or Vector3.zero,name=GetFullName(obj)}
 end)
-workspace.DescendantRemoving:Connect(function(obj)
-    ToolsESP[obj] = nil
-end)
+workspace.DescendantRemoving:Connect(function(obj)AllObjectsESP[obj]=nil end)
 
 -- ================== ANOMALY ESP v40 (INDEPENDENT) ==================
 local REPL_DELAY=0.25
@@ -291,6 +299,35 @@ if Drawing then
         for _,c in ipairs(Circles)do c.Visible=false end;for _,t in ipairs(Texts)do t.Visible=false end;for _,l in ipairs(Lines)do l.Visible=false end
         local root=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart");if not root then return end;local now=tick()
         
+        -- ALL OBJECTS ESP (GREEN)
+        if S.ESP_AllObjects then
+            for obj,data in pairs(AllObjectsESP)do
+                if not obj.Parent then AllObjectsESP[obj]=nil;continue end
+                if now-data.time>10 then AllObjectsESP[obj]=nil;continue end
+                local part=getPart(obj)
+                if part then
+                    data.pos=part.Position
+                elseif obj:IsA("Tool") then
+                    local handle = obj:FindFirstChild("Handle")
+                    if handle and handle:IsA("BasePart") then
+                        data.pos = handle.Position
+                    else
+                        continue
+                    end
+                else
+                    continue
+                end
+                local dist=(data.pos-root.Position).Magnitude;if dist>500 then continue end
+                local pos,on=Camera:WorldToViewportPoint(data.pos);if not on then continue end
+                local cr=GC();local txt=GT()
+                if cr then
+                    cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=6;cr.Color=Theme.GREEN;cr.Visible=true
+                    txt.Position=Vector2.new(pos.X,pos.Y-16)
+                    txt.Text="📍 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
+                end
+            end
+        end
+        
         -- MONSTER ESP (RED)
         if S.ESP_Monsters then
             for obj in pairs(Monsters)do
@@ -329,24 +366,6 @@ if Drawing then
                     cr.Position=Vector2.new(pos.X,pos.Y);cr.Radius=r;cr.Color=Color3.fromRGB(255,150,0);cr.Visible=true
                     txt.Position=Vector2.new(pos.X,pos.Y-r-14)
                     txt.Text="📦 "..data.name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
-                end
-            end
-        end
-        
-        -- TOOLS ESP (CYAN)
-        if S.ESP_Tools then
-            for obj in pairs(ToolsESP)do
-                if not obj.Parent then ToolsESP[obj]=nil;continue end
-                local handle = obj:FindFirstChild("Handle")
-                if not handle or not handle:IsA("BasePart") then continue end
-                local pos = handle.Position
-                local dist=(pos-root.Position).Magnitude;if dist>300 then continue end
-                local screenPos,on=Camera:WorldToViewportPoint(pos);if not on then continue end
-                local cr=GC();local txt=GT()
-                if cr then
-                    cr.Position=Vector2.new(screenPos.X,screenPos.Y);cr.Radius=8;cr.Color=Theme.CYAN;cr.Visible=true
-                    txt.Position=Vector2.new(screenPos.X,screenPos.Y-18)
-                    txt.Text="🔧 "..obj.Name;txt.Color=Color3.fromRGB(255,255,255);txt.Visible=true
                 end
             end
         end
@@ -417,11 +436,11 @@ local function MakeToggle(parent,name,default,callback)local enabled=default;loc
 
 -- ESP TAB
 local ESPLayout=Instance.new("UIListLayout")ESPLayout.Padding=UDim.new(0,8);ESPLayout.Parent=ESPPage
+MakeToggle(ESPPage,"All Objects ESP",false,function(v)S.ESP_AllObjects=v end)
 MakeToggle(ESPPage,"Monster ESP",false,function(v)S.ESP_Monsters=v end)
 MakeToggle(ESPPage,"Item ESP",false,function(v)S.ESP_Items=v end)
 MakeToggle(ESPPage,"Item Tracers",false,function(v)S.ESP_Tracers=v end)
 MakeToggle(ESPPage,"Anomaly ESP",false,function(v)S.ESP_Anomaly=v end)
-MakeToggle(ESPPage,"Tools ESP",false,function(v)S.ESP_Tools=v end)
 
 -- PLAYER TAB
 local PlayerLayout=Instance.new("UIListLayout")PlayerLayout.Padding=UDim.new(0,8);PlayerLayout.Parent=PlayerPage
