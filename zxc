@@ -1,4 +1,4 @@
--- UWU HUB | ANOMALY WATCH v41 | VISUAL FIX + FIRST PERSON HAT + NPC ESP + NOCLIP FIX
+-- UWU HUB | ANOMALY WATCH v40 | PLAYER VISUALS + FULL ENGINE
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -19,230 +19,246 @@ local Theme = {
     ORANGE = Color3.fromRGB(255,150,50), PURPLE = Color3.fromRGB(200,100,255)
 }
 
--- ================== PLAYER VISUALS (SEPARATE FROM ESP) ==================
-local PlayerVisuals = {Hat = false, Trail = false}
-local HatModel
+local REPL_DELAY = 0.25
 
--- Chinese Hat (FIRST PERSON VISIBLE)
-local function CreateHat()
-    if HatModel then HatModel:Destroy() end
-    local char = Player.Character; if not char then return end
-    local head = char:FindFirstChild("Head"); if not head then return end
-    
-    HatModel = Instance.new("Model") HatModel.Name = "ChineseHat"; HatModel.Parent = char
-    
-    local cone = Instance.new("Part") cone.Name = "HatCone"; cone.Shape = Enum.PartType.Cone
-    cone.Size = Vector3.new(2.5, 1.8, 2.5); cone.Position = head.Position + Vector3.new(0, 2, 0)
-    cone.Color = Color3.fromRGB(255, 150, 200); cone.Transparency = 0.4; cone.Material = Enum.Material.Glass
-    cone.Anchored = false; cone.CanCollide = false; cone.Parent = HatModel
-    
-    local ball = Instance.new("Part") ball.Name = "HatBall"; ball.Shape = Enum.PartType.Ball
-    ball.Size = Vector3.new(0.5, 0.5, 0.5); ball.Position = head.Position + Vector3.new(0, 3.1, 0)
-    ball.Color = Color3.fromRGB(255, 100, 150); ball.Transparency = 0.2; ball.Material = Enum.Material.Neon
-    ball.Anchored = false; ball.CanCollide = false; ball.Parent = HatModel
-    
-    local brim = Instance.new("Part") brim.Name = "HatBrim"; brim.Shape = Enum.PartType.Cylinder
-    brim.Size = Vector3.new(3.5, 0.15, 3.5); brim.Position = head.Position + Vector3.new(0, 1.1, 0)
-    brim.Color = Color3.fromRGB(255, 180, 220); brim.Transparency = 0.5; brim.Material = Enum.Material.Glass
-    brim.Anchored = false; brim.CanCollide = false; brim.Parent = HatModel
-    
-    -- Welds (FIRST PERSON FIX: use CFrame offset from head)
-    local weld1 = Instance.new("Weld") weld1.Part0 = head; weld1.Part1 = cone
-    weld1.C0 = CFrame.new(0, 1.8, 0) * CFrame.Angles(0, 0, 0); weld1.Parent = cone
-    
-    local weld2 = Instance.new("Weld") weld2.Part0 = cone; weld2.Part1 = ball
-    weld2.C0 = CFrame.new(0, 1.1, 0); weld2.Parent = ball
-    
-    local weld3 = Instance.new("Weld") weld3.Part0 = cone; weld3.Part1 = brim
-    weld3.C0 = CFrame.new(0, -0.9, 0); weld3.Parent = brim
+-- ================== STATE LAYER ==================
+local State = {}
+State.__index = State
+function State.new(obj) return setmetatable({obj=obj,last=nil,dirty=false,lastUpdate=tick(),lastFix=0},State) end
+function State:Snapshot(data) self.last=data;self.lastUpdate=tick();self.dirty=false end
+function State:MarkDirty() self.dirty=true end
+function State:Repair() if tick()-self.lastFix<1 then return end;local part=self.obj:IsA("BasePart")and self.obj or self.obj:FindFirstChildWhichIsA("BasePart");if part and self.last then self.last.pos=part.Position;self.last.size=part.Size;self.lastFix=tick()end end
+
+-- ================== UTILS ==================
+local function getRoot() local char=Player.Character;return char and char:FindFirstChild("HumanoidRootPart")end
+local function getPart(obj) if obj:IsA("BasePart")then return obj end;if obj:IsA("Model")then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")end;return nil end
+
+-- ================== QUATERNION ==================
+local function QuaternionFromCFrame(cf)
+    local _,_,_,m11,m12,m13,m21,m22,m23,m31,m32,m33=cf:GetComponents()
+    local w=math.sqrt(math.max(0,1+m11+m22+m33))/2
+    local x=math.sqrt(math.max(0,1+m11-m22-m33))/2
+    local y=math.sqrt(math.max(0,1-m11+m22-m33))/2
+    local z=math.sqrt(math.max(0,1-m11-m22+m33))/2
+    x=m32-m23>0 and math.abs(x)or -math.abs(x)
+    y=m13-m31>0 and math.abs(y)or -math.abs(y)
+    z=m21-m12>0 and math.abs(z)or -math.abs(z)
+    return{x=x,y=y,z=z,w=w}
+end
+local function RotationDiff(q1,q2) if not q1 or not q2 then return 0 end;local dot=q1.x*q2.x+q1.y*q2.y+q1.z*q2.z+q1.w*q2.w;dot=math.clamp(dot,-1,1);return 2*math.acos(math.abs(dot))end
+
+-- ================== ANOMALY CONFIG ==================
+local AnomalyConfig={
+    MOVED={label="Объект перемещён",color=Color3.fromRGB(255,0,0),priority="MEDIUM"},
+    ROTATED={label="Поворот изменён",color=Color3.fromRGB(150,100,255),priority="LOW"},
+    SIZE={label="Размер изменён",color=Color3.fromRGB(255,100,0),priority="MEDIUM"},
+    COLOR={label="Цвет изменён",color=Color3.fromRGB(255,255,0),priority="LOW"},
+    MATERIAL={label="Материал изменён",color=Color3.fromRGB(200,200,0),priority="LOW"},
+    LIGHT={label="Свет: Изменён",color=Color3.fromRGB(0,255,255),priority="MEDIUM"},
+    IMAGE={label="Изменена картина",color=Color3.fromRGB(255,0,255),priority="HIGH"},
+    TV={label="Изменён телевизор",color=Color3.fromRGB(0,255,0),priority="HIGH"},
+    NEW={label="Новый предмет",color=Color3.fromRGB(255,128,0),priority="HIGH"},
+    MISSING={label="Объект исчез",color=Color3.fromRGB(255,0,0),priority="HIGH"},
+    TRANSPARENCY={label="Прозрачность изменена",color=Color3.fromRGB(200,200,255),priority="LOW"},
+    ANCHORED={label="Физика изменена",color=Color3.fromRGB(255,200,100),priority="MEDIUM"},
+    PARENT_CHANGED={label="Перемещён в другую папку",color=Color3.fromRGB(255,150,150),priority="HIGH"},
+    CHILD_COUNT={label="Объектов изменилось",color=Color3.fromRGB(200,255,200),priority="MEDIUM"}
+}
+
+-- ================== COOLDOWNS ==================
+local Cooldowns={}
+local COOLDOWN_TIME=2
+local function CanAlert(obj,alertType) local key=obj;if not Cooldowns[key]then Cooldowns[key]={}end;local last=Cooldowns[key][alertType];local now=tick();if last and(now-last)<COOLDOWN_TIME then return false end;Cooldowns[key][alertType]=now;return true end
+
+-- ================== HIGHLIGHT + LABEL ==================
+local function highlight(obj,color)
+    local part=getPart(obj)if not part then return end
+    for _,c in ipairs(part:GetChildren())do if c:IsA("BoxHandleAdornment")and c.Name=="AnomalyHL"then c:Destroy()end end
+    local box=Instance.new("BoxHandleAdornment")box.Name="AnomalyHL";box.Adornee=part;box.Size=part.Size+Vector3.new(0.3,0.3,0.3);box.Color3=color;box.AlwaysOnTop=true;box.ZIndex=5;box.Parent=part;task.delay(5,function()if box then box:Destroy()end end)
+end
+local function createLabel(obj,text,color)
+    local part=getPart(obj)if not part then return end
+    for _,c in ipairs(part:GetChildren())do if c:IsA("BillboardGui")and c.Name=="AnomalyLbl"then c:Destroy()end end
+    local bill=Instance.new("BillboardGui")bill.Name="AnomalyLbl";bill.Size=UDim2.new(0,200,0,50);bill.StudsOffset=Vector3.new(0,2.5,0);bill.AlwaysOnTop=true;bill.Parent=part
+    local label=Instance.new("TextLabel")label.Size=UDim2.new(1,0,1,0);label.BackgroundTransparency=1;label.Text=text;label.TextColor3=color or Color3.fromRGB(255,255,0);label.TextStrokeTransparency=0;label.Font=Enum.Font.SourceSansBold;label.TextScaled=true;label.Parent=bill;task.delay(5,function()if bill then bill:Destroy()end end)
 end
 
-local function RemoveHat() if HatModel then HatModel:Destroy(); HatModel = nil end end
+-- ================== BASELINE + DETECT ==================
+local BaseLine={}
+local function ProcessAnomaly(obj,anomalyType) if not CanAlert(obj,anomalyType)then return end;local config=AnomalyConfig[anomalyType];if not config then return end;highlight(obj,config.color);createLabel(obj,config.label,config.color)end
 
--- Pink Trail (separate from ESP)
-local TrailParticles = {}
-local MAX_TRAIL = 15
-
-local function SpawnTrailParticle()
-    local char = Player.Character; if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
-    
-    local p = Instance.new("Part") p.Name = "TrailPart"
-    p.Size = Vector3.new(0.25, 0.25, 0.25); p.Shape = Enum.PartType.Ball
-    p.Position = root.Position - Vector3.new(0, 2.5, 0)
-    p.Color = Color3.fromRGB(255, 150, 200); p.Transparency = 0.5
-    p.Material = Enum.Material.Neon; p.Anchored = true; p.CanCollide = false; p.Parent = workspace
-    
-    table.insert(TrailParticles, p)
-    if #TrailParticles > MAX_TRAIL then local old = table.remove(TrailParticles, 1); if old then old:Destroy() end end
-    
-    task.delay(1.5, function()
-        for i = 1, 8 do if not p.Parent then break end; p.Transparency = p.Transparency + 0.06; task.wait(0.04) end
-        if p then p:Destroy() end; for i, v in ipairs(TrailParticles) do if v == p then table.remove(TrailParticles, i) break end end
-    end)
+local function TakeSnapshot(obj)
+    local part=getPart(obj)if not part then return end
+    if not BaseLine[obj]then BaseLine[obj]=State.new(obj)end
+    BaseLine[obj]:Snapshot({pos=part.Position,size=part.Size,color=part:IsA("BasePart")and part.Color or nil,material=part:IsA("BasePart")and part.Material or nil,transparency=part:IsA("BasePart")and part.Transparency or nil,anchored=part:IsA("BasePart")and part.Anchored or nil,quaternion=QuaternionFromCFrame(part.CFrame),texture=obj:IsA("Decal")and obj.Texture or obj:IsA("Texture")and obj.Texture or nil,brightness=obj:IsA("Light")and obj.Brightness or nil,soundId=obj:IsA("Sound")and obj.SoundId or nil,childCount=obj:IsA("Model")and#obj:GetChildren()or nil,parent=obj.Parent})
 end
 
-local function SetHat(v) PlayerVisuals.Hat = v; if v then CreateHat() else RemoveHat() end end
-local function SetTrail(v) PlayerVisuals.Trail = v end
-
-task.spawn(function() while true do task.wait(0.15)
-    if PlayerVisuals.Trail then
-        local char = Player.Character
-        if char then local hum = char:FindFirstChildOfClass("Humanoid"); if hum and hum.MoveDirection.Magnitude > 0 then SpawnTrailParticle() end end
-    end
-end end)
-
-task.spawn(function() while true do task.wait(1)
-    if PlayerVisuals.Hat and HatModel then
-        local head = Player.Character and Player.Character:FindFirstChild("Head")
-        if head and not HatModel.Parent then RemoveHat(); CreateHat() end
-    end
-end end)
-
--- ================== NPC ESP (RED CIRCLES ONLY, NO MOVEMENT ESP) ==================
-local NPCs = {}
-
-local function IsNPC(obj)
-    if obj:IsA("Model") then
-        if obj:FindFirstChildOfClass("Humanoid") then return true end
-        if obj:FindFirstChild("HumanoidRootPart") then return true end
-    end
-    return false
+local function DetectChanges(obj)
+    local state=BaseLine[obj]if not state or not state.last then return end;if not obj.Parent then BaseLine[obj]=nil;return end
+    local part=getPart(obj)if not part then return end;local base=state.last
+    if base.quaternion then local newQ=QuaternionFromCFrame(part.CFrame)if RotationDiff(base.quaternion,newQ)>0.05 then ProcessAnomaly(obj,"ROTATED")base.quaternion=newQ end end
+    if(part.Position-base.pos).Magnitude>1 then ProcessAnomaly(obj,"MOVED")base.pos=part.Position end
+    if base.size and(part.Size-base.size).Magnitude>0.3 then ProcessAnomaly(obj,"SIZE")base.size=part.Size end
+    if base.color and part:IsA("BasePart")and part.Color~=base.color then ProcessAnomaly(obj,"COLOR")base.color=part.Color end
+    if base.material and part:IsA("BasePart")and part.Material~=base.material then ProcessAnomaly(obj,"MATERIAL")base.material=part.Material end
+    if base.transparency and part:IsA("BasePart")and math.abs(part.Transparency-base.transparency)>0.05 then ProcessAnomaly(obj,"TRANSPARENCY")base.transparency=part.Transparency end
+    if base.anchored~=nil and part:IsA("BasePart")and part.Anchored~=base.anchored then ProcessAnomaly(obj,"ANCHORED")base.anchored=part.Anchored end
+    if base.brightness and obj:IsA("Light")and math.abs(obj.Brightness-base.brightness)>0.2 then ProcessAnomaly(obj,"LIGHT")base.brightness=obj.Brightness end
+    local tex=nil;if obj:IsA("Decal")then tex=obj.Texture elseif obj:IsA("Texture")then tex=obj.Texture end
+    if tex and base.texture and tex~=base.texture then ProcessAnomaly(obj,"IMAGE")base.texture=tex end
+    if obj:IsA("BasePart")then local gui=obj:FindFirstChildWhichIsA("SurfaceGui")if gui then local img=gui:FindFirstChildWhichIsA("ImageLabel")if img and base.texture and img.Image~=base.texture then ProcessAnomaly(obj,"TV")base.texture=img.Image end end end
+    if base.parent and obj.Parent~=base.parent then ProcessAnomaly(obj,"PARENT_CHANGED")base.parent=obj.Parent end
+    if base.childCount and obj:IsA("Model")then local count=#obj:GetChildren()if count~=base.childCount then ProcessAnomaly(obj,"CHILD_COUNT")base.childCount=count end end
 end
 
-local function GetPart(obj)
-    if obj:IsA("BasePart") then return obj end
-    if obj:IsA("Model") then return obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart") end
-    return nil
+-- ================== HOOKS ==================
+local function HookObject(obj)
+    if obj:IsA("BasePart")then
+        obj:GetPropertyChangedSignal("Position"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Color"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Material"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Transparency"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Anchored"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+        obj:GetPropertyChangedSignal("Size"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+    end
+    if obj:IsA("Light")then obj:GetPropertyChangedSignal("Brightness"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    if obj:IsA("Decal")or obj:IsA("Texture")then obj:GetPropertyChangedSignal("Texture"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    if obj:IsA("Sound")then obj:GetPropertyChangedSignal("SoundId"):Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)end
+    obj.AncestryChanged:Connect(function()task.delay(REPL_DELAY,function()if BaseLine[obj]then DetectChanges(obj)end end)end)
+    obj.Destroying:Connect(function()if BaseLine[obj]then ProcessAnomaly(obj,"MISSING")BaseLine[obj]=nil end end)
 end
 
 workspace.DescendantAdded:Connect(function(obj)
-    if not (obj:IsA("Model") or obj:IsA("BasePart")) then return end
-    if obj == Player.Character then return end
-    if IsNPC(obj) then NPCs[obj] = true end
+    if not(obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light"))then return end
+    if obj:IsA("BasePart")and obj.Transparency>0.95 then return end
+    task.delay(1.5,function()if not obj.Parent then return end;if not BaseLine[obj]then TakeSnapshot(obj)ProcessAnomaly(obj,"NEW")HookObject(obj)end end)
 end)
+workspace.DescendantRemoving:Connect(function(obj)if BaseLine[obj]then ProcessAnomaly(obj,"MISSING")BaseLine[obj]=nil end end)
+task.defer(function()task.wait(2)for _,obj in ipairs(workspace:GetDescendants())do if obj:IsA("BasePart")or obj:IsA("Model")or obj:IsA("Sound")or obj:IsA("Light")then if not BaseLine[obj]then TakeSnapshot(obj)HookObject(obj)end end end end)
+task.spawn(function()while true do task.wait(3)for obj,state in pairs(BaseLine)do if state then state:Repair()end end end end)
 
-workspace.DescendantRemoving:Connect(function(obj) NPCs[obj] = nil end)
+-- ================== PLAYER MODS ==================
+local PlayerMods={Speed=false,Fly=false,Noclip=false,Fullbright=false,FOV=false}
+local NormalSpeed=16;local NormalFOV=70
+local OrigBrightness=Lighting.Brightness;local OrigAmbient=Lighting.Ambient
+local OrigOutdoorAmbient=Lighting.OutdoorAmbient;local OrigClockTime=Lighting.ClockTime;local OrigFogEnd=Lighting.FogEnd
 
--- Initial NPC scan
-task.defer(function()
-    task.wait(1)
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if IsNPC(obj) and obj ~= Player.Character then NPCs[obj] = true end
-    end
-end)
+local function SetSpeed(v)local char=Player.Character;if char then local hum=char:FindFirstChildOfClass("Humanoid");if hum then hum.WalkSpeed=v and 25 or NormalSpeed end end end
+local FlyBody,FlyGyro
+local FLY_SPEED=2
+local function SetFly(v)
+    local char=Player.Character;if not char then return end;local root=char:FindFirstChild("HumanoidRootPart");if not root then return end;local hum=char:FindFirstChildOfClass("Humanoid")
+    if v then if hum then hum.PlatformStand=true end;FlyBody=Instance.new("BodyVelocity")FlyBody.Velocity=Vector3.zero;FlyBody.MaxForce=Vector3.new(1,1,1)*50000;FlyBody.Parent=root;FlyGyro=Instance.new("BodyGyro")FlyGyro.MaxTorque=Vector3.new(1,1,1)*50000;FlyGyro.P=3000;FlyGyro.Parent=root
+        spawn(function()while PlayerMods.Fly and char and char.Parent do local vel=Vector3.zero
+            if UserInputService:IsKeyDown(Enum.KeyCode.W)then vel+=Camera.CFrame.LookVector*50*FLY_SPEED end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S)then vel-=Camera.CFrame.LookVector*50*FLY_SPEED end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A)then vel-=Camera.CFrame.RightVector*50*FLY_SPEED end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D)then vel+=Camera.CFrame.RightVector*50*FLY_SPEED end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space)then vel+=Vector3.new(0,50,0)*FLY_SPEED end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)then vel-=Vector3.new(0,50,0)*FLY_SPEED end
+            if FlyBody then FlyBody.Velocity=vel end;if FlyGyro then FlyGyro.CFrame=Camera.CFrame end;task.wait()end end)
+    else if FlyBody then FlyBody:Destroy()FlyBody=nil end;if FlyGyro then FlyGyro:Destroy()FlyGyro=nil end;if hum then hum.PlatformStand=false end end
+end
+local NoclipCon
+local function SetNoclip(v)if v then NoclipCon=RunService.Stepped:Connect(function()local char=Player.Character;if char then for _,p in ipairs(char:GetDescendants())do if p:IsA("BasePart")then p.CanCollide=false end end end end)else if NoclipCon then NoclipCon:Disconnect()NoclipCon=nil end;local char=Player.Character;if char then for _,p in ipairs(char:GetDescendants())do if p:IsA("BasePart")then p.CanCollide=true end end end end end
+local function SetFullbright(v)if v then Lighting.Brightness=3;Lighting.Ambient=Color3.fromRGB(80,80,80);Lighting.OutdoorAmbient=Color3.fromRGB(60,60,60);Lighting.ClockTime=14;Lighting.FogEnd=99999;Lighting.GlobalShadows=false else Lighting.Brightness=OrigBrightness;Lighting.Ambient=OrigAmbient;Lighting.OutdoorAmbient=OrigOutdoorAmbient;Lighting.ClockTime=OrigClockTime;Lighting.FogEnd=OrigFogEnd;Lighting.GlobalShadows=true end end
+local function SetFOV(v)Camera.FieldOfView=v and 100 or NormalFOV end
 
--- NPC ESP Render (RED circles + distance text only)
-if Drawing then
-    local Circles = {}; local Texts = {}
-    function GetCircle()
-        for _, c in ipairs(Circles) do if not c.Visible then return c end end
-        local c = Drawing.new("Circle") c.Thickness = 2; c.Filled = false; c.Transparency = 1; c.NumSides = 40; table.insert(Circles, c); return c
-    end
-    function GetText()
-        for _, t in ipairs(Texts) do if not t.Visible then return t end end
-        local t = Drawing.new("Text") t.Size = 13; t.Center = true; t.Outline = true; t.OutlineColor = Color3.new(); table.insert(Texts, t); return t
-    end
+-- ================== PLAYER VISUALS ==================
+local PlayerVisuals={Hat=false,Trail=false}
+local HatModel,TrailPart
+
+-- Chinese Hat (transparent pink)
+local function CreateHat()
+    if HatModel then HatModel:Destroy()end
+    local char=Player.Character;if not char then return end
+    local head=char:FindFirstChild("Head");if not head then return end
     
-    RunService.RenderStepped:Connect(function()
-        for _, c in ipairs(Circles) do c.Visible = false end
-        for _, t in ipairs(Texts) do t.Visible = false end
-        
-        local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        
-        for obj in pairs(NPCs) do
-            if not obj.Parent then NPCs[obj] = nil; continue end
-            local part = GetPart(obj); if not part then continue end
-            local dist = (part.Position - root.Position).Magnitude; if dist > 300 then continue end
-            local pos, on = Camera:WorldToViewportPoint(part.Position); if not on then continue end
-            
-            local cr = GetCircle(); local txt = GetText()
-            if cr then
-                local r = math.clamp(math.max(part.Size.X, part.Size.Y, part.Size.Z) * 0.8, 5, 35)
-                cr.Position = Vector2.new(pos.X, pos.Y); cr.Radius = r; cr.Color = Theme.RED; cr.Visible = true
-                txt.Position = Vector2.new(pos.X, pos.Y - r - 14)
-                txt.Text = "NPC: " .. obj.Name .. "\n" .. math.floor(dist) .. "m"
-                txt.Color = Color3.fromRGB(255, 255, 255); txt.Visible = true
-            end
-        end
+    HatModel=Instance.new("Model")HatModel.Name="ChineseHat";HatModel.Parent=char
+    
+    -- Cone (hat part)
+    local cone=Instance.new("Part")cone.Name="HatCone";cone.Shape=Enum.PartType.Cone
+    cone.Size=Vector3.new(3,2,3);cone.Position=head.Position+Vector3.new(0,2.2,0)
+    cone.Color=Color3.fromRGB(255,150,200);cone.Transparency=0.5;cone.Material=Enum.Material.Glass
+    cone.Anchored=false;cone.CanCollide=false;cone.Parent=HatModel
+    
+    -- Ball on top
+    local ball=Instance.new("Part")ball.Name="HatBall";ball.Shape=Enum.PartType.Ball
+    ball.Size=Vector3.new(0.6,0.6,0.6);ball.Position=head.Position+Vector3.new(0,3.4,0)
+    ball.Color=Color3.fromRGB(255,100,150);ball.Transparency=0.3;ball.Material=Enum.Material.Neon
+    ball.Anchored=false;ball.CanCollide=false;ball.Parent=HatModel
+    
+    -- Brim (ring)
+    local brim=Instance.new("Part")brim.Name="HatBrim";brim.Shape=Enum.PartType.Cylinder
+    brim.Size=Vector3.new(4,0.2,4);brim.Position=head.Position+Vector3.new(0,1.2,0)
+    brim.Color=Color3.fromRGB(255,180,220);brim.Transparency=0.6;brim.Material=Enum.Material.Glass
+    brim.Anchored=false;brim.CanCollide=false;brim.Parent=HatModel
+    
+    -- Weld to head
+    local weld=Instance.new("Weld")weld.Part0=head;weld.Part1=cone;weld.C0=CFrame.new(0,1,0);weld.Parent=cone
+    local weld2=Instance.new("Weld")weld2.Part0=cone;weld2.Part1=ball;weld2.C0=CFrame.new(0,1.2,0);weld2.Parent=ball
+    local weld3=Instance.new("Weld")weld3.Part0=cone;weld3.Part1=brim;weld3.C0=CFrame.new(0,-1,0);weld3.Parent=brim
+end
+
+local function RemoveHat()if HatModel then HatModel:Destroy()HatModel=nil end end
+
+-- Walking Trail (pink particles)
+local TrailParticles={}
+local MAX_TRAIL=20
+
+local function SpawnTrailParticle()
+    local char=Player.Character;if not char then return end
+    local root=char:FindFirstChild("HumanoidRootPart");if not root then return end
+    
+    local p=Instance.new("Part")p.Name="TrailPart"
+    p.Size=Vector3.new(0.3,0.3,0.3);p.Shape=Enum.PartType.Ball
+    p.Position=root.Position-Vector3.new(0,2.5,0)
+    p.Color=Color3.fromRGB(255,150,200);p.Transparency=0.5
+    p.Material=Enum.Material.Neon;p.Anchored=true;p.CanCollide=false;p.Parent=workspace
+    
+    table.insert(TrailParticles,p)
+    if#TrailParticles>MAX_TRAIL then local old=table.remove(TrailParticles,1)if old then old:Destroy()end end
+    
+    -- Fade out
+    task.delay(2,function()
+        for i=1,10 do if not p.Parent then break end;p.Transparency=p.Transparency+0.05;task.wait(0.05)end
+        if p then p:Destroy()end;for i,v in ipairs(TrailParticles)do if v==p then table.remove(TrailParticles,i)break end end
     end)
 end
 
--- ================== PLAYER MODS ==================
-local PlayerMods = {Speed = false, Fly = false, Noclip = false, Fullbright = false, FOV = false}
-local NormalSpeed = 16; local NormalFOV = 70
-local OrigBrightness = Lighting.Brightness; local OrigAmbient = Lighting.Ambient
-local OrigOutdoorAmbient = Lighting.OutdoorAmbient; local OrigClockTime = Lighting.ClockTime; local OrigFogEnd = Lighting.FogEnd
-
-local function SetSpeed(v)
-    local char = Player.Character
-    if char then local hum = char:FindFirstChildOfClass("Humanoid"); if hum then hum.WalkSpeed = v and 25 or NormalSpeed end end
+local function SetHat(v)
+    PlayerVisuals.Hat=v
+    if v then CreateHat()else RemoveHat()end
 end
 
--- Fly (SPEED 2)
-local FlyBody, FlyGyro; local FLY_SPEED = 2
-local function SetFly(v)
-    local char = Player.Character; if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if v then
-        if hum then hum.PlatformStand = true end
-        FlyBody = Instance.new("BodyVelocity") FlyBody.Velocity = Vector3.zero; FlyBody.MaxForce = Vector3.new(1,1,1)*50000; FlyBody.Parent = root
-        FlyGyro = Instance.new("BodyGyro") FlyGyro.MaxTorque = Vector3.new(1,1,1)*50000; FlyGyro.P = 3000; FlyGyro.Parent = root
-        spawn(function() while PlayerMods.Fly and char and char.Parent do local vel = Vector3.zero
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then vel += Camera.CFrame.LookVector * 50 * FLY_SPEED end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then vel -= Camera.CFrame.LookVector * 50 * FLY_SPEED end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then vel -= Camera.CFrame.RightVector * 50 * FLY_SPEED end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then vel += Camera.CFrame.RightVector * 50 * FLY_SPEED end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then vel += Vector3.new(0, 50, 0) * FLY_SPEED end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then vel -= Vector3.new(0, 50, 0) * FLY_SPEED end
-            if FlyBody then FlyBody.Velocity = vel end; if FlyGyro then FlyGyro.CFrame = Camera.CFrame end; task.wait() end end)
-    else
-        if FlyBody then FlyBody:Destroy(); FlyBody = nil end; if FlyGyro then FlyGyro:Destroy(); FlyGyro = nil end
-        if hum then hum.PlatformStand = false end
-    end
+local function SetTrail(v)
+    PlayerVisuals.Trail=v
 end
 
--- NOCLIP FIX (using BodyVelocity/ZeroGravity or direct CanCollide loop)
-local NoclipConn
-local function SetNoclip(v)
-    if v then
-        NoclipConn = RunService.Stepped:Connect(function()
-            local char = Player.Character
-            if char then
-                for _, p in ipairs(char:GetDescendants()) do
-                    if p:IsA("BasePart") then p.CanCollide = false end
-                end
-            end
-        end)
-    else
-        if NoclipConn then NoclipConn:Disconnect(); NoclipConn = nil end
-        local char = Player.Character
-        if char then
-            for _, p in ipairs(char:GetDescendants()) do
-                if p:IsA("BasePart") then p.CanCollide = true end
-            end
+-- Trail spawner
+task.spawn(function()
+    while true do task.wait(0.1)
+        if PlayerVisuals.Trail then
+            local char=Player.Character
+            if char then local hum=char:FindFirstChildOfClass("Humanoid")if hum and hum.MoveDirection.Magnitude>0 then SpawnTrailParticle()end end
         end
     end
-end
+end)
 
-local function SetFullbright(v)
-    if v then
-        Lighting.Brightness = 3; Lighting.Ambient = Color3.fromRGB(80,80,80)
-        Lighting.OutdoorAmbient = Color3.fromRGB(60,60,60); Lighting.ClockTime = 14
-        Lighting.FogEnd = 99999; Lighting.GlobalShadows = false
-    else
-        Lighting.Brightness = OrigBrightness; Lighting.Ambient = OrigAmbient
-        Lighting.OutdoorAmbient = OrigOutdoorAmbient; Lighting.ClockTime = OrigClockTime
-        Lighting.FogEnd = OrigFogEnd; Lighting.GlobalShadows = true
+-- Keep hat updated
+task.spawn(function()
+    while true do task.wait(0.5)
+        if PlayerVisuals.Hat and HatModel then
+            -- Re-create hat if character respawned
+            local head=Player.Character and Player.Character:FindFirstChild("Head")
+            if head and not HatModel.Parent then RemoveHat()CreateHat()end
+        end
     end
-end
-local function SetFOV(v) Camera.FieldOfView = v and 100 or NormalFOV end
+end)
 
 -- ================== MINIMIZE ICON ==================
 local MinIcon
-local MonsterFrames = {[[  ╱|、
+local MonsterFrames={[[  ╱|、
  ( °  °)  
   |  ~ |   
   じしˍ,)ノ]],[[  ╱|、
@@ -256,46 +272,46 @@ local MonsterFrames = {[[  ╱|、
   |  ~ |   
   じしˍ,)ノ]]}
 local function CreateMinIcon()
-    if MinIcon then MinIcon:Destroy() end
-    MinIcon = Instance.new("TextButton") MinIcon.Size = UDim2.fromOffset(40, 40); MinIcon.Position = UDim2.new(0.5, -20, 0.02, 0)
-    MinIcon.BackgroundColor3 = Theme.CARD; MinIcon.Text = MonsterFrames[1]; MinIcon.TextColor3 = Theme.RED; MinIcon.Font = Enum.Font.GothamBold
-    MinIcon.TextSize = 7; MinIcon.BorderSizePixel = 0; MinIcon.Active = true; MinIcon.Draggable = true; MinIcon.Parent = Gui
-    Instance.new("UICorner", MinIcon).CornerRadius = UDim.new(1, 0)
-    local Glow = Instance.new("Frame") Glow.Size = UDim2.new(1, 6, 1, 6); Glow.Position = UDim2.fromOffset(-3, -3)
-    Glow.BackgroundColor3 = Theme.RED; Glow.BackgroundTransparency = 0.6; Glow.BorderSizePixel = 0; Glow.ZIndex = 0; Glow.Parent = MinIcon; Instance.new("UICorner", Glow).CornerRadius = UDim.new(1, 0)
-    local FrameIdx = 1; spawn(function() while MinIcon and MinIcon.Parent do FrameIdx = FrameIdx % #MonsterFrames + 1; MinIcon.Text = MonsterFrames[FrameIdx]; wait(0.8) end end)
-    MinIcon.MouseButton1Click:Connect(function() MinIcon:Destroy(); MinIcon = nil; Main.Visible = true; TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.fromOffset(520, 400)}):Play() end)
+    if MinIcon then MinIcon:Destroy()end
+    MinIcon=Instance.new("TextButton")MinIcon.Size=UDim2.fromOffset(40,40);MinIcon.Position=UDim2.new(0.5,-20,0.02,0)
+    MinIcon.BackgroundColor3=Theme.CARD;MinIcon.Text=MonsterFrames[1];MinIcon.TextColor3=Theme.RED;MinIcon.Font=Enum.Font.GothamBold
+    MinIcon.TextSize=7;MinIcon.BorderSizePixel=0;MinIcon.Active=true;MinIcon.Draggable=true;MinIcon.Parent=Gui
+    Instance.new("UICorner",MinIcon).CornerRadius=UDim.new(1,0)
+    local Glow=Instance.new("Frame")Glow.Size=UDim2.new(1,6,1,6);Glow.Position=UDim2.fromOffset(-3,-3)
+    Glow.BackgroundColor3=Theme.RED;Glow.BackgroundTransparency=0.6;Glow.BorderSizePixel=0;Glow.ZIndex=0;Glow.Parent=MinIcon;Instance.new("UICorner",Glow).CornerRadius=UDim.new(1,0)
+    local FrameIdx=1;spawn(function()while MinIcon and MinIcon.Parent do FrameIdx=FrameIdx%#MonsterFrames+1;MinIcon.Text=MonsterFrames[FrameIdx];wait(0.8)end end)
+    MinIcon.MouseButton1Click:Connect(function()MinIcon:Destroy()MinIcon=nil;Main.Visible=true;TweenService:Create(Main,TweenInfo.new(0.3),{Size=UDim2.fromOffset(520,420)}):Play()end)
 end
 
 -- ================== GUI ==================
-local Gui = Instance.new("ScreenGui") Gui.Name = "UwUHub"; Gui.ResetOnSpawn = false; Gui.IgnoreGuiInset = true; Gui.Parent = PLAYERGUI
-local Main = Instance.new("Frame") Main.Size = UDim2.fromOffset(0, 0); Main.Position = UDim2.fromScale(0.5, 0.5); Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.BackgroundColor3 = Theme.BG; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true; Main.Parent = Gui; Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 22)
-local Stroke = Instance.new("UIStroke") Stroke.Color = Theme.ACCENT; Stroke.Transparency = 0.6; Stroke.Parent = Main
-TweenService:Create(Main, TweenInfo.new(0.4), {Size = UDim2.fromOffset(520, 400)}):Play()
-local Header = Instance.new("Frame") Header.Size = UDim2.new(1, 0, 0, 58); Header.BackgroundTransparency = 1; Header.Parent = Main
-local Title = Instance.new("TextLabel") Title.Size = UDim2.new(1, -80, 1, 0); Title.Position = UDim2.fromOffset(24, 0); Title.Text = "✦ UWU HUB v41"; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = Theme.TEXT; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.Parent = Header
-local Sub = Instance.new("TextLabel") Sub.Size = UDim2.new(1, -80, 0, 18); Sub.Position = UDim2.fromOffset(24, 30); Sub.Text = "visual fix • fp hat • npc esp • noclip ok"; Sub.Font = Enum.Font.Gotham; Sub.TextSize = 11; Sub.TextColor3 = Theme.MUTED; Sub.BackgroundTransparency = 1; Sub.TextXAlignment = Enum.TextXAlignment.Left; Sub.Parent = Header
-local MinBtn = Instance.new("TextButton") MinBtn.Size = UDim2.fromOffset(34, 34); MinBtn.Position = UDim2.new(1, -54, 0.5, -17); MinBtn.Text = "—"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextColor3 = Theme.TEXT; MinBtn.BackgroundColor3 = Theme.CARD; MinBtn.Parent = Header; Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1, 0)
-MinBtn.MouseButton1Click:Connect(function() TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.fromOffset(0, 0)}):Play(); task.wait(0.25); Main.Visible = false; CreateMinIcon() end)
-local Sidebar = Instance.new("Frame") Sidebar.Size = UDim2.new(0, 130, 1, -82); Sidebar.Position = UDim2.fromOffset(18, 68); Sidebar.BackgroundColor3 = Theme.PANEL; Sidebar.Parent = Main; Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 18)
-local SideLayout = Instance.new("UIListLayout") SideLayout.Padding = UDim.new(0, 8); SideLayout.Parent = Sidebar
-local Content = Instance.new("Frame") Content.Size = UDim2.new(1, -160, 1, -82); Content.Position = UDim2.fromOffset(150, 68); Content.BackgroundColor3 = Theme.PANEL; Content.Parent = Main; Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 18)
-local Tabs = {}; local Pages = {}
-local function CreateTab(name) local Btn = Instance.new("TextButton") Btn.Size = UDim2.new(1, -12, 0, 42); Btn.Position = UDim2.fromOffset(6, 0); Btn.Text = name; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 13; Btn.TextColor3 = Theme.MUTED; Btn.BackgroundColor3 = Theme.CARD; Btn.Parent = Sidebar; Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 14); local Page = Instance.new("Frame") Page.Visible = false; Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Parent = Content; Tabs[name] = Btn; Pages[name] = Page; Btn.MouseButton1Click:Connect(function() for n, p in pairs(Pages) do p.Visible = false; Tabs[n].BackgroundColor3 = Theme.CARD; Tabs[n].TextColor3 = Theme.MUTED end; Page.Visible = true; TweenService:Create(Btn, TweenInfo.new(0.18), {BackgroundColor3 = Theme.ACCENT}):Play(); Btn.TextColor3 = Theme.TEXT end) return Page end
-local HomePage = CreateTab("Home"); local ModsPage = CreateTab("Player"); local VisualPage = CreateTab("Visual")
-local function MakeCard(parent, title, desc) local Box = Instance.new("Frame") Box.Size = UDim2.new(1, -26, 0, 72); Box.Position = UDim2.fromOffset(13, 0); Box.BackgroundColor3 = Theme.CARD; Box.Parent = parent; Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 16); local T = Instance.new("TextLabel") T.Size = UDim2.new(1, -30, 0, 22); T.Position = UDim2.fromOffset(16, 14); T.Text = title; T.TextSize = 14; T.Font = Enum.Font.GothamBold; T.TextColor3 = Theme.TEXT; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left; T.Parent = Box; local D = Instance.new("TextLabel") D.Size = UDim2.new(1, -30, 0, 24); D.Position = UDim2.fromOffset(16, 38); D.Text = desc; D.TextWrapped = true; D.TextColor3 = Theme.MUTED; D.Font = Enum.Font.Gotham; D.TextSize = 11; D.BackgroundTransparency = 1; D.TextXAlignment = Enum.TextXAlignment.Left; D.Parent = Box; return Box end
-local HomeLayout = Instance.new("UIListLayout") HomeLayout.Padding = UDim.new(0, 10); HomeLayout.Parent = HomePage
-MakeCard(HomePage, "✦ UWU HUB v41", "Visuals Fixed + NPC ESP\nFirst Person Hat • Noclip Working")
-MakeCard(HomePage, "🎀 Features", "NPC Red Circles Only\nHat visible in FP • Pink Trail")
-local function MakeToggle(parent, name, default, callback) local enabled = default; local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 38); Row.Position = UDim2.fromOffset(10, 0); Row.BackgroundColor3 = Theme.CARD; Row.Parent = parent; Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 12); local Lbl = Instance.new("TextLabel") Lbl.Size = UDim2.new(0.6, 0, 1, 0); Lbl.Position = UDim2.fromOffset(12, 0); Lbl.Text = name; Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED; Lbl.Font = Enum.Font.Gotham; Lbl.TextSize = 12; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left; Lbl.Parent = Row; local Btn = Instance.new("TextButton") Btn.Size = UDim2.fromOffset(44, 24); Btn.Position = UDim2.new(1, -54, 0.5, -12); Btn.Text = enabled and "ON" or "OFF"; Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD; Btn.TextColor3 = Theme.TEXT; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 10; Btn.Parent = Row; Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10); Btn.MouseButton1Click:Connect(function() enabled = not enabled; Btn.Text = enabled and "ON" or "OFF"; Btn.BackgroundColor3 = enabled and Theme.ACCENT or Theme.CARD; Lbl.TextColor3 = enabled and Theme.TEXT or Theme.MUTED; callback(enabled) end) return Row end
-local ModsLayout = Instance.new("UIListLayout") ModsLayout.Padding = UDim.new(0, 8); ModsLayout.Parent = ModsPage
-MakeToggle(ModsPage, "Speed (25)", false, function(v) PlayerMods.Speed = v; SetSpeed(v) end)
-MakeToggle(ModsPage, "Fly (x2)", false, function(v) PlayerMods.Fly = v; SetFly(v) end)
-MakeToggle(ModsPage, "Noclip", false, function(v) PlayerMods.Noclip = v; SetNoclip(v) end)
-MakeToggle(ModsPage, "Fullbright", false, function(v) PlayerMods.Fullbright = v; SetFullbright(v) end)
-MakeToggle(ModsPage, "FOV (100)", false, function(v) PlayerMods.FOV = v; SetFOV(v) end)
-local VisualLayout = Instance.new("UIListLayout") VisualLayout.Padding = UDim.new(0, 8); VisualLayout.Parent = VisualPage
-MakeToggle(VisualPage, "Chinese Hat", false, function(v) SetHat(v) end)
-MakeToggle(VisualPage, "Pink Trail", false, function(v) SetTrail(v) end)
-Pages.Home.Visible = true; Tabs.Home.BackgroundColor3 = Theme.ACCENT; Tabs.Home.TextColor3 = Theme.TEXT
+local Gui=Instance.new("ScreenGui")Gui.Name="UwUHub";Gui.ResetOnSpawn=false;Gui.IgnoreGuiInset=true;Gui.Parent=PLAYERGUI
+local Main=Instance.new("Frame")Main.Size=UDim2.fromOffset(0,0);Main.Position=UDim2.fromScale(0.5,0.5);Main.AnchorPoint=Vector2.new(0.5,0.5)
+Main.BackgroundColor3=Theme.BG;Main.BorderSizePixel=0;Main.Active=true;Main.Draggable=true;Main.Parent=Gui;Instance.new("UICorner",Main).CornerRadius=UDim.new(0,22)
+local Stroke=Instance.new("UIStroke")Stroke.Color=Theme.ACCENT;Stroke.Transparency=0.6;Stroke.Parent=Main
+TweenService:Create(Main,TweenInfo.new(0.4),{Size=UDim2.fromOffset(520,420)}):Play()
+local Header=Instance.new("Frame")Header.Size=UDim2.new(1,0,0,58);Header.BackgroundTransparency=1;Header.Parent=Main
+local Title=Instance.new("TextLabel")Title.Size=UDim2.new(1,-80,1,0);Title.Position=UDim2.fromOffset(24,0);Title.Text="✦ UWU HUB v40";Title.Font=Enum.Font.GothamBold;Title.TextSize=20;Title.TextColor3=Theme.TEXT;Title.BackgroundTransparency=1;Title.TextXAlignment=Enum.TextXAlignment.Left;Title.Parent=Header
+local Sub=Instance.new("TextLabel")Sub.Size=UDim2.new(1,-80,0,18);Sub.Position=UDim2.fromOffset(24,30);Sub.Text="player visuals • chinese hat • trail";Sub.Font=Enum.Font.Gotham;Sub.TextSize=11;Sub.TextColor3=Theme.MUTED;Sub.BackgroundTransparency=1;Sub.TextXAlignment=Enum.TextXAlignment.Left;Sub.Parent=Header
+local MinBtn=Instance.new("TextButton")MinBtn.Size=UDim2.fromOffset(34,34);MinBtn.Position=UDim2.new(1,-54,0.5,-17);MinBtn.Text="—";MinBtn.Font=Enum.Font.GothamBold;MinBtn.TextColor3=Theme.TEXT;MinBtn.BackgroundColor3=Theme.CARD;MinBtn.Parent=Header;Instance.new("UICorner",MinBtn).CornerRadius=UDim.new(1,0)
+MinBtn.MouseButton1Click:Connect(function()TweenService:Create(Main,TweenInfo.new(0.25),{Size=UDim2.fromOffset(0,0)}):Play();task.wait(0.25);Main.Visible=false;CreateMinIcon()end)
+local Sidebar=Instance.new("Frame")Sidebar.Size=UDim2.new(0,130,1,-82);Sidebar.Position=UDim2.fromOffset(18,68);Sidebar.BackgroundColor3=Theme.PANEL;Sidebar.Parent=Main;Instance.new("UICorner",Sidebar).CornerRadius=UDim.new(0,18)
+local SideLayout=Instance.new("UIListLayout")SideLayout.Padding=UDim.new(0,8);SideLayout.Parent=Sidebar
+local Content=Instance.new("Frame")Content.Size=UDim2.new(1,-160,1,-82);Content.Position=UDim2.fromOffset(150,68);Content.BackgroundColor3=Theme.PANEL;Content.Parent=Main;Instance.new("UICorner",Content).CornerRadius=UDim.new(0,18)
+local Tabs={};local Pages={}
+local function CreateTab(name)local Btn=Instance.new("TextButton")Btn.Size=UDim2.new(1,-12,0,42);Btn.Position=UDim2.fromOffset(6,0);Btn.Text=name;Btn.Font=Enum.Font.GothamBold;Btn.TextSize=13;Btn.TextColor3=Theme.MUTED;Btn.BackgroundColor3=Theme.CARD;Btn.Parent=Sidebar;Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,14);local Page=Instance.new("Frame")Page.Visible=false;Page.Size=UDim2.new(1,0,1,0);Page.BackgroundTransparency=1;Page.Parent=Content;Tabs[name]=Btn;Pages[name]=Page;Btn.MouseButton1Click:Connect(function()for n,p in pairs(Pages)do p.Visible=false;Tabs[n].BackgroundColor3=Theme.CARD;Tabs[n].TextColor3=Theme.MUTED end;Page.Visible=true;TweenService:Create(Btn,TweenInfo.new(0.18),{BackgroundColor3=Theme.ACCENT}):Play();Btn.TextColor3=Theme.TEXT end)return Page end
+local HomePage=CreateTab("Home");local ModsPage=CreateTab("Player");local VisualPage=CreateTab("Visual")
+local function MakeCard(parent,title,desc)local Box=Instance.new("Frame")Box.Size=UDim2.new(1,-26,0,72);Box.Position=UDim2.fromOffset(13,0);Box.BackgroundColor3=Theme.CARD;Box.Parent=parent;Instance.new("UICorner",Box).CornerRadius=UDim.new(0,16);local T=Instance.new("TextLabel")T.Size=UDim2.new(1,-30,0,22);T.Position=UDim2.fromOffset(16,14);T.Text=title;T.TextSize=14;T.Font=Enum.Font.GothamBold;T.TextColor3=Theme.TEXT;T.BackgroundTransparency=1;T.TextXAlignment=Enum.TextXAlignment.Left;T.Parent=Box;local D=Instance.new("TextLabel")D.Size=UDim2.new(1,-30,0,24);D.Position=UDim2.fromOffset(16,38);D.Text=desc;D.TextWrapped=true;D.TextColor3=Theme.MUTED;D.Font=Enum.Font.Gotham;D.TextSize=11;D.BackgroundTransparency=1;D.TextXAlignment=Enum.TextXAlignment.Left;D.Parent=Box;return Box end
+local HomeLayout=Instance.new("UIListLayout")HomeLayout.Padding=UDim.new(0,10);HomeLayout.Parent=HomePage
+MakeCard(HomePage,"✦ UWU HUB v40","Player Visuals + Anomaly Engine\nChinese Hat • Trail • Full Detection")
+MakeCard(HomePage,"🎀 Features","14 anomaly types • State Sync\nFly x2 • Noclip • Hat • Trail")
+local function MakeToggle(parent,name,default,callback)local enabled=default;local Row=Instance.new("Frame")Row.Size=UDim2.new(1,-20,0,38);Row.Position=UDim2.fromOffset(10,0);Row.BackgroundColor3=Theme.CARD;Row.Parent=parent;Instance.new("UICorner",Row).CornerRadius=UDim.new(0,12);local Lbl=Instance.new("TextLabel")Lbl.Size=UDim2.new(0.6,0,1,0);Lbl.Position=UDim2.fromOffset(12,0);Lbl.Text=name;Lbl.TextColor3=enabled and Theme.TEXT or Theme.MUTED;Lbl.Font=Enum.Font.Gotham;Lbl.TextSize=12;Lbl.BackgroundTransparency=1;Lbl.TextXAlignment=Enum.TextXAlignment.Left;Lbl.Parent=Row;local Btn=Instance.new("TextButton")Btn.Size=UDim2.fromOffset(44,24);Btn.Position=UDim2.new(1,-54,0.5,-12);Btn.Text=enabled and"ON"or"OFF";Btn.BackgroundColor3=enabled and Theme.ACCENT or Theme.CARD;Btn.TextColor3=Theme.TEXT;Btn.Font=Enum.Font.GothamBold;Btn.TextSize=10;Btn.Parent=Row;Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,10);Btn.MouseButton1Click:Connect(function()enabled=not enabled;Btn.Text=enabled and"ON"or"OFF";Btn.BackgroundColor3=enabled and Theme.ACCENT or Theme.CARD;Lbl.TextColor3=enabled and Theme.TEXT or Theme.MUTED;callback(enabled)end)return Row end
+local ModsLayout=Instance.new("UIListLayout")ModsLayout.Padding=UDim.new(0,8);ModsLayout.Parent=ModsPage
+MakeToggle(ModsPage,"Speed (25)",false,function(v)PlayerMods.Speed=v;SetSpeed(v)end)
+MakeToggle(ModsPage,"Fly (x2)",false,function(v)PlayerMods.Fly=v;SetFly(v)end)
+MakeToggle(ModsPage,"Noclip",false,function(v)PlayerMods.Noclip=v;SetNoclip(v)end)
+MakeToggle(ModsPage,"Fullbright",false,function(v)PlayerMods.Fullbright=v;SetFullbright(v)end)
+MakeToggle(ModsPage,"FOV (100)",false,function(v)PlayerMods.FOV=v;SetFOV(v)end)
+local VisualLayout=Instance.new("UIListLayout")VisualLayout.Padding=UDim.new(0,8);VisualLayout.Parent=VisualPage
+MakeToggle(VisualPage,"Chinese Hat",false,function(v)SetHat(v)end)
+MakeToggle(VisualPage,"Pink Trail",false,function(v)SetTrail(v)end)
+Pages.Home.Visible=true;Tabs.Home.BackgroundColor3=Theme.ACCENT;Tabs.Home.TextColor3=Theme.TEXT
