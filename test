@@ -1,0 +1,47 @@
+-- Halloween Auto Collect | Paranormal
+-- One pass through loaded Halloween collectibles. Run again after more items load.
+local Players=game:GetService('Players')
+local player=Players.LocalPlayer
+local env=getgenv and getgenv()or _G
+if env.OverdriveHalloweenCollecting then return warn('Halloween collection is already running')end
+if type(fireproximityprompt)~='function'then return warn('Proximity prompt interaction is unavailable')end
+env.OverdriveHalloweenCollecting=true
+local collected,attempted=0,0
+local ok,err=xpcall(function()
+ local targets={}
+ for _,model in ipairs(workspace:GetDescendants())do
+  if model:IsA('Model')and model:GetAttribute('Halloween')==true then targets[#targets+1]=model end
+ end
+ local initialRoot=player.Character and player.Character:FindFirstChild('HumanoidRootPart')
+ if initialRoot then
+  table.sort(targets,function(a,b)
+   return (a:GetPivot().Position-initialRoot.Position).Magnitude<(b:GetPivot().Position-initialRoot.Position).Magnitude
+  end)
+ end
+ for _,model in ipairs(targets)do
+  local character=player.Character
+  local humanoid=character and character:FindFirstChildOfClass('Humanoid')
+  local root=character and character:FindFirstChild('HumanoidRootPart')
+  if not root or not humanoid or humanoid.Health<=0 then warn('Collection stopped: character unavailable');break end
+  local prompt=model:FindFirstChildWhichIsA('ProximityPrompt',true)
+  local part=model:FindFirstChild('main')or model:FindFirstChildWhichIsA('BasePart',true)
+  if model:IsDescendantOf(workspace)and prompt and prompt.Enabled and part and part:IsA('BasePart')then
+   attempted+=1
+   local name=model.Name
+   local spot=part.Position+Vector3.new(1.2,1.2,0)
+   character:PivotTo(CFrame.lookAt(spot,part.Position+Vector3.new(0,1.2,0)))
+   root.AssemblyLinearVelocity=Vector3.zero
+   task.wait(.35)
+   if prompt.Parent and prompt.Enabled and character==player.Character then
+    local interacted,interactionError=pcall(function()fireproximityprompt(prompt)end)
+    task.wait(math.max(.9,prompt.Parent and prompt.HoldDuration+.2 or .9))
+    if not model:IsDescendantOf(workspace)then collected+=1;print('Collected: '..name)
+    elseif not interacted then warn('Interaction failed: '..name..' | '..tostring(interactionError))
+    else warn('Collection not confirmed: '..name)end
+   end
+  end
+ end
+end,debug.traceback)
+env.OverdriveHalloweenCollecting=nil
+if not ok then warn(err)end
+print('Halloween: '..collected..' collected / '..attempted..' attempted. Only loaded items were checked.')
